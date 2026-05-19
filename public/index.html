@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — ИИ в школе</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <h1>🏫 Вход в платформу</h1>
+      <form id="loginForm">
+        <input type="email" id="email" class="input" placeholder="Email" value="student@school.ru" required>
+        <input type="password" id="password" class="input" placeholder="Пароль" value="123456" required>
+        <button type="submit" class="btn">Войти</button>
+        <p id="errorMsg" style="color:red; margin-top:10px; display:none;"></p>
+      </form>
+      <div style="margin-top:20px; font-size:0.8rem; color:#666; text-align:left;">
+        <p>🔑 Тестовые аккаунты (пароль: <b>123456</b>):</p>
+        <p style="margin-top:15px; font-size:0.9rem;">Нет аккаунта? <a href="/register.html">Зарегистрироваться</a></p>
+        <ul>
+          <li>admin@school.ru (Админ)</li>
+          <li>teacher@school.ru (Учитель)</li>
+          <li>student@school.ru (Ученик)</li>
+          <li>parent@school.ru (Родитель)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

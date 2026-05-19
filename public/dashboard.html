@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Кабинет — ИИ в школе</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <aside class="sidebar">
+      <div class="logo">🏫 Школа ИИ</div>
+      <nav id="navMenu"></nav> <!-- Генерируется через JS под роль -->
+      <div class="logout-btn" onclick="logout()">🚪 Выйти</div>
+    </aside>
+
+    <main class="main-content">
+      <!-- Дневник -->
+      <section id="diary" class="page active">
+        <h1>📓 Дневник</h1>
+        <table id="gradesTable">
+          <thead><tr><th>Предмет</th><th>Оценка</th><th>Учитель</th><th>Комментарий</th><th>Дата</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Логи (только админ) -->
+      <section id="logs" class="page">
+        <h1>📜 Журнал действий</h1>
+        <table id="logsTable">
+          <thead><tr><th>Кто</th><th>Действие</th><th>Детали</th><th>Время</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Профиль родителя -->
+      <section id="parent" class="page">
+        <h1>👨‍👩‍ Кабинет родителя</h1>
+        <div id="parentInfo"></div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

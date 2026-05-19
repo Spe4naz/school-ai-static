@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация — ИИ в школе</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <h1>📝 Регистрация</h1>
+      <form id="regForm">
+        <input type="text" id="name" class="input" placeholder="ФИО" required>
+        <input type="email" id="email" class="input" placeholder="Email" required>
+        <input type="password" id="password" class="input" placeholder="Пароль (мин. 6 символов)" minlength="6" required>
+        
+        <select id="role" class="input" onchange="toggleRoleFields()">
+          <option value="student">🎓 Ученик</option>
+          <option value="parent">👨‍👩‍👧 Родитель</option>
+        </select>
+
+        <div id="studentFields">
+          <input type="text" id="class_id" class="input" placeholder="Класс (например: 9А)">
+        </div>
+        <div id="parentFields" style="display:none;">
+          <input type="email" id="student_email" class="input" placeholder="Email ребёнка (уже зарегистрирован)">
+        </div>
+
+        <button type="submit" class="btn">Зарегистрироваться</button>
+        <p id="regError" style="color:red; margin-top:10px; display:none;"></p>
+      </form>
+      <p style="margin-top:15px; font-size:0.9rem;">Уже есть аккаунт? <a href="/">Войти</a></p>
+    </div>
+  </div>
+  <script>
+    function toggleRoleFields() {
+      const r = document.getElementById('role').value;
+      document.getElementById('studentFields').style.display = r === 'student' ? 'block' : 'none';
+      document.getElementById('parentFields').style.display = r === 'parent' ? 'block' : 'none';
+    }
+    document.getElementById('regForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const payload = {
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value,
+        role: document.getElementById('role').value,
+        class_id: document.getElementById('class_id').value,
+        student_email: document.getElementById('student_email').value
+      };
+      try {
+        const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if (data.success) location.href = '/?registered=1';
+        else { document.getElementById('regError').textContent = data.error; document.getElementById('regError').style.display = 'block'; }
+      } catch { alert('Ошибка сети'); }
+    });
+  </script>
+</body>
+</html>
