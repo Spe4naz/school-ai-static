@@ -1,35 +1,30 @@
-﻿# 📦 Зависимости
+﻿# Dependencies
 node_modules/
-npm-debug.log*
-yarn-error.log*
 
-# 🗄️ Базы данных (никогда не коммитим!)
-*.db
-*.sqlite
-*.sqlite3
-school.db
-test.db
-
-# 🔐 Секреты и конфиги окружения
+# Environment
 .env
 .env.local
 .env.production
-*.pem
-*.key
-!*.pem.example
 
-# 📁 Сборка и кэш
-.next/
-dist/
-build/
-coverage/
+# Database
+*.db
+!*.db.example
+backups/
+
+# Logs
 *.log
+npm-debug.log*
 
-# 💻 Системные файлы
+# OS
 .DS_Store
 Thumbs.db
+
+# IDE
+.idea/
+.vscode/
 *.swp
 *.swo
 
-# 🧪 Тестовые артефакты
-__tests__/test.db
+# Coverage
+coverage/
+.nyc_output/

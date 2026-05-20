@@ -3,43 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Кабинет — ИИ в школе</title>
+  <title>Кабинет — Умная Школа</title>
   <link rel="stylesheet" href="style.css">
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
 </head>
 <body>
   <div class="dashboard-wrapper">
     <aside class="sidebar">
-      <div class="logo">🏫 Школа ИИ</div>
-      <nav id="navMenu"></nav> <!-- Генерируется через JS под роль -->
-      <div class="logout-btn" onclick="logout()">🚪 Выйти</div>
+      <div class="logo"><i class='bx bx-graduation'></i> Умная Школа</div>
+      <nav id="navMenu"></nav>
+      <div class="logout-btn" onclick="logout()"><i class='bx bx-log-out'></i> Выйти</div>
     </aside>
 
     <main class="main-content">
+      <!-- Главная -->
+      <section id="home" class="page active">
+        <h1>👋 Добро пожаловать!</h1>
+        <div class="stats-grid">
+          <div class="stat-card"><h3>📅 Уроки</h3><p id="homeScheduleCount">Загрузка...</p></div>
+          <div class="stat-card"><h3>📊 Средний балл</h3><p id="homeAvgGrade">—</p></div>
+        </div>
+      </section>
+
       <!-- Дневник -->
-      <section id="diary" class="page active">
-        <h1>📓 Дневник</h1>
-        <table id="gradesTable">
-          <thead><tr><th>Предмет</th><th>Оценка</th><th>Учитель</th><th>Комментарий</th><th>Дата</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <section id="diary" class="page">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+          <h1>📓 Дневник</h1>
+          <div style="display:flex; gap:10px;">
+            <select id="classFilter" class="input" style="width:150px; margin:0; display:none;" onchange="loadGrades(this.value)"></select>
+            <button id="addGradeBtn" class="btn" style="display:none; width:auto;" onclick="openGradeModal()">+ Оценка</button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="gradesTable"><thead><tr><th>Предмет</th><th>Оценка</th><th>Ученик</th><th>Комментарий</th><th>Дата</th></tr></thead><tbody></tbody></table>
+        </div>
       </section>
 
-      <!-- Логи (только админ) -->
-      <section id="logs" class="page">
-        <h1>📜 Журнал действий</h1>
-        <table id="logsTable">
-          <thead><tr><th>Кто</th><th>Действие</th><th>Детали</th><th>Время</th></tr></thead>
-          <tbody></tbody>
-        </table>
+      <!-- Расписание -->
+      <section id="schedule" class="page">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+          <h1>📅 Расписание</h1>
+          <button id="addScheduleBtn" class="btn" style="display:none; width:auto;" onclick="alert('Функция добавления урока в разработке')">+ Урок</button>
+        </div>
+        <div id="scheduleContainer" class="schedule-grid">Загрузка расписания...</div>
       </section>
 
-      <!-- Профиль родителя -->
-      <section id="parent" class="page">
-        <h1>👨‍👩‍ Кабинет родителя</h1>
-        <div id="parentInfo"></div>
+      <!-- Уведомления -->
+      <section id="notifications" class="page">
+        <h1>🔔 Уведомления</h1>
+        <div id="notifList" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="padding:20px; text-align:center; color:#666;">Загрузка...</div>
+        </div>
       </section>
     </main>
   </div>
+
+  <!-- Модальное окно: Выставить оценку -->
+  <div id="gradeModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" onclick="closeGradeModal()">&times;</span>
+      <h2>📝 Выставить оценку</h2>
+      <form id="gradeForm" onsubmit="submitGrade(event)">
+        <label>Ученик:</label>
+        <select id="modalStudentId" class="input" required></select>
+        
+        <label>Предмет:</label>
+        <input type="text" id="modalSubject" class="input" placeholder="Математика" required>
+        
+        <label>Оценка:</label>
+        <select id="modalGrade" class="input" required>
+          <option value="5">5 (Отлично)</option>
+          <option value="4">4 (Хорошо)</option>
+          <option value="3">3 (Удовл.)</option>
+          <option value="2">2 (Неуд.)</option>
+        </select>
+
+        <label>Комментарий:</label>
+        <textarea id="modalComment" class="input" rows="3"></textarea>
+
+        <button type="submit" class="btn">Сохранить</button>
+      </form>
+    </div>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
