@@ -3,22 +3,19 @@ const rateLimit = require('express-rate-limit');
 
 // === Настройки для всех лимитеров ===
 const baseConfig = {
-  // Отключаем кастомный keyGenerator — используем встроенный (IPv6-safe)
-  // keyGenerator: undefined, // по умолчанию библиотека сама обрабатывает IPv4/IPv6
-  
   // Отключаем лимиты в тестовом режиме
-  skip: (req) => process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID,
-  
+  skip: () => process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID,
+
   // Заголовки для мониторинга (отключаем в тестах)
   standardHeaders: process.env.NODE_ENV !== 'test',
   legacyHeaders: false,
-  
+
   // Обработчик превышения лимита
   handler: (req, res) => {
-    res.status(429).json({ 
-      error: 'Превышен лимит запросов', 
+    res.status(429).json({
+      error: 'Превышен лимит запросов',
       code: 'RATE_LIMITED',
-      retryAfter: Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000)
+      retryAfter: Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000),
     });
   },
 };
@@ -31,6 +28,22 @@ const loginLimiter = rateLimit({
   message: { error: 'Слишком много попыток входа', code: 'RATE_LIMITED' },
 });
 
+// === Лимитер для регистрации (строгий) ===
+const registerLimiter = rateLimit({
+  ...baseConfig,
+  windowMs: 60 * 60 * 1000, // 1 час
+  max: 3, // 3 регистрации с одного IP
+  message: { error: 'Слишком много попыток регистрации', code: 'RATE_LIMITED' },
+});
+
+// === Лимитер для сброса пароля (строгий) ===
+const passwordResetLimiter = rateLimit({
+  ...baseConfig,
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 3, // 3 запроса с одного IP
+  message: { error: 'Слишком много попыток сброса пароля', code: 'RATE_LIMITED' },
+});
+
 // === Лимитер для API (мягкий) ===
 const apiLimiter = rateLimit({
   ...baseConfig,
@@ -39,4 +52,4 @@ const apiLimiter = rateLimit({
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
 
-module.exports = { loginLimiter, apiLimiter };
+module.exports = { loginLimiter, registerLimiter, passwordResetLimiter, apiLimiter };

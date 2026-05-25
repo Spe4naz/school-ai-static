@@ -1,67 +1,111 @@
-// services/userService.js
-const db = require('../config/database');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../config/auth');
 
 class UserService {
+  constructor(db) {
+    this.db = db;
+  }
+
   async findByEmail(email) {
-    return db.get("SELECT * FROM users WHERE email = ?", [email]);
+    return this.db.get('SELECT * FROM users WHERE email = $1', [email]);
   }
 
   async findById(id) {
-    return db.get("SELECT * FROM users WHERE id = ?", [id]);
+    return this.db.get('SELECT * FROM users WHERE id = $1', [id]);
   }
 
   async create({ email, password, name, role, class_id = null, linked_student_id = null }) {
     const hash = await bcrypt.hash(password, config.bcryptRounds);
     const id = uuidv4();
-    
-    await db.run(
-      "INSERT INTO users VALUES (?,?,?,?,?,?,?,NULL,NULL)",
-      [id, email, hash, name, role, class_id, linked_student_id]
+
+    await this.db.query(
+      'INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP)',
+      [id, email, hash, name, role, class_id, linked_student_id],
     );
-    
+
     return { id, email, name, role };
   }
 
   async updatePassword(userId, newPassword) {
     const hash = await bcrypt.hash(newPassword, config.bcryptRounds);
-    await db.run("UPDATE users SET password = ? WHERE id = ?", [hash, userId]);
+    await this.db.query('UPDATE users SET password = $1 WHERE id = $2', [hash, userId]);
   }
 
   async requestPasswordReset(email) {
     const user = await this.findByEmail(email);
-    if (!user) return null; // Не раскрываем существование пользователя
+    if (!user) return null;
 
     const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetId = crypto.randomUUID();
     const expiry = new Date(Date.now() + config.resetTokenExpiry);
-    
-    await db.run(
-      "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?",
-      [resetToken, expiry, user.id]
-    );
-    
-    return { user, resetToken };
+
+    await this.db.query('UPDATE users SET reset_token = $1, reset_token_expiry = $2, reset_id = $3 WHERE id = $4', [
+      resetToken,
+      expiry.toISOString(),
+      resetId,
+      user.id,
+    ]);
+
+    return { user, resetId };
   }
 
-  async confirmPasswordReset(email, token, newPassword) {
-    const user = await db.get(
-      "SELECT * FROM users WHERE email = ? AND reset_token = ? AND reset_token_expiry > ?",
-      [email, token, new Date()]
+  async confirmPasswordReset(resetId, email, newPassword) {
+    const user = await this.db.get(
+      'SELECT * FROM users WHERE reset_id = $1 AND email = $2 AND reset_token_expiry > $3',
+      [resetId, email, new Date().toISOString()],
     );
-    
-    if (!user) throw new Error('Неверный или истёкший токен');
-    
-    await this.updatePassword(user.id, newPassword);
-    await db.run("UPDATE users SET reset_token = NULL, reset_token_expiry = NULL WHERE id = ?", [user.id]);
-    
+
+    if (!user) {
+      const err = new Error('Неверный или истёкший токен');
+      err.status = 400;
+      err.code = 'INVALID_TOKEN';
+      throw err;
+    }
+
+    const result = await this.db.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_token_expiry = NULL, reset_id = NULL WHERE id = $2 AND reset_id = $3',
+      [await bcrypt.hash(newPassword, config.bcryptRounds), user.id, resetId],
+    );
+
+    if (result.rowCount === 0) {
+      const err = new Error('Неверный или истёкший токен');
+      err.status = 400;
+      err.code = 'INVALID_TOKEN';
+      throw err;
+    }
     return true;
   }
 
   async listByClass(classId) {
-    return db.all("SELECT id, name, email, role FROM users WHERE class_id = ? AND role = 'student'", [classId]);
+    return this.db.all("SELECT id, name, email, role FROM users WHERE class_id = $1 AND role = 'student'", [classId]);
+  }
+
+  async updateLastLogin(userId) {
+    await this.db.query('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [userId]);
+  }
+
+  async validateRegistrationCode(code, role) {
+    const record = await this.db.get(
+      'SELECT * FROM registration_codes WHERE code = $1 AND role = $2 AND used = 0',
+      [code, role],
+    );
+    if (!record) return false;
+    await this.db.query('UPDATE registration_codes SET used = 1 WHERE code = $1', [code]);
+    return true;
+  }
+
+  async getProfile(userId) {
+    const user = await this.db.get('SELECT id, email, name, role, class_id FROM users WHERE id = $1', [userId]);
+    if (!user) return null;
+    let class_name = null;
+    if (user.class_id) {
+      const cls = await this.db.get('SELECT name FROM classes WHERE id = $1', [user.class_id]);
+      class_name = cls?.name;
+    }
+    return { ...user, class_name };
   }
 }
 
-module.exports = new UserService();
+module.exports = UserService;

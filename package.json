@@ -6,10 +6,24 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "prod": "NODE_ENV=production node server.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "prod": "cross-env NODE_ENV=production node server.js",
+    "test": "cross-env NODE_ENV=test jest",
+    "test:watch": "cross-env NODE_ENV=test jest --watch",
+    "test:coverage": "cross-env NODE_ENV=test jest --coverage",
+    "test:ci": "cross-env NODE_ENV=ci jest --ci --coverage",
+    "prepare": "husky",
+    "build": "esbuild public/js/main.js --bundle --minify --outfile=public/dashboard.bundle.js",
+    "build:dev": "esbuild public/js/main.js --bundle --sourcemap --outfile=public/dashboard.bundle.js",
+    "watch": "esbuild public/js/main.js --bundle --sourcemap --outfile=public/dashboard.bundle.js --watch",
+    "lint": "eslint . --ignore-pattern coverage/ --ignore-pattern backups/",
+    "format": "prettier --write \"**/*.js\" \"**/*.json\" \"**/*.css\" \"**/*.html\"",
+    "format:check": "prettier --check \"**/*.js\" \"**/*.json\" \"**/*.css\" \"**/*.html\"",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose --env-file .env up -d",
+    "docker:down": "docker compose down",
+    "docker:prod": "docker compose --env-file .env up -d",
+    "docker:logs": "docker compose logs -f caddy app",
+    "docker:rebuild": "docker compose build --no-cache && docker compose --env-file .env up -d"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,12 +32,22 @@
     "express-rate-limit": "^8.5.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.1",
     "node-cron": "^4.2.1",
-    "sqlite3": "^5.1.6",
-    "uuid": "8.3.2"
+    "nodemailer": "^8.0.7",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.13.0",
+    "uuid": "8.3.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
+    "esbuild": "^0.28.0",
+    "eslint": "^8.57.0",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.2.0",
     "supertest": "^6.3.3"
   },
   "keywords": [
@@ -32,5 +56,14 @@
     "school"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "lint-staged": {
+    "*.js": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,html}": [
+      "prettier --write"
+    ]
+  }
 }

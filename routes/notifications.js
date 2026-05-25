@@ -1,51 +1,63 @@
-// routes/notifications.js
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const asyncHandler = require('../middleware/asyncHandler');
 const auth = require('../middleware/auth');
 const logger = require('../middleware/logger');
+const { notificationService } = require('../config/container');
+const { LIMITS } = require('../config/constants');
 
-// GET /api/notifications
-router.get('/', auth, logger, async (req, res, next) => {
+router.use(auth, logger);
+
+router.get('/', asyncHandler(async (req, res) => {
+  const notifications = await notificationService.list(
+    req.user.id,
+    parseInt(req.query.limit) || LIMITS.NOTIFICATIONS,
+  );
+  res.json(notifications);
+}));
+
+router.put('/read', asyncHandler(async (req, res) => {
+  await notificationService.markAsRead(req.user.id);
+  res.json({ success: true });
+}));
+
+router.get('/unread-count', asyncHandler(async (req, res) => {
+  const unread = await notificationService.getUnreadCount(req.user.id);
+  res.json({ unread });
+}));
+
+// SSE endpoint for real-time notifications
+const sseClients = new Map();
+
+router.get('/stream', (req, res) => {
+  const token = req.query.token;
+  if (!token) return res.status(401).json({ error: 'Токен обязателен' });
   try {
-    const { limit = 20 } = req.query;
-    const notifications = await db.all(
-      `SELECT * FROM notifications 
-       WHERE user_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT ?`,
-      [req.user.id, parseInt(limit)]
-    );
-    res.json(notifications);
-  } catch (err) {
-    next(err);
-  }
+    const jwt = require('jsonwebtoken');
+    const config = require('../config/auth');
+    const decoded = jwt.verify(token, config.jwtSecret);
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    res.write('data: {"connected":true}\n\n');
+
+    if (!sseClients.has(decoded.id)) sseClients.set(decoded.id, []);
+    sseClients.get(decoded.id).push(res);
+
+    const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 15000);
+    req.on('close', () => {
+      clearInterval(heartbeat);
+      const clients = sseClients.get(decoded.id);
+      if (clients) {
+        const idx = clients.indexOf(res);
+        if (idx !== -1) clients.splice(idx, 1);
+        if (clients.length === 0) sseClients.delete(decoded.id);
+      }
+    });
+  } catch { res.status(403).json({ error: 'Невалидный токен' }); }
 });
 
-// PUT /api/notifications/read
-router.put('/read', auth, logger, async (req, res, next) => {
-  try {
-    await db.run(
-      "UPDATE notifications SET is_read = 1 WHERE user_id = ?",
-      [req.user.id]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    next(err);
-  }
-});
-
-// GET /api/notifications/unread-count
-router.get('/unread-count', auth, async (req, res, next) => {
-  try {
-    const { count } = await db.get(
-      "SELECT COUNT(*) as count FROM notifications WHERE user_id = ? AND is_read = 0",
-      [req.user.id]
-    );
-    res.json({ unread: count || 0 });
-  } catch (err) {
-    next(err);
-  }
-});
-
-module.exports = router;
+module.exports = { router, sseClients };

@@ -1,61 +1,153 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Регистрация — ИИ в школе</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <h1>📝 Регистрация</h1>
-      <form id="regForm">
-        <input type="text" id="name" class="input" placeholder="ФИО" required>
-        <input type="email" id="email" class="input" placeholder="Email" required>
-        <input type="password" id="password" class="input" placeholder="Пароль (мин. 6 символов)" minlength="6" required>
-        
-        <select id="role" class="input" onchange="toggleRoleFields()">
-          <option value="student">🎓 Ученик</option>
-          <option value="parent">👨‍👩‍👧 Родитель</option>
-        </select>
-
-        <div id="studentFields">
-          <input type="text" id="class_id" class="input" placeholder="Класс (например: 9А)">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Регистрация — Умная Школа</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-card">
+        <div style="margin-bottom: 20px">
+          <i class="bx bx-graduation" style="font-size: 3rem; color: var(--primary)"></i>
         </div>
-        <div id="parentFields" style="display:none;">
-          <input type="email" id="student_email" class="input" placeholder="Email ребёнка (уже зарегистрирован)">
-        </div>
+        <h1>📝 Регистрация</h1>
+        <p style="color: var(--text-sec); margin-bottom: 20px">Создайте аккаунт для доступа к платформе</p>
 
-        <button type="submit" class="btn">Зарегистрироваться</button>
-        <p id="regError" style="color:red; margin-top:10px; display:none;"></p>
-      </form>
-      <p style="margin-top:15px; font-size:0.9rem;">Уже есть аккаунт? <a href="/">Войти</a></p>
+        <form id="regForm">
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">ФИО</label>
+            <input type="text" id="name" class="input" placeholder="Иванов Иван Иванович" required />
+          </div>
+
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Email</label>
+            <input type="email" id="email" class="input" placeholder="example@school.ru" required />
+          </div>
+
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Пароль</label>
+            <input type="password" id="password" class="input" placeholder="Минимум 6 символов" minlength="6" required />
+          </div>
+
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Я регистрируюсь как</label>
+            <select id="role" class="input" onchange="toggleRoleFields()">
+              <option value="student">🎓 Ученик</option>
+              <option value="parent">👨‍👩‍👧 Родитель</option>
+              <option value="teacher">👩‍🏫 Учитель</option>
+              <option value="head_teacher">📋 Завуч</option>
+            </select>
+          </div>
+
+          <div id="studentFields" style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Класс</label>
+            <select id="classSelect" class="input">
+              <option value="">Выберите класс</option>
+            </select>
+          </div>
+
+          <div id="parentFields" style="display: none; margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Email вашего ребёнка</label>
+            <input type="email" id="student_email" class="input" placeholder="Ребёнок уже должен быть зарегистрирован" />
+          </div>
+
+          <!-- Кнопка регистрации (student/parent) -->
+          <button type="submit" id="regBtn" class="btn" style="width: 100%; margin-top: 10px">Зарегистрироваться</button>
+
+          <!-- Поле кода регистрации (teacher/head_teacher) -->
+          <div id="codeFields" style="display: none; margin-top: 10px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Код регистрации</label>
+            <input type="text" id="regCode" class="input" placeholder="Например: SCHOOL2024" />
+            <div style="font-size: 0.8rem; color: var(--text-sec); margin-top: 4px">Выдаётся администратором школы</div>
+            <button type="submit" class="btn" style="width: 100%; margin-top: 10px">Активировать код</button>
+          </div>
+
+          <p id="regError" style="color: var(--danger); margin-top: 15px; display: none; text-align: center; padding: 10px; background: #fee2e2; border-radius: 8px"></p>
+        </form>
+
+        <p style="margin-top: 20px; font-size: 0.9rem; color: var(--text-sec)">
+          Уже есть аккаунт? <a href="/" style="color: var(--primary); font-weight: 600">Войти</a>
+        </p>
+
+        <p style="margin-top: 10px; font-size: 0.8rem; color: var(--text-sec)">
+          <a href="/reset-password.html" style="color: var(--text-sec)">Забыли пароль?</a>
+        </p>
+      </div>
     </div>
-  </div>
-  <script>
-    function toggleRoleFields() {
-      const r = document.getElementById('role').value;
-      document.getElementById('studentFields').style.display = r === 'student' ? 'block' : 'none';
-      document.getElementById('parentFields').style.display = r === 'parent' ? 'block' : 'none';
-    }
-    document.getElementById('regForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const payload = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value,
-        role: document.getElementById('role').value,
-        class_id: document.getElementById('class_id').value,
-        student_email: document.getElementById('student_email').value
-      };
-      try {
-        const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-        const data = await res.json();
-        if (data.success) location.href = '/?registered=1';
-        else { document.getElementById('regError').textContent = data.error; document.getElementById('regError').style.display = 'block'; }
-      } catch { alert('Ошибка сети'); }
-    });
-  </script>
-</body>
+
+    <script>
+      const API = window.location.origin + '/api';
+
+      async function loadClasses() {
+        try {
+          const res = await fetch(`${API}/classes`);
+          const classes = await res.json();
+          const select = document.getElementById('classSelect');
+          if (classes.length === 0) {
+            select.innerHTML = '<option value="">Нет классов — обратитесь к администратору</option>';
+          } else {
+            select.innerHTML = '<option value="">Выберите класс</option>' +
+              classes.map((c) => `<option value="${c.id}">${c.name}</option>`).join('');
+          }
+        } catch (err) { console.error(err); }
+      }
+
+      loadClasses();
+
+      function toggleRoleFields() {
+        const role = document.getElementById('role').value;
+        const isCodeRole = role === 'teacher' || role === 'head_teacher';
+        document.getElementById('studentFields').style.display = role === 'student' ? 'block' : 'none';
+        document.getElementById('parentFields').style.display = role === 'parent' ? 'block' : 'none';
+        document.getElementById('regBtn').style.display = isCodeRole ? 'none' : 'block';
+        document.getElementById('codeFields').style.display = isCodeRole ? 'block' : 'none';
+      }
+
+      document.getElementById('regForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const role = document.getElementById('role').value;
+        const class_id = document.getElementById('classSelect').value;
+        const student_email = document.getElementById('student_email').value.trim();
+        const code = document.getElementById('regCode').value.trim();
+        const isCodeRole = role === 'teacher' || role === 'head_teacher';
+
+        const errorEl = document.getElementById('regError');
+        errorEl.style.display = 'none';
+
+        if (!name || name.length < 2) { errorEl.textContent = 'Введите корректное ФИО'; errorEl.style.display = 'block'; return; }
+        if (!email || !email.includes('@')) { errorEl.textContent = 'Введите корректный email'; errorEl.style.display = 'block'; return; }
+        if (password.length < 6) { errorEl.textContent = 'Пароль должен быть минимум 6 символов'; errorEl.style.display = 'block'; return; }
+        if (role === 'student' && !class_id) { errorEl.textContent = 'Выберите класс'; errorEl.style.display = 'block'; return; }
+        if (role === 'parent' && !student_email) { errorEl.textContent = 'Введите email ребёнка'; errorEl.style.display = 'block'; return; }
+        if (isCodeRole && !code) { errorEl.textContent = 'Введите код регистрации'; errorEl.style.display = 'block'; return; }
+
+        try {
+          const res = await fetch(`${API}/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name, email, password, role,
+              class_id: role === 'student' ? class_id : null,
+              student_email: role === 'parent' ? student_email : null,
+              code: isCodeRole ? code : null,
+            }),
+          });
+          const data = await res.json();
+          if (data.success) {
+            location.href = '/?registered=1';
+          } else {
+            errorEl.textContent = data.error || 'Ошибка регистрации';
+            errorEl.style.display = 'block';
+          }
+        } catch { errorEl.textContent = 'Ошибка сети. Попробуйте позже.'; errorEl.style.display = 'block'; }
+      });
+    </script>
+  </body>
 </html>

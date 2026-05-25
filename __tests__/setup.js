@@ -1,76 +1,43 @@
 // __tests__/setup.js
-const path = require('path');
-const fs = require('fs').promises; // Используем async fs
-
-// === Настройка окружения для тестов ===
 process.env.NODE_ENV = 'test';
-process.env.DB_PATH = path.join(__dirname, 'test.db');
+process.env.DATABASE_URL =
+  process.env.TEST_DATABASE_URL || 'postgresql://school:school_pass@localhost:5432/school_test';
 process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
-process.env.SKIP_DEV_EMAIL = 'true';
 
-// === Импорты ===
+const { Pool } = require('pg');
+
+async function createTestDatabase() {
+  const testDbUrl = process.env.DATABASE_URL;
+  const defaultUrl = testDbUrl.replace(/\/[^/]+$/, '/postgres');
+  const dbName = testDbUrl.split('/').pop();
+
+  const pool = new Pool({ connectionString: defaultUrl });
+  try {
+    const { rows } = await pool.query("SELECT 1 FROM pg_database WHERE datname = $1", [dbName]);
+    if (rows.length === 0) {
+      await pool.query(`CREATE DATABASE "${dbName}"`);
+      console.log(`Created test database: ${dbName}`);
+    }
+  } finally {
+    await pool.end();
+  }
+}
+
 const db = require('../config/database');
 
-// === Глобальные хуки ===
 beforeAll(async () => {
-  console.log('🔧 Настройка тестового окружения...');
-  
-  // 1. Закрываем любое существующее соединение и удаляем старую БД
-  if (db.db) {
-    await new Promise((resolve) => db.db.close(resolve));
-  }
-  
-  const dbPath = process.env.DB_PATH;
-  try {
-    if (await fs.access(dbPath).then(() => true).catch(() => false)) {
-      await fs.unlink(dbPath);
-      console.log(`🗑️ Удалён старый test.db`);
-    }
-  } catch (err) {
-    // Игнорируем, если файл не существует
-  }
-  
-  // 2. Инициализируем НОВУЮ БД
-  // Создаём новый экземпляр database для тестов
-  const TestDatabase = require('../config/database').constructor;
-  const testDb = new TestDatabase();
-  testDb.db = require('sqlite3').verbose().Database(dbPath);
-  testDb.run = require('util').promisify(testDb.db.run).bind(testDb.db);
-  testDb.all = require('util').promisify(testDb.db.all).bind(testDb.db);
-  testDb.get = require('util').promisify(testDb.db.get).bind(testDb.db);
-  
-  await testDb.init();
-  
-  // Заменяем экспортированный db на тестовый
-  Object.assign(require('../config/database'), testDb);
-  
-  console.log('✅ Тестовая БД инициализирована');
-}, 30000); // Таймаут 30 секунд на инициализацию
+  console.log('Setting up test database...');
+  await createTestDatabase();
+  await db.init();
+}, 30000);
 
 afterAll(async () => {
-  console.log('🧹 Очистка после тестов...');
-  
-  // Закрываем соединение
-  if (db.db) {
-    await new Promise((resolve) => db.db.close(resolve));
-  }
-  
-  // Удаляем файл БД с повторными попытками (для Windows)
-  const dbPath = process.env.DB_PATH;
-  for (let i = 0; i < 5; i++) {
+  console.log('Cleaning up after tests...');
+  const tables = ['class_keys', 'messages', 'logs', 'notifications', 'schedule', 'grades', 'users', 'classes', 'registration_codes', 'homeworks', 'announcements', 'chat_typing'];
+  for (const t of tables) {
     try {
-      if (await fs.access(dbPath).then(() => true).catch(() => false)) {
-        await fs.unlink(dbPath);
-        console.log('🗑️ Тестовая БД удалена');
-      }
-      break;
-    } catch (err) {
-      if (i === 4) {
-        console.warn('⚠️ Не удалось удалить test.db:', err.message);
-      } else {
-        // Ждём и пробуем снова (для Windows, где файл может быть заблокирован)
-        await new Promise(resolve => setTimeout(resolve, 100 * (i + 1)));
-      }
-    }
+      await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`);
+    } catch (_) {}
   }
+  await db.close();
 });

@@ -1,91 +1,439 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Кабинет — Умная Школа</title>
-  <link rel="stylesheet" href="style.css">
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-</head>
-<body>
-  <div class="dashboard-wrapper">
-    <aside class="sidebar">
-      <div class="logo"><i class='bx bx-graduation'></i> Умная Школа</div>
-      <nav id="navMenu"></nav>
-      <div class="logout-btn" onclick="logout()"><i class='bx bx-log-out'></i> Выйти</div>
-    </aside>
-
-    <main class="main-content">
-      <!-- Главная -->
-      <section id="home" class="page active">
-        <h1>👋 Добро пожаловать!</h1>
-        <div class="stats-grid">
-          <div class="stat-card"><h3>📅 Уроки</h3><p id="homeScheduleCount">Загрузка...</p></div>
-          <div class="stat-card"><h3>📊 Средний балл</h3><p id="homeAvgGrade">—</p></div>
-        </div>
-      </section>
-
-      <!-- Дневник -->
-      <section id="diary" class="page">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-          <h1>📓 Дневник</h1>
-          <div style="display:flex; gap:10px;">
-            <select id="classFilter" class="input" style="width:150px; margin:0; display:none;" onchange="loadGrades(this.value)"></select>
-            <button id="addGradeBtn" class="btn" style="display:none; width:auto;" onclick="openGradeModal()">+ Оценка</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Кабинет — Умная Школа</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="dashboard-wrapper">
+      <aside class="sidebar">
+        <div class="logo"><i class="bx bx-graduation"></i> Умная Школа</div>
+        <nav id="navMenu"></nav>
+          <div class="sidebar-footer">
+            <div class="sidebar-user" id="sidebarUser"></div>
+            <div class="theme-toggle" id="themeToggle" title="Сменить тему"><i class="bx bx-moon"></i> <span>Тёмная тема</span></div>
+            <div class="logout-btn" data-action="logout"><i class="bx bx-log-out"></i> Выйти</div>
           </div>
-        </div>
-        <div class="table-container">
-          <table id="gradesTable"><thead><tr><th>Предмет</th><th>Оценка</th><th>Ученик</th><th>Комментарий</th><th>Дата</th></tr></thead><tbody></tbody></table>
-        </div>
-      </section>
+      </aside>
 
-      <!-- Расписание -->
-      <section id="schedule" class="page">
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
-          <h1>📅 Расписание</h1>
-          <button id="addScheduleBtn" class="btn" style="display:none; width:auto;" onclick="alert('Функция добавления урока в разработке')">+ Урок</button>
-        </div>
-        <div id="scheduleContainer" class="schedule-grid">Загрузка расписания...</div>
-      </section>
+      <main class="main-content">
+        <!-- Главная -->
+        <section id="home" class="page active">
+          <h1>👋 Добро пожаловать!</h1>
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">📅</div>
+              <h3>Уроков на неделе</h3>
+              <p id="homeScheduleCount">Загрузка...</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">📊</div>
+              <h3>Средний балл</h3>
+              <p id="homeAvgGrade">—</p>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🏆</div>
+              <h3>Лучший предмет</h3>
+              <p id="homeBestSubject">—</p>
+            </div>
+          </div>
+          <div style="margin-top:1.5rem">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h2 style="font-size:1.2rem">📢 Объявления</h2>
+              <button id="addAnnBtn" class="btn btn-sm" style="display:none" data-action="openModal" data-modal="annModal">+ Добавить</button>
+            </div>
+            <div id="announcementList" style="display:flex;flex-direction:column;gap:8px"></div>
+          </div>
+        </section>
 
-      <!-- Уведомления -->
-      <section id="notifications" class="page">
-        <h1>🔔 Уведомления</h1>
-        <div id="notifList" style="display:flex; flex-direction:column; gap:10px;">
-          <div style="padding:20px; text-align:center; color:#666;">Загрузка...</div>
-        </div>
-      </section>
-    </main>
-  </div>
+        <!-- Дневник -->
+        <section id="diary" class="page">
+          <div class="page-header">
+            <h1>📓 Дневник</h1>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
+              <select id="classFilter" class="input" style="width: 150px; margin: 0; display: none" data-action="filterGrades"></select>
+              <div class="week-nav" style="display:flex;align-items:center;gap:6px">
+                <button class="btn btn-sm btn-ghost" id="weekPrev" title="Предыдущая неделя">‹</button>
+                <span id="weekLabel" style="font-size:0.85rem;font-weight:500;min-width:160px;text-align:center"></span>
+                <button class="btn btn-sm btn-ghost" id="weekNext" title="Следующая неделя">›</button>
+                <button class="btn btn-sm btn-ghost" id="weekToday" title="Текущая неделя">Сегодня</button>
+              </div>
+              <button id="addGradeBtn" class="btn btn-sm" style="display: none" data-action="openModal" data-modal="gradeModal">+ Оценка</button>
+              <button id="exportBtn" class="btn btn-sm btn-success" style="display: none" data-action="openModal" data-modal="exportModal">📥 Экспорт</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="gradesTable">
+              <thead>
+                <tr><th>Предмет</th><th>Оценка</th><th>Ученик</th><th>Комментарий</th><th>Дата</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
 
-  <!-- Модальное окно: Выставить оценку -->
-  <div id="gradeModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <span class="close" onclick="closeGradeModal()">&times;</span>
-      <h2>📝 Выставить оценку</h2>
-      <form id="gradeForm" onsubmit="submitGrade(event)">
-        <label>Ученик:</label>
-        <select id="modalStudentId" class="input" required></select>
-        
-        <label>Предмет:</label>
-        <input type="text" id="modalSubject" class="input" placeholder="Математика" required>
-        
-        <label>Оценка:</label>
-        <select id="modalGrade" class="input" required>
-          <option value="5">5 (Отлично)</option>
-          <option value="4">4 (Хорошо)</option>
-          <option value="3">3 (Удовл.)</option>
-          <option value="2">2 (Неуд.)</option>
-        </select>
+        <!-- Профиль ученика -->
+        <section id="profile" class="page">
+          <div class="profile-container" id="profileContainer">
+            <div style="text-align:center; padding:40px; color:var(--text-sec)">Загрузка профиля...</div>
+          </div>
+        </section>
 
-        <label>Комментарий:</label>
-        <textarea id="modalComment" class="input" rows="3"></textarea>
+        <!-- Домашние задания -->
+        <section id="homework" class="page">
+          <div class="page-header">
+            <h1>📋 Домашние задания</h1>
+            <button id="addHwBtn" class="btn btn-sm" style="display:none" data-action="openModal" data-modal="hwModal">+ Задание</button>
+          </div>
+          <div id="homeworkList" style="display:flex;flex-direction:column;gap:10px">
+            <div style="padding:20px;text-align:center;color:var(--text-sec)">Загрузка...</div>
+          </div>
+        </section>
 
-        <button type="submit" class="btn">Сохранить</button>
-      </form>
+        <!-- Графики -->
+        <section id="charts" class="page">
+          <div class="page-header">
+            <h1>📈 Успеваемость</h1>
+            <div style="display: flex; gap: 10px">
+              <select id="chartSubject" class="input" style="width: 180px" data-action="loadChart">
+                <option value="all">Все предметы</option>
+              </select>
+              <select id="chartPeriod" class="input" style="width: 140px" data-action="loadChart">
+                <option value="week">За неделю</option>
+                <option value="month" selected>За месяц</option>
+                <option value="term">За четверть</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-container" style="padding: 20px">
+            <canvas id="progressChart" height="100"></canvas>
+          </div>
+        </section>
+
+        <!-- Чат класса -->
+        <section id="chat" class="page">
+          <div class="chat-layout">
+            <div class="chat-box">
+              <div class="chat-header">
+                <div class="chat-header-left">
+                  <div class="chat-avatar"><i class="bx bx-chat"></i></div>
+                  <div class="chat-header-info">
+                    <h3 id="chatClassName">Чат класса</h3>
+                    <span id="chatStatus" class="status"><span class="status-dot"></span> Подключение...</span>
+                  </div>
+                </div>
+                <div class="chat-actions">
+                  <button class="btn-ghost btn-sm btn" data-action="chatRefresh" title="Обновить"><i class="bx bx-refresh"></i></button>
+                </div>
+              </div>
+              <div id="chatMessages" class="messages">
+                <div class="msg-loader">Загрузка сообщений...</div>
+              </div>
+              <div id="typingIndicator" class="typing-indicator" style="display:none">
+                <span id="typingNames"></span>
+              </div>
+              <div class="chat-input-area" style="position:relative">
+                <div id="emojiPicker" class="emoji-picker"></div>
+                <div class="chat-input-actions">
+                  <button class="btn-emoji" id="emojiToggle" title="Эмодзи"><i class="bx bx-happy-heart-eyes"></i></button>
+                  <button class="btn-attach" id="attachBtn" title="Изображение"><i class="bx bx-image-alt"></i></button>
+                  <input type="file" id="imageInput" accept="image/*" style="display:none" />
+                </div>
+                <input type="text" id="chatInput" class="input" placeholder="Написать сообщение..." data-action="chatKeypress" />
+                <button class="btn" id="sendBtn" data-action="sendMessage"><i class="bx bx-send"></i></button>
+              </div>
+            </div>
+            <div class="chat-sidebar">
+              <div class="chat-sidebar-header">Участники</div>
+              <div id="participantsList"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Расписание -->
+        <section id="schedule" class="page">
+          <div class="page-header">
+            <h1>📅 Расписание</h1>
+            <button id="addScheduleBtn" class="btn btn-sm" style="display: none" data-action="openModal" data-modal="scheduleModal">+ Урок</button>
+          </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 15px">
+            <select id="scheduleClassFilter" class="input" style="width: 160px" data-action="filterSchedule">
+              <option value="">Все классы</option>
+            </select>
+          </div>
+          <div id="scheduleContainer" class="schedule-grid">Загрузка расписания...</div>
+        </section>
+
+        <!-- Уведомления -->
+        <section id="notifications" class="page">
+          <div class="page-header">
+            <h1>🔔 Уведомления</h1>
+          </div>
+          <div id="notifList" style="display: flex; flex-direction: column; gap: 10px; max-width: 700px">
+            <div style="padding: 20px; text-align: center; color: var(--text-sec)">Загрузка...</div>
+          </div>
+        </section>
+
+        <!-- Пользователи (только для админа) -->
+        <section id="users" class="page">
+          <div class="page-header">
+            <h1>👥 Пользователи</h1>
+            <div style="display: flex; gap: 10px">
+              <select id="userRoleFilter" class="input" style="width: 150px" data-action="filterUsers">
+                <option value="">Все роли</option>
+                <option value="admin">Админы</option>
+                <option value="teacher">Учителя</option>
+                <option value="student">Ученики</option>
+                <option value="parent">Родители</option>
+              </select>
+              <button class="btn btn-sm" data-action="openModal" data-modal="userModal">+ Добавить</button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="usersTable">
+              <thead>
+                <tr><th>Имя</th><th>Email</th><th>Роль</th><th>Класс</th><th>Действия</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Логи аудита (только для админа) -->
+        <section id="logs" class="page">
+          <div class="page-header">
+            <h1>📋 Логи аудита</h1>
+            <button class="btn btn-sm btn-ghost" id="refreshLogs">🔄 Обновить</button>
+          </div>
+          <div class="table-container">
+            <table id="logsTable">
+              <thead>
+                <tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Детали</th></tr>
+              </thead>
+              <tbody id="logsBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+      </main>
     </div>
-  </div>
 
-  <script src="script.js"></script>
-</body>
+    <!-- Модальное окно: Экспорт отчёта -->
+    <div id="exportModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="exportModal">&times;</span>
+        <h2>📥 Экспорт отчёта</h2>
+        <form data-action="exportReport">
+          <label>Класс:</label>
+          <select id="exportClass" class="input"><option value="">Все классы</option></select>
+          <label>Период:</label>
+          <select id="exportPeriod" class="input">
+            <option value="week">За неделю</option>
+            <option value="month" selected>За месяц</option>
+            <option value="term">За четверть</option>
+          </select>
+          <label>Формат:</label>
+          <select id="exportType" class="input">
+            <option value="pdf">PDF (красивый отчёт)</option>
+            <option value="excel">Excel (для обработки)</option>
+          </select>
+          <button type="submit" class="btn" style="margin-top: 15px">Скачать</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно: Выставить оценку -->
+    <div id="gradeModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="gradeModal">&times;</span>
+        <h2>📝 Выставить оценку</h2>
+        <form id="gradeForm" data-action="submitGrade">
+          <label>Ученик:</label>
+          <select id="modalStudentId" class="input" required></select>
+          <label>Предмет:</label>
+          <select id="modalSubject" class="input" required>
+            <option value="">Выберите предмет</option>
+            <option value="Математика">Математика</option>
+            <option value="Русский язык">Русский язык</option>
+            <option value="Английский язык">Английский язык</option>
+            <option value="Физика">Физика</option>
+            <option value="Химия">Химия</option>
+            <option value="Биология">Биология</option>
+            <option value="История">История</option>
+            <option value="Обществознание">Обществознание</option>
+            <option value="География">География</option>
+            <option value="Информатика">Информатика</option>
+          </select>
+          <label>Оценка:</label>
+          <select id="modalGrade" class="input" required>
+            <option value="5">5 (Отлично)</option>
+            <option value="4">4 (Хорошо)</option>
+            <option value="3">3 (Удовл.)</option>
+            <option value="2">2 (Неуд.)</option>
+          </select>
+          <label>Комментарий:</label>
+          <textarea id="modalComment" class="input" rows="3"></textarea>
+          <button type="submit" class="btn" style="margin-top: 15px">Сохранить</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно: Добавить пользователя -->
+    <div id="userModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="userModal">&times;</span>
+        <h2>👤 Добавить пользователя</h2>
+        <form id="userForm" data-action="createUser">
+          <label>ФИО:</label>
+          <input type="text" id="newUserName" class="input" placeholder="Иванов Иван Иванович" required />
+          <label>Email:</label>
+          <input type="email" id="newUserEmail" class="input" placeholder="ivan@school.ru" required />
+          <label>Пароль:</label>
+          <input type="password" id="newUserPassword" class="input" placeholder="Минимум 6 символов" minlength="6" required />
+          <label>Роль:</label>
+          <select id="newUserRole" class="input" data-action="toggleUserClass">
+            <option value="teacher">Учитель</option>
+            <option value="admin">Администратор</option>
+            <option value="student">Ученик</option>
+            <option value="parent">Родитель</option>
+          </select>
+          <div id="newUserClassWrapper" style="display: none">
+            <label>Класс:</label>
+            <select id="newUserClass" class="input"></select>
+          </div>
+          <button type="submit" class="btn" style="margin-top: 15px">Создать</button>
+        </form>
+        <p id="userError" style="color: var(--danger); margin-top: 10px; display: none"></p>
+      </div>
+    </div>
+
+    <!-- Модальное окно: Добавить урок -->
+    <div id="scheduleModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="scheduleModal">&times;</span>
+        <h2>📅 Добавить урок</h2>
+        <form id="scheduleForm" data-action="createSchedule">
+          <label>День недели:</label>
+          <select id="scheduleDay" class="input" required>
+            <option value="">Выберите день</option>
+            <option value="Пн">Понедельник</option>
+            <option value="Вт">Вторник</option>
+            <option value="Ср">Среда</option>
+            <option value="Чт">Четверг</option>
+            <option value="Пт">Пятница</option>
+            <option value="Сб">Суббота</option>
+          </select>
+          <label>Время:</label>
+          <select id="scheduleTime" class="input" required>
+            <option value="">Выберите время</option>
+            <option value="08:30">08:30</option>
+            <option value="09:20">09:20</option>
+            <option value="10:10">10:10</option>
+            <option value="11:00">11:00</option>
+            <option value="11:55">11:55</option>
+            <option value="12:45">12:45</option>
+            <option value="13:35">13:35</option>
+            <option value="14:25">14:25</option>
+          </select>
+          <label>Предмет:</label>
+          <select id="scheduleSubject" class="input" required>
+            <option value="">Выберите предмет</option>
+            <option value="Математика">Математика</option>
+            <option value="Русский язык">Русский язык</option>
+            <option value="Английский язык">Английский язык</option>
+            <option value="Физика">Физика</option>
+            <option value="Химия">Химия</option>
+            <option value="Биология">Биология</option>
+            <option value="История">История</option>
+            <option value="Обществознание">Обществознание</option>
+            <option value="География">География</option>
+            <option value="Информатика">Информатика</option>
+            <option value="Музыка">Музыка</option>
+            <option value="ИЗО">ИЗО</option>
+            <option value="Физкультура">Физкультура</option>
+            <option value="ОБЖ">ОБЖ</option>
+            <option value="Технология">Технология</option>
+          </select>
+          <label>Класс:</label>
+          <select id="scheduleClass" class="input" required></select>
+          <label>Кабинет (необязательно):</label>
+          <input type="text" id="scheduleRoom" class="input" placeholder="302" />
+          <button type="submit" class="btn" style="margin-top: 15px">Добавить</button>
+        </form>
+        <p id="scheduleError" style="color: var(--danger); margin-top: 10px; display: none"></p>
+      </div>
+    </div>
+
+    <!-- Модальное окно: Добавить задание -->
+    <div id="hwModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="hwModal">&times;</span>
+        <h2>📋 Новое задание</h2>
+        <form id="hwForm">
+          <label>Предмет:</label>
+          <select id="hwSubject" class="input" required>
+            <option value="">Выберите предмет</option>
+            <option value="Математика">Математика</option>
+            <option value="Русский язык">Русский язык</option>
+            <option value="Английский язык">Английский язык</option>
+            <option value="Физика">Физика</option>
+            <option value="Химия">Химия</option>
+            <option value="Биология">Биология</option>
+            <option value="История">История</option>
+            <option value="Обществознание">Обществознание</option>
+            <option value="География">География</option>
+            <option value="Информатика">Информатика</option>
+            <option value="Музыка">Музыка</option>
+            <option value="ИЗО">ИЗО</option>
+            <option value="Физкультура">Физкультура</option>
+          </select>
+          <label>Название:</label>
+          <input type="text" id="hwTitle" class="input" placeholder="Упражнение 5, стр. 23" required />
+          <label>Описание (необязательно):</label>
+          <textarea id="hwDesc" class="input" rows="3"></textarea>
+          <label>Срок сдачи:</label>
+          <input type="date" id="hwDueDate" class="input" required />
+          <button type="submit" class="btn" style="margin-top: 15px">Создать</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальное окно: Добавить объявление -->
+    <div id="annModal" class="modal" style="display: none">
+      <div class="modal-content">
+        <span class="close" data-action="closeModal" data-modal="annModal">&times;</span>
+        <h2>📢 Новое объявление</h2>
+        <form id="annForm">
+          <label>Заголовок:</label>
+          <input type="text" id="annTitle" class="input" placeholder="Важное объявление" required />
+          <label>Текст:</label>
+          <textarea id="annContent" class="input" rows="4" required></textarea>
+          <button type="submit" class="btn" style="margin-top: 15px">Опубликовать</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="dashboard.bundle.js"></script>
+    <script>
+    (function() {
+      try {
+        const tok = localStorage.getItem('token');
+        if (!tok) return;
+        const payload = JSON.parse(atob(tok.split('.')[1]));
+        if (payload.role !== 'admin') return;
+        const nav = document.getElementById('navMenu');
+        if (!nav) return;
+        const a = document.createElement('a');
+        a.href = '/admin-panel';
+        a.className = 'nav-item admin-link';
+        a.innerHTML = '<i class="bx bx-shield"></i> <span>Панель упр.</span>';
+        nav.appendChild(a);
+      } catch(e) { /* ignore */ }
+    })();
+    </script>
+  </body>
 </html>

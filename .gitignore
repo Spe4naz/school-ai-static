@@ -9,6 +9,8 @@ node_modules/
 # Database
 *.db
 !*.db.example
+*.db-wal
+*.db-shm
 backups/
 
 # Logs

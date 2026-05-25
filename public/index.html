@@ -1,28 +1,116 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Вход — ИИ в школе</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <h1>🏫 Вход в платформу</h1>
-      <form id="loginForm">
-        <input type="email" id="email" class="input" placeholder="Email" value="student@school.ru" required>
-        <input type="password" id="password" class="input" placeholder="Пароль" value="123456" required>
-        <button type="submit" class="btn">Войти</button>
-        <p id="errorMsg" style="color:red; margin-top:10px; display:none;"></p>
-      </form>
-      <div style="margin-top:20px; font-size:0.8rem; color:#666; text-align:left;">
-        <p style="margin-top:15px; font-size:0.9rem;">Нет аккаунта? <a href="/register.html">Зарегистрироваться</a></p>
-        <ul>
-        </ul>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход — Умная Школа</title>
+    <link rel="stylesheet" href="style.css" />
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-card">
+        <div style="margin-bottom: 20px">
+          <i class="bx bx-graduation" style="font-size: 3rem; color: var(--primary)"></i>
+        </div>
+        <h1>🏫 Умная Школа</h1>
+        <p style="color: var(--text-sec); margin-bottom: 20px">Вход в систему</p>
+
+        <!-- Сообщение об успешной регистрации -->
+        <div
+          id="regSuccess"
+          style="
+            display: none;
+            background: #dcfce7;
+            color: #166534;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+          "
+        >
+          ✅ Аккаунт создан! Теперь войдите с вашими данными.
+        </div>
+
+        <form id="loginForm">
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Email</label>
+            <input type="email" id="email" class="input" placeholder="example@school.ru" required />
+          </div>
+
+          <div style="margin-bottom: 15px">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500; font-size: 0.9rem">Пароль</label>
+            <input type="password" id="password" class="input" placeholder="Ваш пароль" required />
+          </div>
+
+          <button type="submit" class="btn" style="width: 100%">Войти</button>
+
+          <p
+            id="errorMsg"
+            style="
+              color: var(--danger);
+              margin-top: 15px;
+              display: none;
+              text-align: center;
+              padding: 10px;
+              background: #fee2e2;
+              border-radius: 8px;
+            "
+          ></p>
+        </form>
+
+        <div style="margin-top: 20px; display: flex; justify-content: space-between; font-size: 0.9rem">
+          <a href="/register.html" style="color: var(--primary)">Регистрация</a>
+          <a href="/reset-password.html" style="color: var(--text-sec)">Забыли пароль?</a>
+        </div>
       </div>
     </div>
-  </div>
-  <script src="script.js"></script>
-</body>
+
+    <script>
+      // Проверяем параметр registered
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('registered') === '1') {
+        document.getElementById('regSuccess').style.display = 'block';
+      }
+
+      // Обработка формы входа
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        errorMsg.style.display = 'none';
+
+        if (!email || !password) {
+          errorMsg.textContent = 'Заполните все поля';
+          errorMsg.style.display = 'block';
+          return;
+        }
+
+        try {
+          const res = await fetch(window.location.origin + '/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+          });
+
+          const data = await res.json();
+
+          if (data.token) {
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.location.href = '/dashboard.html';
+          } else {
+            errorMsg.textContent = data.error || 'Ошибка входа';
+            errorMsg.style.display = 'block';
+          }
+        } catch (err) {
+          errorMsg.textContent = 'Ошибка сети';
+          errorMsg.style.display = 'block';
+        }
+      });
+    </script>
+  </body>
 </html>

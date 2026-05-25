@@ -1,7 +1,10 @@
-// middleware/logger.js
 module.exports = (req, res, next) => {
+  if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'ci') {
+    return next();
+  }
+
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
     const log = {
@@ -13,13 +16,9 @@ module.exports = (req, res, next) => {
       userId: req.user?.id || 'anonymous',
       timestamp: new Date().toISOString(),
     };
-    
-    if (res.statusCode >= 400) {
-      console.warn('⚠️', JSON.stringify(log));
-    } else {
-      console.log('✅', JSON.stringify(log));
-    }
+
+    console.log(JSON.stringify(log));
   });
-  
+
   next();
 };

@@ -1,0 +1,50 @@
+{
+  "env": {
+    "node": true,
+    "es2021": true,
+    "jest": true
+  },
+  "extends": ["eslint:recommended"],
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "next" }],
+    "no-console": "off",
+    "prefer-const": "warn",
+    "no-var": "warn",
+    "eqeqeq": ["warn", "always"],
+    "curly": ["warn", "multi-line"],
+    "semi": ["warn", "always"],
+    "quotes": ["warn", "single", { "avoidEscape": true }],
+    "indent": ["warn", 2, { "SwitchCase": 1 }],
+    "comma-dangle": ["warn", "always-multiline"],
+    "no-trailing-spaces": "warn",
+    "eol-last": ["warn", "always"]
+  },
+  "overrides": [
+    {
+      "files": ["public/js/**/*.js"],
+      "env": {
+        "browser": true
+      },
+      "parserOptions": {
+        "sourceType": "module"
+      },
+      "globals": {
+        "Chart": "readonly"
+      }
+    },
+    {
+      "files": ["public/dashboard.bundle.js"],
+      "env": {
+        "browser": true
+      },
+      "rules": {
+        "no-unused-vars": "off",
+        "no-undef": "off",
+        "no-redeclare": "off"
+      }
+    }
+  ]
+}
