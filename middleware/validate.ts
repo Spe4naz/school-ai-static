@@ -62,7 +62,7 @@ function validate(schema) {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      const first = result.error.errors[0];
+      const first = result.error.issues[0];
       const code = mapErrorCode(first);
       return res.status(400).json({ error: first.message, code, path: first.path });
     }
@@ -72,11 +72,15 @@ function validate(schema) {
 }
 
 function mapErrorCode(err) {
-  if (err.path.includes('email')) return ERR.INVALID_EMAIL;
-  if (err.path.includes('password')) return ERR.WEAK_PASSWORD;
-  if (err.path.includes('role')) return ERR.INVALID_ROLE;
-  if (err.message.includes('Required')) return ERR.MISSING_FIELDS;
-  if (err.message.includes('grade')) return ERR.INVALID_GRADE;
+  const path = err.path || [];
+  const pathStr = path.join('.');
+  const isMissing = err.message.includes('Required') || err.code === 'invalid_type';
+
+  if (isMissing) return ERR.MISSING_FIELDS;
+  if (pathStr.includes('email')) return ERR.INVALID_EMAIL;
+  if (pathStr.includes('password')) return ERR.WEAK_PASSWORD;
+  if (pathStr.includes('role')) return ERR.INVALID_ROLE;
+  if (pathStr.includes('grade')) return ERR.INVALID_GRADE;
   return ERR.VALIDATION_ERROR;
 }
 

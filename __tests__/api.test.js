@@ -291,9 +291,11 @@ describe('Регистрация', () => {
   });
 
   test('POST /api/register: дубликат email → 409', async () => {
+    const classes = await request(app).get('/api/classes');
+    const classId = classes.body[0]?.id;
     const res = await request(app)
       .post('/api/register')
-      .send({ ...newUser, email: 'ivan@school.ru' });
+      .send({ ...newUser, email: 'ivan@school.ru', class_id: classId });
     expect(res.statusCode).toBe(409);
     expect(res.body.code).toBe('EMAIL_EXISTS');
   });

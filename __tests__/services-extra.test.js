@@ -1,17 +1,6 @@
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
-
 const db = require('../config/database');
 const { scheduleService, adminService } = require('../config/container');
 const asyncHandler = require('../middleware/asyncHandler');
-
-beforeAll(async () => {
-  await db.init();
-}, 30000);
-
-afterAll(async () => {
-  await db.close();
-});
 
 describe('AdminService', () => {
   test('listClasses returns array', async () => {

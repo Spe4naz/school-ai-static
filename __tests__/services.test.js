@@ -1,16 +1,5 @@
-process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
-
 const db = require('../config/database');
 const { cryptoService, notificationService, gradeService } = require('../config/container');
-
-beforeAll(async () => {
-  await db.init();
-}, 30000);
-
-afterAll(async () => {
-  await db.close();
-});
 
 describe('CryptoService', () => {
   const testKey = cryptoService.generateKey();
