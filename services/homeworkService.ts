@@ -1,4 +1,6 @@
 class HomeworkService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -39,11 +41,17 @@ class HomeworkService {
       return student?.class_id || null;
     }
     if (user.role === 'teacher' || user.role === 'admin') {
-      const classes = await this.db.all('SELECT id FROM classes LIMIT 1');
-      return classes.length > 0 ? classes[0].id : null;
+      const fromSchedule = await this.db.get(
+        'SELECT DISTINCT s.class_id FROM schedule s WHERE s.teacher_id = $1 LIMIT 1',
+        [user.id],
+      );
+      if (fromSchedule) return fromSchedule.class_id;
+      const anyClass = await this.db.get('SELECT id FROM classes LIMIT 1');
+      return anyClass?.id || null;
     }
     return null;
   }
 }
 
 module.exports = HomeworkService;
+

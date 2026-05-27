@@ -1,6 +1,9 @@
 const { LIMITS } = require('../config/constants');
 
 class NotificationService {
+  private db: any;
+  private _sseClients: any;
+
   constructor(db) {
     this.db = db;
     this._sseClients = null;
@@ -68,3 +71,5 @@ class NotificationService {
 }
 
 module.exports = NotificationService;
+
+

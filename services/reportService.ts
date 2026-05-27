@@ -2,6 +2,8 @@ const PDFDocument = require('pdfkit');
 const XLSX = require('xlsx');
 
 class ReportService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -90,3 +92,4 @@ class ReportService {
 }
 
 module.exports = ReportService;
+

@@ -1,4 +1,6 @@
 class GradeService {
+  private db: any;
+  private notificationService: any;
   constructor(db, notificationService) {
     this.db = db;
     this.notificationService = notificationService || null;
@@ -99,11 +101,11 @@ class GradeService {
     let startDate;
 
     if (period === 'week') {
-      startDate = new Date(now - 7 * 24 * 60 * 60 * 1000);
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     } else if (period === 'month') {
-      startDate = new Date(now - 30 * 24 * 60 * 60 * 1000);
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     } else {
-      startDate = new Date(now - 90 * 24 * 60 * 60 * 1000);
+      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     }
 
     let idx = 0;
@@ -118,7 +120,7 @@ class GradeService {
     query += ' ORDER BY date ASC';
     const grades = await this.db.all(query, params);
 
-    const byDate = {};
+    const byDate: Record<string, number[]> = {};
     grades.forEach((g) => {
       if (!byDate[g.date]) byDate[g.date] = [];
       byDate[g.date].push(g.grade);
@@ -147,3 +149,4 @@ class GradeService {
 }
 
 module.exports = GradeService;
+

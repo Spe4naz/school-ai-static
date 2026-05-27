@@ -19,14 +19,17 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname)}`),
 });
+const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const allowedExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
     const ext = path.extname(file.originalname).toLowerCase();
-    if (allowed.includes(ext)) cb(null, true);
-    else cb(new Error('Только изображения: jpg, png, gif, webp'));
+    if (!allowedExts.includes(ext) || !ALLOWED_MIMES.includes(file.mimetype)) {
+      return cb(new Error('Только изображения: jpg, png, gif, webp'));
+    }
+    cb(null, true);
   },
 });
 

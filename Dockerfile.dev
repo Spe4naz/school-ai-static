@@ -4,6 +4,6 @@ RUN apk add --no-cache postgresql-client
 COPY package*.json ./
 RUN npm install
 COPY . .
-RUN npm run build
+RUN npm run build:frontend
 EXPOSE 3000
-CMD ["node", "--watch", "server.js"]
+CMD ["npx", "tsx", "watch", "server.ts"]

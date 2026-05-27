@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const { ERR } = require('../config/constants');
 
 class AdminService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -66,7 +68,7 @@ class AdminService {
 
     const lastBackup =
       backups.length > 0
-        ? backups.sort((a, b) => new Date(b.created) - new Date(a.created))[0].created
+        ? backups.sort((a: any, b: any) => new Date(b.created).getTime() - new Date(a.created).getTime())[0].created
         : null;
 
     return {
@@ -77,11 +79,15 @@ class AdminService {
     };
   }
 
-  async listUsers({ role, class_id }) {
+  async listUsers({ role, class_id, q }) {
     let query = 'SELECT id, email, name, role, class_id FROM users WHERE 1=1';
     const params = [];
     let idx = 0;
 
+    if (q) {
+      query += ` AND (name ILIKE $${++idx} OR email ILIKE $${idx})`;
+      params.push(`%${q}%`);
+    }
     if (role) {
       query += ` AND role = $${++idx}`;
       params.push(role);
@@ -175,3 +181,4 @@ class AdminService {
 }
 
 module.exports = AdminService;
+

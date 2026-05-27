@@ -1,6 +1,8 @@
 const { ERR } = require('../config/constants');
 
 class ScheduleService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -84,3 +86,4 @@ class ScheduleService {
 }
 
 module.exports = ScheduleService;
+

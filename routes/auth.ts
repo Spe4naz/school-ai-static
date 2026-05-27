@@ -8,54 +8,86 @@ const config = require('../config/auth');
 const emailTransporter = require('../config/email');
 const { loginLimiter, registerLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
 const logger = require('../middleware/logger');
-const { requiredFields, validateEmail, validatePassword, validateRole } = require('../middleware/validate');
-const { ERR, ROLES, EMAIL_REGEX } = require('../config/constants');
+const { validate, loginSchema, registerSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
+const { ERR } = require('../config/constants');
 
-router.post('/login', loginLimiter, logger, asyncHandler(async (req, res) => {
+router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Email и пароль обязательны', code: ERR.MISSING_FIELDS });
-  }
-  if (typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
-    return res.status(400).json({ error: 'Неверный формат email', code: ERR.INVALID_EMAIL });
-  }
 
   const user = await userService.findByEmail(email);
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Неверные данные', code: ERR.INVALID_CREDENTIALS });
   }
 
-  // Update last login timestamp
   await userService.updateLastLogin(user.id);
 
-  const token = jwt.sign(
+  const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
     config.jwtSecret,
     { expiresIn: config.jwtExpiresIn },
   );
 
+  const refreshToken = await userService.createRefreshToken(user.id);
+
+  res.cookie('token', accessToken, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+
   res.json({
-    token,
+    token: accessToken,
+    refreshToken,
     user: { id: user.id, name: user.name, role: user.role, class_id: user.class_id, linked_student_id: user.linked_student_id },
   });
+}));
+
+router.post('/refresh', logger, asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'refreshToken обязателен', code: ERR.MISSING_FIELDS });
+  }
+
+  const payload = await userService.consumeRefreshToken(refreshToken);
+  if (!payload) {
+    return res.status(401).json({ error: 'Невалидный или истёкший refresh-токен', code: ERR.INVALID_TOKEN });
+  }
+
+  const user = await userService.findById(payload.user_id);
+  if (!user) {
+    return res.status(401).json({ error: 'Пользователь не найден', code: ERR.NOT_FOUND });
+  }
+
+  const accessToken = jwt.sign(
+    { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn },
+  );
+
+  const newRefreshToken = await userService.createRefreshToken(user.id);
+
+  res.cookie('token', accessToken, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+
+  res.json({ token: accessToken, refreshToken: newRefreshToken });
 }));
 
 router.post(
   '/register',
   registerLimiter,
   logger,
-  requiredFields('email', 'password', 'name'),
-  validateEmail,
-  validatePassword,
-  validateRole(ROLES.REGISTRABLE),
+  validate(registerSchema),
   asyncHandler(async (req, res) => {
     const { email, password, name, role, class_id, student_email, code } = req.body;
 
     const existing = await userService.findByEmail(email);
     if (existing) return res.status(409).json({ error: 'Email уже занят', code: ERR.EMAIL_EXISTS });
 
-    // Teacher and head_teacher require a valid registration code
     if (role === 'teacher' || role === 'head_teacher') {
       if (!code) return res.status(400).json({ error: 'Требуется код регистрации', code: ERR.MISSING_FIELDS });
       const valid = await userService.validateRegistrationCode(code, role);
@@ -85,12 +117,8 @@ router.post(
   }),
 );
 
-router.post('/password-reset/request', passwordResetLimiter, logger, asyncHandler(async (req, res) => {
+router.post('/password-reset/request', passwordResetLimiter, logger, validate(passwordResetRequestSchema), asyncHandler(async (req, res) => {
   const { email } = req.body;
-  if (!email) return res.status(400).json({ error: 'Email обязателен', code: ERR.MISSING_EMAIL });
-  if (typeof email !== 'string' || !EMAIL_REGEX.test(email)) {
-    return res.status(400).json({ error: 'Неверный формат email', code: ERR.INVALID_EMAIL });
-  }
 
   const result = await userService.requestPasswordReset(email);
   if (!result) {
@@ -116,18 +144,10 @@ router.post('/password-reset/request', passwordResetLimiter, logger, asyncHandle
   res.json({ success: true, message: 'Если аккаунт существует, инструкция отправлена' });
 }));
 
-router.post(
-  '/password-reset/confirm',
-  passwordResetLimiter,
-  logger,
-  requiredFields('id', 'email', 'newPassword'),
-  validateEmail,
-  validatePassword,
-  asyncHandler(async (req, res) => {
-    const { id, email, newPassword } = req.body;
-    await userService.confirmPasswordReset(id, email, newPassword);
-    res.json({ success: true, message: 'Пароль успешно изменён' });
-  }),
-);
+router.post('/password-reset/confirm', passwordResetLimiter, logger, validate(passwordResetConfirmSchema), asyncHandler(async (req, res) => {
+  const { id, email, newPassword } = req.body;
+  await userService.confirmPasswordReset(id, email, newPassword);
+  res.json({ success: true, message: 'Пароль успешно изменён' });
+}));
 
 module.exports = router;

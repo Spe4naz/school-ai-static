@@ -3,6 +3,8 @@ const fs = require('fs').promises;
 const path = require('path');
 
 class BackupService {
+  private backupDir: string;
+  private retentionDays: number;
   constructor(backupDir = './backups', retentionDays = 7) {
     this.backupDir = path.join(__dirname, '..', backupDir);
     this.retentionDays = retentionDays;
@@ -13,10 +15,6 @@ class BackupService {
   }
 
   async create() {
-    if (process.env.NODE_ENV !== 'production') {
-      return null;
-    }
-
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const backupPath = path.join(this.backupDir, `school-backup-${timestamp}.sql`);
 
@@ -24,7 +22,7 @@ class BackupService {
       const url = process.env.DATABASE_URL;
       if (!url) throw new Error('DATABASE_URL not set');
 
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const pgDump = spawn('pg_dump', [url]);
         const outStream = fs.createWriteStream(backupPath);
 
@@ -100,3 +98,4 @@ class BackupService {
 }
 
 module.exports = BackupService;
+

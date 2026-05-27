@@ -1,15 +1,20 @@
 ﻿// jest.config.js
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
   testEnvironment: 'node',
-  testMatch: ['**/__tests__/**/*.test.js'],
+  testMatch: ['**/__tests__/**/*.test.{js,ts}'],
   setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
+
+  transform: {
+    '^.+\\.ts$': ['ts-jest'],
+  },
 
   maxWorkers: 1,
 
   // Таймауты для медленных операций на Windows
   testTimeout: 30000,
 
-  // Покрытие кода (пороги можно снизить для начала)
+  // Покрытие кода
   coverageThreshold: {
     global: {
       branches: 20,
@@ -19,15 +24,16 @@ module.exports = {
     },
   },
 
-  // Игнорируем transform для node_modules (ускоряет тесты)
+  // Игнорируем transform для node_modules
   transformIgnorePatterns: ['node_modules/(?!(uuid)/)'],
 
   // Сбор покрытия
   collectCoverageFrom: [
-    'config/**/*.js',
-    'middleware/**/*.js',
-    'routes/**/*.js',
-    'services/**/*.js',
+    'config/**/*.{js,ts}',
+    'middleware/**/*.{js,ts}',
+    'routes/**/*.{js,ts}',
+    'services/**/*.{js,ts}',
+    'server.ts',
     'server.js',
     '!**/node_modules/**',
   ],

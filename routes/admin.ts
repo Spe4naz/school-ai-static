@@ -1,14 +1,21 @@
 const express = require('express');
 const router = express.Router();
 const asyncHandler = require('../middleware/asyncHandler');
+const { z } = require('zod');
 const { userService, adminService, backupService } = require('../config/container');
 const auth = require('../middleware/auth');
 const roles = require('../middleware/roles');
 const logger = require('../middleware/logger');
-const { requiredFields, validateEmail, validatePassword, validateRole } = require('../middleware/validate');
-const { ERR, ROLES, LIMITS } = require('../config/constants');
+const { validate, createUserSchema, updateUserSchema } = require('../middleware/validate');
+const { ERR, LIMITS } = require('../config/constants');
 
 router.use(auth, logger);
+
+const classNameSchema = z.object({ name: z.string().min(1, 'name обязателен').max(100) });
+const registrationCodeSchema = z.object({
+  code: z.string().min(1, 'code обязателен').max(50),
+  role: z.enum(['teacher', 'head_teacher'], { message: 'role должен быть teacher или head_teacher' }),
+});
 
 // ---- Classes ----
 router.get('/classes', asyncHandler(async (req, res) => {
@@ -16,17 +23,13 @@ router.get('/classes', asyncHandler(async (req, res) => {
   res.json(classes);
 }));
 
-router.post('/classes', roles('admin'), asyncHandler(async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: 'name обязателен', code: ERR.MISSING_NAME });
-  const cls = await adminService.createClass(name);
+router.post('/classes', roles('admin'), validate(classNameSchema), asyncHandler(async (req, res) => {
+  const cls = await adminService.createClass(req.body.name);
   res.status(201).json({ success: true, class: cls });
 }));
 
-router.put('/classes/:id', roles('admin'), asyncHandler(async (req, res) => {
-  const { name } = req.body;
-  if (!name) return res.status(400).json({ error: 'name обязателен', code: ERR.MISSING_NAME });
-  const cls = await adminService.updateClass(req.params.id, name);
+router.put('/classes/:id', roles('admin'), validate(classNameSchema), asyncHandler(async (req, res) => {
+  const cls = await adminService.updateClass(req.params.id, req.body.name);
   res.json({ success: true, class: cls });
 }));
 
@@ -60,10 +63,7 @@ router.get('/stats', roles('admin'), asyncHandler(async (req, res) => {
 router.post(
   '/users',
   roles('admin'),
-  requiredFields('email', 'password', 'name', 'role'),
-  validateEmail,
-  validatePassword,
-  validateRole(ROLES.ALL),
+  validate(createUserSchema),
   asyncHandler(async (req, res) => {
     const { email, password, name, role, class_id } = req.body;
     const newUser = await userService.create({
@@ -79,7 +79,7 @@ router.post(
 );
 
 router.get('/users', roles('admin'), asyncHandler(async (req, res) => {
-  const users = await adminService.listUsers({ role: req.query.role, class_id: req.query.class_id });
+  const users = await adminService.listUsers({ role: req.query.role, class_id: req.query.class_id, q: req.query.q });
   res.json(users);
 }));
 
@@ -88,9 +88,8 @@ router.get('/users/:id', roles('admin'), asyncHandler(async (req, res) => {
   res.json(user);
 }));
 
-router.put('/users/:id', roles('admin'), asyncHandler(async (req, res) => {
-  const { email, name, role, class_id } = req.body;
-  const result = await adminService.updateUser(req.params.id, { email, name, role, class_id });
+router.put('/users/:id', roles('admin'), validate(updateUserSchema), asyncHandler(async (req, res) => {
+  const result = await adminService.updateUser(req.params.id, req.body);
   res.json({ success: true, user: result });
 }));
 
@@ -105,13 +104,8 @@ router.get('/registration-codes', roles('admin'), asyncHandler(async (req, res) 
   res.json(codes);
 }));
 
-router.post('/registration-codes', roles('admin'), asyncHandler(async (req, res) => {
-  const { code, role } = req.body;
-  if (!code || !role) return res.status(400).json({ error: 'code и role обязательны', code: ERR.MISSING_FIELDS });
-  if (!['teacher', 'head_teacher'].includes(role)) {
-    return res.status(400).json({ error: 'role должен быть teacher или head_teacher', code: ERR.INVALID_ROLE });
-  }
-  const result = await adminService.createRegistrationCode(code.toUpperCase(), role);
+router.post('/registration-codes', roles('admin'), validate(registrationCodeSchema), asyncHandler(async (req, res) => {
+  const result = await adminService.createRegistrationCode(req.body.code.toUpperCase(), req.body.role);
   res.status(201).json({ success: true, code: result });
 }));
 

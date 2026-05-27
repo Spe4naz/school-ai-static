@@ -3,6 +3,10 @@ const { Pool } = require('pg');
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://school:school_pass@localhost:5432/school';
 
 class Database {
+  private pool: any;
+  query: any;
+  all: any;
+  get: any;
   constructor() {
     this.pool = new Pool({ connectionString: DATABASE_URL });
     this.query = (text, params) => this.pool.query(text, params);
@@ -95,6 +99,15 @@ class Database {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    await this.query(`CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id SERIAL PRIMARY KEY,
+      token TEXT NOT NULL UNIQUE,
+      user_id TEXT NOT NULL,
+      used INTEGER DEFAULT 0,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`);
+
     await this._migrate();
     await this._createIndexes();
 
@@ -119,7 +132,7 @@ class Database {
       try {
         await this.query(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
       } catch (err) {
-        if (!err.message.includes('duplicate column') && !err.message.includes('already has column')) {
+        if (err.code !== '42701') {
           throw err;
         }
       }
@@ -164,6 +177,9 @@ class Database {
       'CREATE INDEX IF NOT EXISTS idx_registration_codes_used ON registration_codes(used)',
       // class_keys
       'CREATE INDEX IF NOT EXISTS idx_chat_typing_class ON chat_typing(class_id)',
+      // refresh_tokens
+      'CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)',
+      'CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires ON refresh_tokens(expires_at)',
     ];
 
     for (const sql of indexes) {
@@ -171,7 +187,7 @@ class Database {
         await this.query(sql);
       } catch (err) {
         // ignore duplicate index errors on re-runs
-        if (!err.message?.includes('already exists')) throw err;
+        if (err.code !== '42710') throw err;
       }
     }
   }
@@ -290,3 +306,4 @@ class Database {
 }
 
 module.exports = new Database();
+

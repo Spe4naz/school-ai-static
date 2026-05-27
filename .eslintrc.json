@@ -24,6 +24,15 @@
   },
   "overrides": [
     {
+      "files": ["**/*.ts"],
+      "parser": "@typescript-eslint/parser",
+      "extends": ["eslint:recommended"],
+      "rules": {
+        "no-unused-vars": "off",
+        "no-undef": "off"
+      }
+    },
+    {
       "files": ["public/js/**/*.js"],
       "env": {
         "browser": true

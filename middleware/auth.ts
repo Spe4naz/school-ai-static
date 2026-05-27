@@ -1,9 +1,9 @@
-// middleware/auth.js
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth');
 
 module.exports = (req, res, next) => {
   let token = req.headers.authorization?.split(' ')[1];
+  if (!token) token = req.cookies?.token;
   if (!token) token = req.query.token;
 
   if (!token) {

@@ -1,4 +1,6 @@
 class AnnouncementService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -31,3 +33,4 @@ class AnnouncementService {
 }
 
 module.exports = AnnouncementService;
+

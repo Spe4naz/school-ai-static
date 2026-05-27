@@ -6,7 +6,7 @@ const auth = require('../middleware/auth');
 const roles = require('../middleware/roles');
 const logger = require('../middleware/logger');
 const resolveStudentId = require('../middleware/resolveStudentId');
-const { requiredFields, validateGrade } = require('../middleware/validate');
+const { validate, createGradeSchema } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
 
 router.use(auth, logger);
@@ -20,15 +20,14 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post(
   '/',
   roles('teacher', 'admin'),
-  requiredFields('student_id', 'subject', 'grade'),
-  validateGrade,
+  validate(createGradeSchema),
   asyncHandler(async (req, res) => {
     const { student_id, subject, grade, comment } = req.body;
     const result = await gradeService.create({
       student_id,
       teacher_id: req.user.id,
       subject,
-      grade: parseInt(grade),
+      grade,
       comment,
     });
     res.json({ success: true, grade: result });

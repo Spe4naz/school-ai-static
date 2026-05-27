@@ -7,14 +7,9 @@ if (MISSING_ENV.length > 0) {
   process.exit(1);
 }
 
-const DEFAULT_SECRET = 'dev_secret_key_change_in_production';
-if (
-  process.env.NODE_ENV === 'production' &&
-  (!process.env.JWT_SECRET ||
-    process.env.JWT_SECRET === DEFAULT_SECRET ||
-    process.env.JWT_SECRET === 'change_this_in_production_please_12345')
-) {
-  console.error('FATAL: JWT_SECRET is not set or using default value in production mode');
+const DEFAULT_SECRETS = ['dev_secret_key_change_in_production', 'change_this_in_production_please_12345'];
+if (DEFAULT_SECRETS.includes(process.env.JWT_SECRET)) {
+  console.error('FATAL: JWT_SECRET is set to a known default value. Change it immediately.');
   process.exit(1);
 }
 
@@ -22,6 +17,7 @@ const express = require('express');
 const path = require('path');
 const helmet = require('helmet');
 const cron = require('node-cron');
+const cookieParser = require('cookie-parser');
 
 const db = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -44,6 +40,7 @@ const PORT = process.env.PORT || 3000;
 let httpServer = null;
 
 app.set('trust proxy', 1);
+app.use(cookieParser());
 
 app.use(helmet({
   crossOriginEmbedderPolicy: false,

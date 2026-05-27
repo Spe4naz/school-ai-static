@@ -4,6 +4,8 @@ const { v4: uuidv4 } = require('uuid');
 const config = require('../config/auth');
 
 class UserService {
+  private db: any;
+
   constructor(db) {
     this.db = db;
   }
@@ -58,10 +60,7 @@ class UserService {
     );
 
     if (!user) {
-      const err = new Error('Неверный или истёкший токен');
-      err.status = 400;
-      err.code = 'INVALID_TOKEN';
-      throw err;
+      const err: any = new Error('Неверный или истёкший токен'); err.status = 400; err.code = 'INVALID_TOKEN'; throw err;
     }
 
     const result = await this.db.query(
@@ -70,10 +69,7 @@ class UserService {
     );
 
     if (result.rowCount === 0) {
-      const err = new Error('Неверный или истёкший токен');
-      err.status = 400;
-      err.code = 'INVALID_TOKEN';
-      throw err;
+      const err: any = new Error('Неверный или истёкший токен'); err.status = 400; err.code = 'INVALID_TOKEN'; throw err;
     }
     return true;
   }
@@ -106,6 +102,30 @@ class UserService {
     }
     return { ...user, class_name };
   }
+
+  async createRefreshToken(userId) {
+    const token = require('crypto').randomBytes(48).toString('hex');
+    const config = require('../config/auth');
+    const expiresAt = new Date(Date.now() + config.refreshExpiresInMs);
+    await this.db.query(
+      'INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)',
+      [token, userId, expiresAt.toISOString()],
+    );
+    return token;
+  }
+
+  async consumeRefreshToken(token) {
+    const record = await this.db.get(
+      'SELECT * FROM refresh_tokens WHERE token = $1 AND expires_at > $2 AND used = 0',
+      [token, new Date().toISOString()],
+    );
+    if (!record) return null;
+
+    await this.db.query('UPDATE refresh_tokens SET used = 1 WHERE id = $1', [record.id]);
+    return { user_id: record.user_id };
+  }
 }
 
 module.exports = UserService;
+
+

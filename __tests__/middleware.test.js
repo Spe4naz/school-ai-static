@@ -3,10 +3,11 @@ process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
 
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth');
+const { z } = require('zod');
 
 const authMiddleware = require('../middleware/auth');
 const rolesMiddleware = require('../middleware/roles');
-const validate = require('../middleware/validate');
+const { validate, loginSchema, registerSchema, createGradeSchema } = require('../middleware/validate');
 const errorHandler = require('../middleware/errorHandler');
 
 function mockReq(resObj = {}) {
@@ -125,140 +126,126 @@ describe('roles middleware', () => {
   });
 });
 
-describe('validate middleware', () => {
-  test('requiredFields: all present → next', () => {
-    const req = mockReq({ body: { a: 1, b: 2 } });
+describe('validate (Zod)', () => {
+  test('loginSchema: valid → passes through', () => {
+    const req = mockReq({ body: { email: 'test@example.com', password: 'secret' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.requiredFields('a', 'b')(req, res, next);
+    validate(loginSchema)(req, res, next);
 
     expect(next).toHaveBeenCalled();
+    expect(req.body.email).toBe('test@example.com');
   });
 
-  test('requiredFields: missing field → 400', () => {
-    const req = mockReq({ body: { a: 1 } });
+  test('loginSchema: missing email → 400', () => {
+    const req = mockReq({ body: { password: 'secret' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.requiredFields('a', 'b')(req, res, next);
+    validate(loginSchema)(req, res, next);
 
     expect(res.statusCode).toBe(400);
     expect(res._json.code).toBe('MISSING_FIELDS');
   });
 
-  test('requiredFields: null value → 400', () => {
-    const req = mockReq({ body: { a: null } });
+  test('loginSchema: invalid email → 400', () => {
+    const req = mockReq({ body: { email: 'notanemail', password: 'secret' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.requiredFields('a')(req, res, next);
-
-    expect(res.statusCode).toBe(400);
-  });
-
-  test('requiredFields: empty string → 400', () => {
-    const req = mockReq({ body: { a: '' } });
-    const res = mockRes();
-    const next = mockNext();
-
-    validate.requiredFields('a')(req, res, next);
-
-    expect(res.statusCode).toBe(400);
-  });
-
-  test('validateEmail: valid email → next', () => {
-    const req = mockReq({ body: { email: 'test@example.com' } });
-    const res = mockRes();
-    const next = mockNext();
-
-    validate.validateEmail(req, res, next);
-
-    expect(next).toHaveBeenCalled();
-  });
-
-  test('validateEmail: invalid email → 400', () => {
-    const req = mockReq({ body: { email: 'invalid' } });
-    const res = mockRes();
-    const next = mockNext();
-
-    validate.validateEmail(req, res, next);
+    validate(loginSchema)(req, res, next);
 
     expect(res.statusCode).toBe(400);
     expect(res._json.code).toBe('INVALID_EMAIL');
   });
 
-  test('validatePassword: strong password → next', () => {
-    const req = mockReq({ body: { password: '123456' } });
+  test('loginSchema: weak password is allowed (only min 1 char)', () => {
+    const req = mockReq({ body: { email: 'test@test.com', password: 'a' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.validatePassword(req, res, next);
+    validate(loginSchema)(req, res, next);
 
     expect(next).toHaveBeenCalled();
   });
 
-  test('validatePassword: weak password → 400', () => {
-    const req = mockReq({ body: { password: '123' } });
+  test('registerSchema: valid → passes', () => {
+    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: 'Test', role: 'student' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.validatePassword(req, res, next);
+    validate(registerSchema)(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(req.body.name).toBe('Test');
+  });
+
+  test('registerSchema: weak password → 400', () => {
+    const req = mockReq({ body: { email: 'new@test.com', password: '123', name: 'Test', role: 'student' } });
+    const res = mockRes();
+    const next = mockNext();
+
+    validate(registerSchema)(req, res, next);
 
     expect(res.statusCode).toBe(400);
     expect(res._json.code).toBe('WEAK_PASSWORD');
   });
 
-  test('validatePassword: newPassword field → next', () => {
-    const req = mockReq({ body: { newPassword: '123456' } });
+  test('registerSchema: invalid role → 400', () => {
+    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: 'Test', role: 'invalid' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.validatePassword(req, res, next);
-
-    expect(next).toHaveBeenCalled();
-  });
-
-  test('validateRole: allowed role → next', () => {
-    const req = mockReq({ body: { role: 'student' } });
-    const res = mockRes();
-    const next = mockNext();
-
-    validate.validateRole(['student', 'parent'])(req, res, next);
-
-    expect(next).toHaveBeenCalled();
-  });
-
-  test('validateRole: disallowed role → 400', () => {
-    const req = mockReq({ body: { role: 'admin' } });
-    const res = mockRes();
-    const next = mockNext();
-
-    validate.validateRole(['student', 'parent'])(req, res, next);
+    validate(registerSchema)(req, res, next);
 
     expect(res.statusCode).toBe(400);
     expect(res._json.code).toBe('INVALID_ROLE');
   });
 
-  test('validateGrade: valid grade → next', () => {
-    const req = mockReq({ body: { grade: 4 } });
+  test('registerSchema: html in name is sanitized', () => {
+    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: '<script>alert(1)</script>', role: 'student' } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.validateGrade(req, res, next);
+    validate(registerSchema)(req, res, next);
 
     expect(next).toHaveBeenCalled();
+    expect(req.body.name).toBe('scriptalert(1)/script'); // Zod transform strips <>
   });
+});
 
-  test('validateGrade: invalid grade → 400', () => {
-    const req = mockReq({ body: { grade: 6 } });
+describe('validateGrade with Zod', () => {
+  test('valid grade → calls next', () => {
+    const req = mockReq({ body: { student_id: 'abc', subject: 'Math', grade: 4 } });
     const res = mockRes();
     const next = mockNext();
 
-    validate.validateGrade(req, res, next);
+    validate(createGradeSchema)(req, res, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(req.body.grade).toBe(4);
+  });
+
+  test('invalid grade out of range → 400', () => {
+    const req = mockReq({ body: { student_id: 'abc', subject: 'Math', grade: 6 } });
+    const res = mockRes();
+    const next = mockNext();
+
+    validate(createGradeSchema)(req, res, next);
 
     expect(res.statusCode).toBe(400);
     expect(res._json.code).toBe('INVALID_GRADE');
+  });
+
+  test('missing student_id → 400', () => {
+    const req = mockReq({ body: { subject: 'Math', grade: 4 } });
+    const res = mockRes();
+    const next = mockNext();
+
+    validate(createGradeSchema)(req, res, next);
+
+    expect(res.statusCode).toBe(400);
   });
 });
 

@@ -1,43 +1,43 @@
 // __tests__/setup.js
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL =
-  process.env.TEST_DATABASE_URL || 'postgresql://school:school_pass@localhost:5432/school_test';
 process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
 
-const { Pool } = require('pg');
+const { GenericContainer } = require('testcontainers');
 
-async function createTestDatabase() {
-  const testDbUrl = process.env.DATABASE_URL;
-  const defaultUrl = testDbUrl.replace(/\/[^/]+$/, '/postgres');
-  const dbName = testDbUrl.split('/').pop();
-
-  const pool = new Pool({ connectionString: defaultUrl });
-  try {
-    const { rows } = await pool.query("SELECT 1 FROM pg_database WHERE datname = $1", [dbName]);
-    if (rows.length === 0) {
-      await pool.query(`CREATE DATABASE "${dbName}"`);
-      console.log(`Created test database: ${dbName}`);
-    }
-  } finally {
-    await pool.end();
-  }
-}
-
-const db = require('../config/database');
+let container;
 
 beforeAll(async () => {
-  console.log('Setting up test database...');
-  await createTestDatabase();
+  console.log('Starting PostgreSQL container...');
+  container = await new GenericContainer('postgres:16-alpine')
+    .withEnvironment({
+      POSTGRES_DB: 'school_test',
+      POSTGRES_USER: 'test',
+      POSTGRES_PASSWORD: 'test_pass',
+    })
+    .withExposedPorts(5432)
+    .withHealthCheck({
+      test: ['CMD-SHELL', 'pg_isready -U test -d school_test'],
+      interval: 1000,
+      retries: 10,
+    })
+    .start();
+
+  const host = container.getHost();
+  const port = container.getMappedPort(5432);
+  process.env.DATABASE_URL = `postgresql://test:test_pass@${host}:${port}/school_test`;
+  console.log('PostgreSQL ready at', process.env.DATABASE_URL);
+
+  const db = require('../config/database');
   await db.init();
-}, 30000);
+}, 60000);
 
 afterAll(async () => {
-  console.log('Cleaning up after tests...');
-  const tables = ['class_keys', 'messages', 'logs', 'notifications', 'schedule', 'grades', 'users', 'classes', 'registration_codes', 'homeworks', 'announcements', 'chat_typing'];
+  console.log('Cleaning up...');
+  const db = require('../config/database');
+  const tables = ['refresh_tokens', 'class_keys', 'messages', 'logs', 'notifications', 'schedule', 'grades', 'users', 'classes', 'registration_codes', 'homeworks', 'announcements', 'chat_typing'];
   for (const t of tables) {
-    try {
-      await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`);
-    } catch (_) {}
+    try { await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`); } catch (_) {}
   }
   await db.close();
-});
+  if (container) await container.stop();
+}, 30000);

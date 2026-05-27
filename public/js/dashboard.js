@@ -130,7 +130,7 @@ export function initDashboard() {
   setInterval(checkUnreadNotifications, 15000);
   // SSE real-time notifications
   if (token && typeof EventSource !== 'undefined') {
-    const es = new EventSource(`${API}/notifications/stream?token=${encodeURIComponent(token)}`);
+    const es = new EventSource(`${API}/notifications/stream`);
     es.onmessage = (e) => {
       try {
         const data = JSON.parse(e.data);

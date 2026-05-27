@@ -270,6 +270,7 @@ tr:hover td { background: rgba(59,130,246,.04); }
       <div class="page" id="page-users">
         <div class="toolbar">
           <button class="btn btn-primary" onclick="showAddUserModal()"><i class="ti ti-plus"></i> Создать</button>
+          <input id="userSearch" type="search" placeholder="Поиск по имени или email..." oninput="loadUsers()" style="padding:6px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--bg4);color:var(--text);font-size:12px;flex:1;max-width:280px">
           <select id="userRoleFilter" onchange="loadUsers()" style="padding:6px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--bg4);color:var(--text);font-size:12px">
             <option value="">Все роли</option>
             <option value="student">Ученик</option>
@@ -435,7 +436,11 @@ async function loadUsers() {
   const tbody = document.getElementById('usersBody');
   loading(tbody);
   const role = document.getElementById('userRoleFilter').value;
-  const r = await api(`/users${role ? '?role='+encodeURIComponent(role) : ''}`);
+  const q = document.getElementById('userSearch').value.trim();
+  const params = new URLSearchParams();
+  if (role) params.set('role', role);
+  if (q) params.set('q', q);
+  const r = await api(`/users?${params}`);
   if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Ошибка загрузки</td></tr>'; return; }
   if (!r.data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-users"></i>Нет пользователей</td></tr>'; return; }
   tbody.innerHTML = r.data.map(u => {

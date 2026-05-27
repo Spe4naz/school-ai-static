@@ -30,7 +30,7 @@ router.get('/unread-count', asyncHandler(async (req, res) => {
 const sseClients = new Map();
 
 router.get('/stream', (req, res) => {
-  const token = req.query.token;
+  let token = req.cookies?.token || req.query.token;
   if (!token) return res.status(401).json({ error: 'Токен обязателен' });
   try {
     const jwt = require('jsonwebtoken');
