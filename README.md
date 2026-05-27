@@ -17,11 +17,12 @@
 
 ## Стек
 
-- **Backend:** Node.js, Express
-- **Database:** PostgreSQL
+- **Backend:** Node.js, Express, TypeScript (ts-jest)
+- **Database:** PostgreSQL 16+
 - **Frontend:** Vanilla JS, Chart.js, ESBuild (сборка)
 - **Прокси:** Caddy (авто-SSL, обратный прокси)
 - **Контейнеризация:** Docker / Docker Compose
+- **Тестирование:** Jest + Supertest + testcontainers
 
 ## Быстрый старт (локальная разработка)
 
@@ -195,14 +196,15 @@ https://school.net.ru/admin-panel
 
 ## API
 
-Основные эндпоинты (все, кроме `/api/auth/login` и `/api/auth/register`, требуют JWT в `Authorization: Bearer <token>`):
+Основные эндпоинты:
 
 | Метод | Путь | Роль | Описание |
 |---|---|---|---|
-| POST | `/api/auth/login` | — | Вход |
+| POST | `/api/auth/login` | — | Вход (JWT в httpOnly cookie + body) |
 | POST | `/api/auth/register` | — | Регистрация |
 | POST | `/api/auth/logout` | любая | Выход |
 | GET | `/api/profile` | любая | Профиль |
+| GET | `/api/classes` | — | Список классов (публичный) |
 | GET/POST | `/api/grades` | teacher+ | Оценки |
 | GET/POST | `/api/schedule` | teacher+ | Расписание |
 | GET/POST | `/api/homework` | teacher+ | ДЗ |
@@ -224,7 +226,7 @@ npm run lint
 # форматирование
 npm run format
 
-# тесты (требуется запущенный PostgreSQL)
+# тесты (требуется Docker — testcontainers запускает PostgreSQL)
 npm run test
 
 # docker для разработки
@@ -235,15 +237,15 @@ docker compose up -d
 
 ```
 ├── config/              # Конфигурация, БД, контейнер, константы
-├── middleware/           # Express-мидлвары (auth, roles, validate, logger)
-├── routes/              # Маршруты Express
-├── services/            # Бизнес-логика
+├── middleware/           # Express-мидлвары (auth, roles, validate, errorHandler, logger, rateLimit)
+├── routes/              # Маршруты Express (auth, grades, schedule, chat, homework, admin, ...)
+├── services/            # Бизнес-логика (user, grade, notification, chat, backup, crypto, homework, schedule, announcement, admin)
 ├── public/              # Статика (HTML, CSS, JS, изображения)
-│   ├── js/              # Исходники frontend (собираются в dashboard.bundle.js)
+│   ├── js/              # Исходники frontend (собираются в dashboard.bundle.js через ESBuild)
 │   ├── admin-panel.html # SPA панель управления
 │   └── dashboard.html   # Основной интерфейс
-├── utils/               # Вспомогательные утилиты
-├── __tests__/           # Тесты (Jest + Supertest)
+├── utils/               # Вспомогательные утилиты (classResolver)
+├── __tests__/           # Тесты (Jest + Supertest + testcontainers)
 ├── backups/             # Резервные копии БД
 ├── server.js            # Точка входа
 ├── Dockerfile           # Production-образ
