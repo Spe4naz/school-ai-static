@@ -1,0 +1,99 @@
+﻿
+> school-ai-static@1.0.0 test
+> cross-env NODE_ENV=test jest
+
+cmd : PASS __tests__/api.test.js (11.514 s)
+строка:1 знак:1
++ cmd /c "npm test" 2>&1 | Out-File -FilePath test_result.txt -Encoding ...
++ ~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (PASS __tests__/api.test.js (11.514 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  тЧП Console
+
+    console.log
+      тЧЗ injected env (10) from .env // tip: тМШ multiple files { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/dotenv/lib/main.js:131:11)
+
+    console.log
+      Starting PostgreSQL container...
+
+      at Object.<anonymous> (__tests__/setup.js:10:11)
+
+    console.log
+      PostgreSQL ready at postgresql://test:test_pass@localhost:32854/school_test
+
+      at Object.<anonymous> (__tests__/setup.js:28:11)
+
+    console.log
+      Initializing test data...
+
+      at Database._createSeedData (config/database.ts:208:13)
+
+    console.log
+      Test data created
+
+      at Database._createSeedData (config/database.ts:304:13)
+
+    console.error
+      Error: Error: ╨Э╨╡╨▓╨╡╤А╨╜╤Л╨╣ ╨╕╨╗╨╕ ╨╕╤Б╤В╤С╨║╤И╨╕╨╣ ╤В╨╛╨║╨╡╨╜
+          at UserService.confirmPasswordReset (C:\school-ai-local\school-ai-static\services\userService.ts:63:13)
+          at processTicksAndRejections (node:internal/process/task_queues:104:5)
+          at C:\school-ai-local\school-ai-static\routes\auth.ts:151:3
+
+    [0m [90m 1 |[39m [90m// middleware/errorHandler.js[39m
+     [90m 2 |[39m module[33m.[39mexports [33m=[39m (err[33m,[39m req[33m,[39m res[33m,[39m next) [33m=>[3
+9m {
+    [31m[1m>[22m[39m[90m 3 |[39m   console[33m.[39merror([32m'Error:'[39m[33m,[39m err[33m.[39mstack)[33
+m;[39m
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 4 |[39m
+     [90m 5 |[39m   [36mif[39m (err[33m.[39mstatus [33m&&[39m err[33m.[39mcode) {
+     [90m 6 |[39m     [36mreturn[39m res[33m.[39mstatus(err[33m.[39mstatus)[33m.[39mjson({ error[33m:[39m e
+rr[33m.[39mmessage[33m,[39m code[33m:[39m err[33m.[39mcode })[33m;[39m[0m
+
+      at Object.<anonymous>.module.exports (middleware/errorHandler.ts:3:11)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:71:5)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at param (node_modules/express/lib/router/index.js:365:14)
+      at param (node_modules/express/lib/router/index.js:376:14)
+      at router.process_params (node_modules/express/lib/router/index.js:421:3)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at Layer.handle_error (node_modules/express/lib/router/layer.js:67:12)
+      at trim_prefix (node_modules/express/lib/router/index.js:326:13)
+      at node_modules/express/lib/router/index.js:286:9
+      at router.process_params (node_modules/express/lib/router/index.js:346:12)
+      at next (node_modules/express/lib/router/index.js:280:10)
+      at node_modules/express/lib/router/index.js:646:15
+      at next (node_modules/express/lib/router/index.js:265:14)
+      at next (node_modules/express/lib/router/route.js:141:14)
+
+    console.log
+      Cleaning up...
+
+      at Object.<anonymous> (__tests__/setup.js:35:11)
+
+  тЧП  process.exit called with "1"
+
+    [0m [90m 4 |[39m [36mif[39m ([33m![39m[33mDATABASE_URL[39m) {
+     [90m 5 |[39m   console[33m.[39merror([32m'FATAL: DATABASE_URL is not set'[39m)[33m;[39m
+    [31m[1m>[22m[39m[90m 6 |[39m   process[33m.[39mexit([35m1[39m)[33m;[39m
+     [90m   |[39m           [31m[1m^[22m[39m
+     [90m 7 |[39m }
+     [90m 8 |[39m
+     [90m 9 |[39m [36mclass[39m [33mDatabase[39m {[0m
+
+      at Object.<anonymous> (config/database.ts:6:11)
+      at Object.<anonymous> (__tests__/services.test.js:1:114)

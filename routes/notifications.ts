@@ -4,7 +4,7 @@ const asyncHandler = require('../middleware/asyncHandler');
 const auth = require('../middleware/auth');
 const logger = require('../middleware/logger');
 const { notificationService } = require('../config/container');
-const { LIMITS } = require('../config/constants');
+const { LIMITS, ERR } = require('../config/constants');
 
 router.use(auth, logger);
 
@@ -30,12 +30,12 @@ router.get('/unread-count', asyncHandler(async (req, res) => {
 const sseClients = new Map();
 
 router.get('/stream', (req, res) => {
-  let token = req.cookies?.token || req.query.token;
-  if (!token) return res.status(401).json({ error: 'Токен обязателен' });
+  let token = req.cookies?.token;
+  if (!token) return res.status(401).json({ error: 'Токен обязателен', code: ERR.AUTH_REQUIRED });
   try {
     const jwt = require('jsonwebtoken');
     const config = require('../config/auth');
-    const decoded = jwt.verify(token, config.jwtSecret);
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',

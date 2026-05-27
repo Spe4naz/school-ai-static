@@ -3,6 +3,8 @@
 module.exports = {
   testEnvironment: 'node',
   testMatch: ['**/__tests__/**/*.test.{js,ts}'],
+  globalSetup: '<rootDir>/__tests__/globalSetup.js',
+  globalTeardown: '<rootDir>/__tests__/globalTeardown.js',
   setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
 
   transform: {

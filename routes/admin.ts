@@ -119,17 +119,11 @@ router.post('/backups', ...protect, roles('admin'), asyncHandler(async (req, res
 }));
 
 router.get('/backups/:name/download', ...protect, roles('admin'), asyncHandler(async (req, res) => {
-  if (req.params.name.includes('..')) {
-    return res.status(400).json({ error: 'Invalid backup name', code: ERR.INVALID_INPUT });
-  }
   const filePath = backupService.getPath(req.params.name);
   res.download(filePath);
 }));
 
 router.delete('/backups/:name', ...protect, roles('admin'), asyncHandler(async (req, res) => {
-  if (req.params.name.includes('..')) {
-    return res.status(400).json({ error: 'Invalid backup name', code: ERR.INVALID_INPUT });
-  }
   const result = await backupService.remove(req.params.name);
   res.json(result);
 }));

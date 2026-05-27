@@ -3,9 +3,11 @@ const router = express.Router();
 const asyncHandler = require('../middleware/asyncHandler');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { z } = require('zod');
 const { userService } = require('../config/container');
 const config = require('../config/auth');
 const emailTransporter = require('../config/email');
+const auth = require('../middleware/auth');
 const { loginLimiter, registerLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
 const logger = require('../middleware/logger');
 const { validate, loginSchema, registerSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
@@ -24,7 +26,7 @@ router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
     config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn },
+    { expiresIn: config.jwtExpiresIn, issuer: 'school-ai' },
   );
 
   const refreshToken = await userService.createRefreshToken(user.id);
@@ -62,7 +64,7 @@ router.post('/refresh', logger, asyncHandler(async (req, res) => {
   const accessToken = jwt.sign(
     { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
     config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn },
+    { expiresIn: config.jwtExpiresIn, issuer: 'school-ai' },
   );
 
   const newRefreshToken = await userService.createRefreshToken(user.id);
@@ -148,6 +150,30 @@ router.post('/password-reset/confirm', passwordResetLimiter, logger, validate(pa
   const { id, email, newPassword } = req.body;
   await userService.confirmPasswordReset(id, email, newPassword);
   res.json({ success: true, message: 'Пароль успешно изменён' });
+}));
+
+router.post('/logout', logger, asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+  if (refreshToken) {
+    await userService.consumeRefreshToken(refreshToken).catch(() => {});
+  }
+  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.json({ success: true, message: 'Выход выполнен' });
+}));
+
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, 'currentPassword обязателен'),
+  newPassword: z.string().min(6, 'Новый пароль должен быть минимум 6 символов').max(128),
+});
+
+router.post('/password/change', auth, logger, validate(passwordChangeSchema), asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await userService.findById(req.user.id);
+  if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+    return res.status(400).json({ error: 'Неверный текущий пароль', code: ERR.INVALID_CREDENTIALS });
+  }
+  await userService.updatePassword(req.user.id, newPassword);
+  res.json({ success: true, message: 'Пароль изменён' });
 }));
 
 module.exports = router;

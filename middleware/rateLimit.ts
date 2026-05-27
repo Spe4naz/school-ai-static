@@ -52,4 +52,11 @@ const apiLimiter = rateLimit({
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
 
-module.exports = { loginLimiter, registerLimiter, passwordResetLimiter, apiLimiter };
+const writeLimiter = rateLimit({
+  ...baseConfig,
+  windowMs: 1 * 60 * 1000, // 1 минута
+  max: 30, // 30 запросов с одного IP
+  message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
+});
+
+module.exports = { loginLimiter, registerLimiter, passwordResetLimiter, apiLimiter, writeLimiter };

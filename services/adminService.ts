@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { ERR } = require('../config/constants');
+const AppError = require('../utils/AppError');
 
 class AdminService {
   private db: any;
@@ -22,17 +23,17 @@ class AdminService {
 
   async updateClass(id, name) {
     const result = await this.db.query('UPDATE classes SET name = $1 WHERE id = $2', [name, id]);
-    if (result.rowCount === 0) throw Object.assign(new Error('Класс не найден'), { status: 404, code: ERR.NOT_FOUND });
+    if (result.rowCount === 0) throw new AppError(404, ERR.NOT_FOUND, 'Класс не найден');
     return { id, name };
   }
 
   async deleteClass(id) {
     const students = await this.db.get('SELECT COUNT(*) as count FROM users WHERE class_id = $1', [id]);
     if (parseInt(students?.count || 0, 10) > 0) {
-      throw Object.assign(new Error('Нельзя удалить класс с учениками'), { status: 400, code: ERR.CONFLICT });
+      throw new AppError(400, ERR.CONFLICT, 'Нельзя удалить класс с учениками');
     }
     const result = await this.db.query('DELETE FROM classes WHERE id = $1', [id]);
-    if (result.rowCount === 0) throw Object.assign(new Error('Класс не найден'), { status: 404, code: ERR.NOT_FOUND });
+    if (result.rowCount === 0) throw new AppError(404, ERR.NOT_FOUND, 'Класс не найден');
     return { success: true };
   }
 
@@ -103,7 +104,7 @@ class AdminService {
 
   async getUser(id) {
     const user = await this.db.get('SELECT id, email, name, role, class_id, created_at, last_login FROM users WHERE id = $1', [id]);
-    if (!user) throw Object.assign(new Error('Пользователь не найден'), { status: 404, code: ERR.NOT_FOUND });
+    if (!user) throw new AppError(404, ERR.NOT_FOUND, 'Пользователь не найден');
     let class_name = null;
     if (user.class_id) {
       const cls = await this.db.get('SELECT name FROM classes WHERE id = $1', [user.class_id]);
@@ -114,7 +115,7 @@ class AdminService {
 
   async updateUser(id, { email, name, role, class_id }) {
     const user = await this.db.get('SELECT id FROM users WHERE id = $1', [id]);
-    if (!user) throw Object.assign(new Error('Пользователь не найден'), { status: 404, code: ERR.NOT_FOUND });
+    if (!user) throw new AppError(404, ERR.NOT_FOUND, 'Пользователь не найден');
 
     const sets = [];
     const params = [];
@@ -134,25 +135,24 @@ class AdminService {
 
   async deleteUser(id, currentUserId) {
     if (id === currentUserId) {
-      throw Object.assign(new Error('Нельзя удалить себя'), { status: 400, code: ERR.CANNOT_DELETE_SELF });
+      throw new AppError(400, ERR.CANNOT_DELETE_SELF, 'Нельзя удалить себя');
     }
 
     const result = await this.db.query('DELETE FROM users WHERE id = $1', [id]);
     if (result.rowCount === 0) {
-      throw Object.assign(new Error('Пользователь не найден'), { status: 404, code: ERR.NOT_FOUND });
+      throw new AppError(404, ERR.NOT_FOUND, 'Пользователь не найден');
     }
 
     return { success: true };
   }
 
-  // Registration codes
   async listRegistrationCodes() {
     return this.db.all('SELECT * FROM registration_codes ORDER BY created_at DESC');
   }
 
   async createRegistrationCode(code, role) {
     const existing = await this.db.get('SELECT code FROM registration_codes WHERE code = $1', [code]);
-    if (existing) throw Object.assign(new Error('Код уже существует'), { status: 409, code: ERR.CONFLICT });
+    if (existing) throw new AppError(409, ERR.CONFLICT, 'Код уже существует');
     await this.db.query(
       'INSERT INTO registration_codes (code, role, used) VALUES ($1,$2,0)',
       [code, role],
@@ -162,11 +162,10 @@ class AdminService {
 
   async deleteRegistrationCode(code) {
     const result = await this.db.query('DELETE FROM registration_codes WHERE code = $1', [code]);
-    if (result.rowCount === 0) throw Object.assign(new Error('Код не найден'), { status: 404, code: ERR.NOT_FOUND });
+    if (result.rowCount === 0) throw new AppError(404, ERR.NOT_FOUND, 'Код не найден');
     return { success: true };
   }
 
-  // System info
   async getSettings() {
     return {
       nodeEnv: process.env.NODE_ENV || 'development',
@@ -181,4 +180,3 @@ class AdminService {
 }
 
 module.exports = AdminService;
-

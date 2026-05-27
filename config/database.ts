@@ -1,26 +1,45 @@
 // config/database.js — PostgreSQL
 const { Pool } = require('pg');
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://school:school_pass@localhost:5432/school';
 
 class Database {
   private pool: any;
-  query: any;
-  all: any;
-  get: any;
   constructor() {
-    this.pool = new Pool({ connectionString: DATABASE_URL });
-    this.query = (text, params) => this.pool.query(text, params);
-    this.all = async (text, params) => {
-      const result = await this.pool.query(text, params);
-      return result.rows;
-    };
-    this.get = async (text, params) => {
-      const result = await this.pool.query(text, params);
-      return result.rows[0] || null;
-    };
+    this.pool = null;
+  }
+
+  _ensureConnected() {
+    if (this.pool) return;
+    const url = process.env.DATABASE_URL;
+    if (!url) {
+      throw new Error('DATABASE_URL is not set');
+    }
+    this.pool = new Pool({
+      connectionString: url,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      query_timeout: 10000,
+    });
+  }
+
+  async query(text: string, params?: any[]) {
+    this._ensureConnected();
+    return this.pool.query(text, params);
+  }
+
+  async all(text: string, params?: any[]) {
+    this._ensureConnected();
+    const result = await this.pool.query(text, params);
+    return result.rows;
+  }
+
+  async get(text: string, params?: any[]) {
+    this._ensureConnected();
+    const result = await this.pool.query(text, params);
+    return result.rows[0] || null;
   }
 
   async init() {
+    this._ensureConnected();
     await this.query(`CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL)`);
 
     await this.query(`CREATE TABLE IF NOT EXISTS users (
@@ -301,7 +320,10 @@ class Database {
   }
 
   async close() {
-    await this.pool.end();
+    if (this.pool) {
+      await this.pool.end();
+      this.pool = null;
+    }
   }
 }
 

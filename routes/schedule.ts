@@ -8,6 +8,7 @@ const logger = require('../middleware/logger');
 const { z } = require('zod');
 const { validate } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
+const { writeLimiter } = require('../middleware/rateLimit');
 
 router.use(auth, logger);
 
@@ -27,6 +28,7 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post(
   '/',
   roles('teacher', 'admin'),
+  writeLimiter,
   validate(createScheduleSchema),
   asyncHandler(async (req, res) => {
     const { day, time_slot, subject, class_id, room } = req.body;
@@ -40,8 +42,9 @@ router.delete('/:id', asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Урок удалён' });
 }));
 
-router.put('/:id', asyncHandler(async (req, res) => {
-  await scheduleService.update(req.params.id, req.user.id, req.user.role, req.body);
+router.put('/:id', validate(createScheduleSchema), asyncHandler(async (req, res) => {
+  const { day, time_slot, subject, class_id, room } = req.body;
+  await scheduleService.update(req.params.id, req.user.id, req.user.role, { day, time_slot, subject, class_id, room });
   res.json({ success: true, message: 'Урок обновлён' });
 }));
 

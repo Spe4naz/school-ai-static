@@ -1,31 +1,14 @@
-// __tests__/setup.js
+const path = require('path');
+const fs = require('fs');
+
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
 
-const { GenericContainer } = require('testcontainers');
-
-let container;
+const stateFile = path.join(__dirname, '.container-state.json');
 
 beforeAll(async () => {
-  console.log('Starting PostgreSQL container...');
-  container = await new GenericContainer('postgres:16-alpine')
-    .withEnvironment({
-      POSTGRES_DB: 'school_test',
-      POSTGRES_USER: 'test',
-      POSTGRES_PASSWORD: 'test_pass',
-    })
-    .withExposedPorts(5432)
-    .withHealthCheck({
-      test: ['CMD-SHELL', 'pg_isready -U test -d school_test'],
-      interval: 1000,
-      retries: 10,
-    })
-    .start();
-
-  const host = container.getHost();
-  const port = container.getMappedPort(5432);
-  process.env.DATABASE_URL = `postgresql://test:test_pass@${host}:${port}/school_test`;
-  console.log('PostgreSQL ready at', process.env.DATABASE_URL);
+  const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+  process.env.DATABASE_URL = state.databaseUrl;
 
   const db = require('../config/database');
   await db.init();
@@ -39,5 +22,4 @@ afterAll(async () => {
     try { await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`); } catch (_) {}
   }
   await db.close();
-  if (container) await container.stop();
 }, 30000);

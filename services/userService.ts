@@ -60,7 +60,7 @@ class UserService {
     );
 
     if (!user) {
-      const err: any = new Error('Неверный или истёкший токен'); err.status = 400; err.code = 'INVALID_TOKEN'; throw err;
+      throw new (require('../utils/AppError'))(400, 'INVALID_TOKEN', 'Неверный или истёкший токен');
     }
 
     const result = await this.db.query(
@@ -69,7 +69,7 @@ class UserService {
     );
 
     if (result.rowCount === 0) {
-      const err: any = new Error('Неверный или истёкший токен'); err.status = 400; err.code = 'INVALID_TOKEN'; throw err;
+      throw new (require('../utils/AppError'))(400, 'INVALID_TOKEN', 'Неверный или истёкший токен');
     }
     return true;
   }

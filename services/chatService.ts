@@ -104,7 +104,7 @@ class ChatService {
       [classId, ignoreUserId],
     );
     const now = Date.now();
-    return rows.filter(r => now - new Date(r.updated_at).getTime() < 10000);
+    return rows.filter(r => now - new Date(r.updated_at).getTime() < LIMITS.CHAT_TYPING_TIMEOUT_MS);
   }
 
   async clearStaleTyping(classId) {
@@ -114,7 +114,7 @@ class ChatService {
     );
     const now = Date.now();
     const staleIds = stale
-      .filter(r => now - new Date(r.updated_at).getTime() >= 15000)
+      .filter(r => now - new Date(r.updated_at).getTime() >= LIMITS.CHAT_TYPING_STALE_THRESHOLD_MS)
       .map(r => r.user_id);
     for (const id of staleIds) {
       await this.db.query('DELETE FROM chat_typing WHERE class_id = $1 AND user_id = $2', [classId, id]);

@@ -87,12 +87,19 @@ class BackupService {
   }
 
   async remove(name) {
-    const filePath = path.join(this.backupDir, name);
+    const filePath = this._safePath(name);
     await fs.unlink(filePath);
     return { success: true };
   }
 
   getPath(name) {
+    return this._safePath(name);
+  }
+
+  _safePath(name) {
+    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+      throw new Error('Invalid backup name');
+    }
     return path.join(this.backupDir, name);
   }
 }

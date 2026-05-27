@@ -18,18 +18,20 @@
 ## Стек
 
 - **Backend:** Node.js, Express, TypeScript (ts-jest)
-- **Database:** PostgreSQL 16+
+- **Database:** PostgreSQL 16+ (pg Pool: max=20, query_timeout=10s)
 - **Frontend:** Vanilla JS, Chart.js, ESBuild (сборка)
-- **Прокси:** Caddy (авто-SSL, обратный прокси)
+- **Прокси:** Caddy (авто-SSL, обратный прокси, gzip)
 - **Контейнеризация:** Docker / Docker Compose
-- **Тестирование:** Jest + Supertest + testcontainers
+- **Тестирование:** Jest + Supertest + testcontainers (Docker-контейнер на все тесты)
+- **Сжатие:** compression (gzip) — все ответы
+- **Безопасность:** helmet, rate-limit, JWT (HS256 + issuer), защита от path traversal в бэкапах
 
 ## Быстрый старт (локальная разработка)
 
 ### Требования
 
-- Node.js 20+
-- PostgreSQL 16+
+- Node.js 22+
+- PostgreSQL 16+ (или Docker для тестов с testcontainers)
 
 ### Установка
 
@@ -199,29 +201,47 @@ https://school.net.ru/admin-panel
 Основные эндпоинты:
 
 | Метод | Путь | Роль | Описание |
-|---|---|---|---|
-| POST | `/api/auth/login` | — | Вход (JWT в httpOnly cookie + body) |
-| POST | `/api/auth/register` | — | Регистрация |
-| POST | `/api/auth/logout` | любая | Выход |
+|---|---|---|---|---|
+| POST | `/api/login` | — | Вход (JWT + refresh-token) |
+| POST | `/api/register` | — | Регистрация (с кодом для teacher) |
+| POST | `/api/logout` | любая | Выход (аннулирование refresh-token) |
+| POST | `/api/refresh` | — | Обновление access-token |
+| POST | `/api/password/change` | любая | Смена пароля (требуется currentPassword) |
+| POST | `/api/password-reset/request` | — | Запрос сброса пароля (email) |
+| POST | `/api/password-reset/confirm` | — | Подтверждение сброса (id + email + newPassword) |
 | GET | `/api/profile` | любая | Профиль |
 | GET | `/api/classes` | — | Список классов (публичный) |
-| GET/POST | `/api/grades` | teacher+ | Оценки |
-| GET/POST | `/api/schedule` | teacher+ | Расписание |
-| GET/POST | `/api/homework` | teacher+ | ДЗ |
-| GET/POST | `/api/announcements` | teacher+ | Объявления |
-| GET/POST | `/api/chat/:classId` | teacher+ | Чат |
-| GET | `/api/reports/:studentId` | teacher+ | Отчёты |
-| GET | `/api/notifications/stream` | любая | SSE уведомления |
-| GET/POST/PUT/DELETE | `/api/admin/*` | admin | Админ-панель |
+| GET/POST | `/api/grades` | teacher+ | Оценки (+ writeLimiter) |
+| GET/POST | `/api/schedule` | teacher+ | Расписание (+ writeLimiter) |
+| GET/POST/DELETE | `/api/homework` | teacher+ | ДЗ (Zod-валидация) |
+| GET/POST/DELETE | `/api/announcements` | teacher+ | Объявления (Zod-валидация) |
+| GET/POST | `/api/chat/messages` | любая | Чат (+ writeLimiter) |
+| GET | `/api/reports/export` | teacher+ | Отчёты PDF/Excel |
+| GET | `/api/notifications` | любая | Уведомления |
+| GET | `/api/notifications/stream` | любая | SSE в реальном времени |
+| PUT | `/api/notifications/read` | любая | Отметить прочитанными |
+| GET/POST | `/api/admin/*` | admin | Админ-панель |
 
 ## Разработка
 
 ```bash
-# watch-режим frontend
-npm run watch
+# сервер + фронтенд одновременно (tsx watch + esbuild --watch)
+npm run dev:all
 
-# линтер
+# сервер отдельно
+npm run dev
+
+# фронтенд отдельно
+npm run build:dev
+
+# typecheck (без линтинга)
+npm run typecheck
+
+# линтер + typecheck
 npm run lint
+
+# автофикс линтера
+npm run lint:fix
 
 # форматирование
 npm run format
@@ -229,9 +249,32 @@ npm run format
 # тесты (требуется Docker — testcontainers запускает PostgreSQL)
 npm run test
 
+# тесты без логов консоли
+npm run test:silent
+
+# покрытие
+npm run test:coverage
+
 # docker для разработки
 docker compose up -d
 ```
+
+### Отладка в VSCode
+
+В `.vscode/launch.json` три конфигурации:
+- **Dev server** — запуск через tsx
+- **Run tests** — все тесты
+- **Debug current test** — текущий открытый файл
+
+### Структура тестов
+
+| Файл | Тип | Тестов |
+|------|-----|-------|
+| `api.test.js` | Интеграционные (supertest) | login, register, grades, schedule, chat, reports, logout, password change, SSE, Zod-валидация |
+| `middleware.test.js` | Модульные | auth, roles, validate, errorHandler |
+| `services.test.js` | Модульные + БД | CryptoService, NotificationService, GradeService |
+| `services-extra.test.js` | Модульные + БД | AdminService, ScheduleService, asyncHandler |
+| `unit.test.js` | Модульные (без БД) | AppError, BackupService |
 
 ## Структура проекта
 
@@ -244,7 +287,11 @@ docker compose up -d
 │   ├── js/              # Исходники frontend (собираются в dashboard.bundle.js через ESBuild)
 │   ├── admin-panel.html # SPA панель управления
 │   └── dashboard.html   # Основной интерфейс
-├── utils/               # Вспомогательные утилиты (classResolver)
+├── utils/               # Вспомогательные утилиты (AppError, classResolver)
+├── scripts/             # Вспомогательные скрипты (dev.js)
+├── .vscode/             # VSCode debug config (launch.json)
+├── .nvmrc               # Фиксация версии Node.js
+├── .gitattributes       # Нормализация line-endings
 ├── __tests__/           # Тесты (Jest + Supertest + testcontainers)
 ├── backups/             # Резервные копии БД
 ├── server.js            # Точка входа

@@ -8,6 +8,7 @@ const logger = require('../middleware/logger');
 const resolveStudentId = require('../middleware/resolveStudentId');
 const { validate, createGradeSchema } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
+const { writeLimiter } = require('../middleware/rateLimit');
 
 router.use(auth, logger);
 
@@ -20,6 +21,7 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post(
   '/',
   roles('teacher', 'admin'),
+  writeLimiter,
   validate(createGradeSchema),
   asyncHandler(async (req, res) => {
     const { student_id, subject, grade, comment } = req.body;

@@ -57,7 +57,7 @@ describe('auth middleware', () => {
   });
 
   test('valid token → calls next', () => {
-    const token = jwt.sign({ id: '1', role: 'admin' }, config.jwtSecret);
+    const token = jwt.sign({ id: '1', role: 'admin' }, config.jwtSecret, { issuer: 'school-ai' });
     const req = mockReq({ headers: { authorization: `Bearer ${token}` } });
     const res = mockRes();
     const next = mockNext();
@@ -70,7 +70,7 @@ describe('auth middleware', () => {
   });
 
   test('expired token → 401', () => {
-    const token = jwt.sign({ id: '1', role: 'admin' }, config.jwtSecret, { expiresIn: '0s' });
+    const token = jwt.sign({ id: '1', role: 'admin' }, config.jwtSecret, { expiresIn: '0s', issuer: 'school-ai' });
     const req = mockReq({ headers: { authorization: `Bearer ${token}` } });
     const res = mockRes();
     const next = mockNext();

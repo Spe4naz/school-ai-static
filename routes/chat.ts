@@ -8,6 +8,7 @@ const logger = require('../middleware/logger');
 const resolveClass = require('../utils/classResolver');
 const { chatService } = require('../config/container');
 const { ERR, LIMITS } = require('../config/constants');
+const { writeLimiter } = require('../middleware/rateLimit');
 
 router.use(auth, logger);
 
@@ -42,7 +43,7 @@ router.get('/messages', asyncHandler(async (req, res) => {
   res.json({ messages, total: parseInt(total?.count || 0, 10), offset, limit });
 }));
 
-router.post('/messages', asyncHandler(async (req, res) => {
+router.post('/messages', writeLimiter, asyncHandler(async (req, res) => {
   const { content } = req.body;
   if (!content || !content.trim()) {
     return res.status(400).json({ error: 'Сообщение не может быть пустым', code: ERR.EMPTY_MESSAGE });
