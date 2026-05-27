@@ -77,16 +77,16 @@ nano .env
 Минимальное содержимое `.env`:
 
 ```env
-DOMAIN=lumira-server.ru
+DOMAIN=school.net.ru
 NODE_ENV=production
 PORT=3000
-FRONTEND_URL=https://lumira-server.ru
+FRONTEND_URL=https://school.net.ru
 JWT_SECRET=<openssl rand -hex 32>
 DATABASE_URL=postgresql://school:school_pass@db:5432/school
 
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER=noreply@lumira-server.ru
+SMTP_USER=noreply@school.net.ru
 SMTP_PASS=your_password_here
 
 BACKUP_DIR=./backups
@@ -100,7 +100,7 @@ sudo apt update && sudo apt install docker.io docker-compose-v2 -y
 # 4. Открыть порты
 sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
 
-# 5. Убедиться, что A-запись lumira-server.ru ведёт на IP сервера
+# 5. Убедиться, что A-запись school.net.ru ведёт на IP сервера
 
 # 6. Запустить
 docker compose --env-file .env up -d
@@ -109,7 +109,7 @@ docker compose --env-file .env up -d
 docker compose logs -f caddy app
 ```
 
-Сайт будет доступен по `https://lumira-server.ru`.  
+Сайт будет доступен по `https://school.net.ru`.  
 Caddy автоматически выпустит Let's Encrypt SSL-сертификат.
 
 ## Cloudflare Origin CA (если сайт за Cloudflare)
@@ -122,10 +122,10 @@ Caddy автоматически выпустит Let's Encrypt SSL-сертиф
 Cloudflare Dashboard → **SSL/TLS → Origin Server → Create Certificate**  
 Скачать `cert.pem` и `key.pem`, закинуть на сервер в `/etc/caddy/certs/`.
 
-### 2. Caddyfile (`lumira-server.ru`)
+### 2. Caddyfile (`school.net.ru`)
 
 ```caddyfile
-lumira-server.ru {
+school.net.ru {
     tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
 
     reverse_proxy app:3000
@@ -162,7 +162,7 @@ Origin-сертификат действителен 15 лет.
 После входа под администратором — ссылка в сайдбаре, или открыть вручную:
 
 ```
-https://lumira-server.ru/admin-panel
+https://school.net.ru/admin-panel
 ```
 
 Возможности:
@@ -179,19 +179,19 @@ https://lumira-server.ru/admin-panel
 
 | Переменная | Обязательная | По умолчанию | Описание |
 |---|---|---|---|
-| `DOMAIN` | да | — | Домен (для Caddy и писем) |
-| `NODE_ENV` | да | `development` | `development`, `production`, `test` |
-| `PORT` | нет | `3000` | Порт приложения |
-| `FRONTEND_URL` | да | — | URL фронтенда (для ссылок в письмах) |
-| `JWT_SECRET` | да | — | Секрет для JWT (минимум 32 символа) |
-| `BCRYPT_ROUNDS` | нет | `12` | Сложность хеширования паролей |
-| `DATABASE_URL` | да | — | Строка подключения к PostgreSQL |
-| `SMTP_HOST` | для писем | — | SMTP-сервер |
-| `SMTP_PORT` | нет | `587` | Порт SMTP |
-| `SMTP_USER` | для писем | — | Логин SMTP |
-| `SMTP_PASS` | для писем | — | Пароль SMTP |
-| `BACKUP_DIR` | нет | `./backups` | Директория бэкапов |
-| `BACKUP_RETENTION_DAYS` | нет | `7` | Дней хранения бэкапов |
+| `DOMAIN` | да | — | Домен сайта, используется Caddy для авто-SSL и в ссылках писем. Пример: school.net.ru |
+| `NODE_ENV` | да | `development` | Режим: `development` (подробные логи), `production` (минимум логов, кеш), `test` (тесты, изолированная БД) |
+| `PORT` | нет | `3000` | Порт, на котором приложение слушает HTTP-запросы |
+| `FRONTEND_URL` | да | — | Полный URL фронтенда для ссылок в email-письмах. Пример: https://school.net.ru |
+| `JWT_SECRET` | да | — | Секретный ключ подписи JWT. Минимум 32 символа. Генерация: `openssl rand -hex 32` |
+| `BCRYPT_ROUNDS` | нет | `12` | Раундов хеширования bcrypt. Больше = безопаснее, но медленнее |
+| `DATABASE_URL` | да | — | Строка подключения к PostgreSQL. Формат: `postgresql://user:pass@host:port/db` |
+| `SMTP_HOST` | для писем | — | Адрес SMTP-сервера для отправки email. Примеры: `smtp.yandex.ru`, `smtp.gmail.com` |
+| `SMTP_PORT` | нет | `587` | Порт SMTP: `587` (STARTTLS), `465` (SSL) |
+| `SMTP_USER` | для писем | — | Логин SMTP. Обычно email отправителя |
+| `SMTP_PASS` | для писем | — | Пароль SMTP. Для Gmail — пароль приложения |
+| `BACKUP_DIR` | нет | `./backups` | Директория для дампов PostgreSQL (относительный или абсолютный путь) |
+| `BACKUP_RETENTION_DAYS` | нет | `7` | Дней хранения бэкапов. `0` — не удалять никогда |
 
 ## API
 
@@ -252,3 +252,52 @@ docker compose up -d
 ├── Caddyfile            # Конфиг Caddy
 └── .env.example         # Пример переменных окружения
 ```
+
+## Поддерживаемые ОС
+
+| ОС | Статус | Замечания |
+|---|---|---|
+| **Linux** (Ubuntu 20.04+, Debian 11+, CentOS 8+) | ✅ Полная поддержка | Рекомендуемая платформа для продакшна |
+| **Windows** (10/11, Server 2019+) | ✅ Разработка | Через WSL2 или Docker Desktop |
+| **macOS** | ✅ Разработка | Через Docker Desktop |
+
+## Удаление
+
+### Локальная разработка (без Docker)
+
+```bash
+# остановить сервер (Ctrl+C)
+
+# удалить БД
+psql -U postgres -c "DROP DATABASE school;"
+psql -U postgres -c "DROP ROLE school;"
+
+# удалить директорию проекта
+cd ..
+Remove-Item -Recurse -Force school-ai-static  # Windows
+# или
+rm -rf school-ai-static                        # Linux / macOS
+```
+
+### Docker (продакшн)
+
+```bash
+docker compose --env-file .env down -v       # остановить и удалить volumes
+docker rmi school-ai-static-app               # удалить образ
+rm -rf school-ai-static                       # удалить проект
+```
+
+### Полная очистка (все данные)
+
+```bash
+# остановить контейнеры и удалить всё
+docker compose --env-file .env down -v
+docker system prune -a --volumes
+
+# удалить директорию
+cd ..
+rm -rf school-ai-static
+```
+
+> **Внимание:** `down -v` безвозвратно удаляет volume с БД.  
+> Перед удалением сделайте бэкап: `npm run backup` или `docker compose exec app node -e "require('./services/backupService').createBackup()"`
