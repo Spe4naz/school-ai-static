@@ -86,7 +86,7 @@
   "license": "MIT",
   "lint-staged": {
     "*.{ts,js}": [
-      "eslint --fix",
+      "eslint --fix --ignore-pattern public/dashboard.bundle.js",
       "prettier --write"
     ],
     "*.{json,css,html}": [

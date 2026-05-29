@@ -56,23 +56,53 @@ export function showConfirm(message) {
       </div>
     `;
     document.body.appendChild(overlay);
-    overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => { overlay.remove(); resolve(false); });
-    overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => { overlay.remove(); resolve(true); });
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.remove(); resolve(false); } });
+    overlay.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+      overlay.remove();
+      resolve(false);
+    });
+    overlay.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+      overlay.remove();
+      resolve(true);
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        resolve(false);
+      }
+    });
   });
 }
 
-export function getChartInstance() { return window._chartInstance; }
-export function setChartInstance(instance) { window._chartInstance = instance; }
-export function getChatInterval() { return window._chatInterval; }
-export function setChatInterval(interval) { window._chatInterval = interval; }
-export function getChatEncryptionKey() { return window._chatEncryptionKey; }
-export function setChatEncryptionKey(key) { window._chatEncryptionKey = key; }
-export function setRefreshInterval(id, interval) { window['_refresh_' + id] = interval; }
-export function getRefreshInterval(id) { return window['_refresh_' + id]; }
+export function getChartInstance() {
+  return window._chartInstance;
+}
+export function setChartInstance(instance) {
+  window._chartInstance = instance;
+}
+export function getChatInterval() {
+  return window._chatInterval;
+}
+export function setChatInterval(interval) {
+  window._chatInterval = interval;
+}
+export function getChatEncryptionKey() {
+  return window._chatEncryptionKey;
+}
+export function setChatEncryptionKey(key) {
+  window._chatEncryptionKey = key;
+}
+export function setRefreshInterval(id, interval) {
+  window['_refresh_' + id] = interval;
+}
+export function getRefreshInterval(id) {
+  return window['_refresh_' + id];
+}
 export function clearAllIntervals() {
-  const keys = Object.keys(window).filter(k => k.startsWith('_refresh_') || k === '_chatInterval');
-  keys.forEach(k => { clearInterval(window[k]); delete window[k]; });
+  const keys = Object.keys(window).filter((k) => k.startsWith('_refresh_') || k === '_chatInterval');
+  keys.forEach((k) => {
+    clearInterval(window[k]);
+    delete window[k];
+  });
 }
 
 export function escapeHtml(str) {
@@ -87,7 +117,12 @@ export function escapeHtml(str) {
 
 export function safeSetHTML(el, html) {
   if (typeof el === 'string') el = document.getElementById(el);
-  if (el) el.innerHTML = html;
+  if (el) {
+    const tmp = document.createElement('div');
+    tmp.textContent = html;
+    el.innerHTML = '';
+    el.appendChild(tmp);
+  }
 }
 
 export async function apiFetch(url, options = {}) {

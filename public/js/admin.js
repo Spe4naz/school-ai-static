@@ -1,9 +1,4 @@
-import { API, escapeHtml } from './utils.js';
-
-function getRoleLabel(role) {
-  const labels = { admin: 'Админ', teacher: 'Учитель', student: 'Ученик', parent: 'Родитель' };
-  return labels[role] || role;
-}
+import { API, escapeHtml, getRoleLabel, showToast, showConfirm } from './utils.js';
 
 export async function loadUsers() {
   const roleFilter = document.getElementById('userRoleFilter').value;
@@ -11,46 +6,49 @@ export async function loadUsers() {
   if (roleFilter) url += `?role=${roleFilter}`;
 
   try {
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-    });
+    const res = await fetch(url, { credentials: 'same-origin' });
     const users = await res.json();
 
     const tbody = document.querySelector('#usersTable tbody');
-    const classes = await fetch(`${API}/classes`, {
-      credentials: 'same-origin',
-    }).then(r => r.json());
+    const classes = await fetch(`${API}/classes`, { credentials: 'same-origin' }).then((r) => r.json());
 
     const classMap = {};
-    classes.forEach(c => classMap[c.id] = c.name);
+    classes.forEach((c) => (classMap[c.id] = c.name));
 
-    tbody.innerHTML = users.map(u => `
+    tbody.innerHTML = users
+      .map(
+        (u) => `
       <tr>
         <td>${escapeHtml(u.name)}</td>
         <td>${escapeHtml(u.email)}</td>
         <td><span class="role-badge role-${escapeHtml(u.role)}">${escapeHtml(getRoleLabel(u.role))}</span></td>
-        <td>${u.class_id ? (escapeHtml(classMap[u.class_id]) || escapeHtml(u.class_id)) : '—'}</td>
+        <td>${u.class_id ? escapeHtml(classMap[u.class_id]) || escapeHtml(u.class_id) : '—'}</td>
         <td>
-          ${u.role !== 'admin' || users.filter(x => x.role === 'admin').length > 1 ?
-    `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${escapeHtml(u.id)}">Удалить</button>` :
-    '<span style="color:#999; font-size:0.8rem;">Нельзя</span>'}
+          ${
+            u.role !== 'admin' || users.filter((x) => x.role === 'admin').length > 1
+              ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${escapeHtml(u.id)}">Удалить</button>`
+              : '<span style="color:#999; font-size:0.8rem;">Нельзя</span>'
+          }
         </td>
       </tr>
-    `).join('');
+    `,
+      )
+      .join('');
 
-    tbody.querySelectorAll('[data-action="deleteUser"]').forEach(btn => {
+    tbody.querySelectorAll('[data-action="deleteUser"]').forEach((btn) => {
       btn.addEventListener('click', () => deleteUser(btn.dataset.id));
     });
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 export async function loadClassesForUserModal() {
-  const res = await fetch(`${API}/classes`, {
-    credentials: 'same-origin',
-  });
+  const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
   const classes = await res.json();
-  document.getElementById('newUserClass').innerHTML = '<option value="">Без класса</option>' +
-    classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+  document.getElementById('newUserClass').innerHTML =
+    '<option value="">Без класса</option>' +
+    classes.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const roleSelect = document.getElementById('newUserRole');
@@ -75,8 +73,9 @@ export async function createUser(e) {
     email: document.getElementById('newUserEmail').value.trim(),
     password: document.getElementById('newUserPassword').value,
     role: document.getElementById('newUserRole').value,
-    class_id: ['student', 'parent'].includes(document.getElementById('newUserRole').value) ?
-      document.getElementById('newUserClass').value : null,
+    class_id: ['student', 'parent'].includes(document.getElementById('newUserRole').value)
+      ? document.getElementById('newUserClass').value
+      : null,
   };
 
   if (!payload.name || payload.name.length < 2) {
@@ -96,7 +95,7 @@ export async function createUser(e) {
     const data = await res.json();
 
     if (res.ok) {
-      alert('Пользователь создан!');
+      showToast('Пользователь создан', 'success');
       const modal = document.getElementById('userModal');
       if (modal) modal.style.display = 'none';
       const form = document.getElementById('userForm');
@@ -113,7 +112,8 @@ export async function createUser(e) {
 }
 
 export async function deleteUser(userId) {
-  if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
+  const ok = await showConfirm('Удалить пользователя?');
+  if (!ok) return;
 
   try {
     const res = await fetch(`${API}/admin/users/${userId}`, {
@@ -122,11 +122,13 @@ export async function deleteUser(userId) {
     });
 
     if (res.ok) {
-      alert('Пользователь удалён');
+      showToast('Пользователь удалён', 'success');
       loadUsers();
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка удаления');
+      showToast(data.error || 'Ошибка удаления', 'error');
     }
-  } catch (err) { alert('Ошибка сети'); }
+  } catch (err) {
+    showToast('Ошибка сети', 'error');
+  }
 }

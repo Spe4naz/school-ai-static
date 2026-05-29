@@ -217,6 +217,7 @@ class Database {
   }
 
   async seed() {
+    if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'ci') return;
     const { rows } = await this.query('SELECT COUNT(*) as count FROM classes');
     if (Number(rows[0].count) === 0) await this._createSeedData();
   }
@@ -237,42 +238,22 @@ class Database {
       studentId = uuidv4(),
       parentId = uuidv4();
 
-    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
-      uuidv4(),
-      'admin@school.ru',
-      hash,
-      'Админ',
-      'admin',
-      null,
-      null,
-    ]);
-    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
-      teacherId,
-      'teacher@school.ru',
-      hash,
-      'Иванова А.П.',
-      'teacher',
-      null,
-      null,
-    ]);
-    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
-      studentId,
-      'ivan@school.ru',
-      hash,
-      'Петров Иван',
-      'student',
-      c1,
-      null,
-    ]);
-    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
-      parentId,
-      'parent@school.ru',
-      hash,
-      'Петрова Мария',
-      'parent',
-      null,
-      studentId,
-    ]);
+    await this.query(
+      'INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)',
+      [uuidv4(), 'admin@school.ru', hash, 'Админ', 'admin', null, null],
+    );
+    await this.query(
+      'INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)',
+      [teacherId, 'teacher@school.ru', hash, 'Иванова А.П.', 'teacher', null, null],
+    );
+    await this.query(
+      'INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)',
+      [studentId, 'ivan@school.ru', hash, 'Петров Иван', 'student', c1, null],
+    );
+    await this.query(
+      'INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)',
+      [parentId, 'parent@school.ru', hash, 'Петрова Мария', 'parent', null, studentId],
+    );
 
     await this.query(
       'INSERT INTO grades (student_id, teacher_id, subject, grade, comment, date) VALUES ($1,$2,$3,$4,$5,$6)',
@@ -333,4 +314,3 @@ class Database {
 }
 
 module.exports = new Database();
-

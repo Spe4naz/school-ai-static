@@ -14,22 +14,64 @@ import { loadLogs } from './logs.js';
 export function renderDashboard(user) {
   const nav = document.getElementById('navMenu');
   const links = {
-    admin: [['🏠 Главная', 'home'], ['📓 Дневник', 'diary'], ['📋 Задания', 'homework'], ['👤 Профиль', 'profile'], ['📅 Расписание', 'schedule'], ['👥 Пользователи', 'users'], ['📋 Логи', 'logs'], ['🔔 Уведомления', 'notifications']],
-    teacher: [['🏠 Главная', 'home'], ['📓 Дневник', 'diary'], ['📋 Задания', 'homework'], ['👤 Профиль', 'profile'], ['📅 Расписание', 'schedule'], ['👥 Пользователи', 'users']],
-    student: [['🏠 Главная', 'home'], ['📓 Дневник', 'diary'], ['📋 Задания', 'homework'], ['👤 Профиль', 'profile'], ['📈 Графики', 'charts'], ['📅 Расписание', 'schedule'], ['💬 Чат', 'chat'], ['🔔 Уведомления', 'notifications']],
-    parent: [['🏠 Главная', 'home'], ['📓 Дневник', 'diary'], ['📋 Задания', 'homework'], ['👤 Профиль', 'profile'], ['📈 Графики', 'charts'], ['📅 Расписание', 'schedule'], ['💬 Чат', 'chat'], ['🔔 Уведомления', 'notifications']],
+    admin: [
+      ['🏠 Главная', 'home'],
+      ['📓 Дневник', 'diary'],
+      ['📋 Задания', 'homework'],
+      ['👤 Профиль', 'profile'],
+      ['📅 Расписание', 'schedule'],
+      ['👥 Пользователи', 'users'],
+      ['📋 Логи', 'logs'],
+      ['🔔 Уведомления', 'notifications'],
+    ],
+    teacher: [
+      ['🏠 Главная', 'home'],
+      ['📓 Дневник', 'diary'],
+      ['📋 Задания', 'homework'],
+      ['👤 Профиль', 'profile'],
+      ['📅 Расписание', 'schedule'],
+      ['👥 Пользователи', 'users'],
+    ],
+    student: [
+      ['🏠 Главная', 'home'],
+      ['📓 Дневник', 'diary'],
+      ['📋 Задания', 'homework'],
+      ['👤 Профиль', 'profile'],
+      ['📈 Графики', 'charts'],
+      ['📅 Расписание', 'schedule'],
+      ['💬 Чат', 'chat'],
+      ['🔔 Уведомления', 'notifications'],
+    ],
+    parent: [
+      ['🏠 Главная', 'home'],
+      ['📓 Дневник', 'diary'],
+      ['📋 Задания', 'homework'],
+      ['👤 Профиль', 'profile'],
+      ['📈 Графики', 'charts'],
+      ['📅 Расписание', 'schedule'],
+      ['💬 Чат', 'chat'],
+      ['🔔 Уведомления', 'notifications'],
+    ],
   };
-  nav.innerHTML = (links[user.role] || links.student).map(([text, id]) =>
-    `<div class="nav-link" data-page="${id}"><span>${text}</span><span class="nav-badge" id="badge-${id}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`,
-  ).join('');
+  nav.innerHTML = (links[user.role] || links.student)
+    .map(
+      ([text, id]) =>
+        `<div class="nav-link" data-page="${id}"><span>${text}</span><span class="nav-badge" id="badge-${id}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`,
+    )
+    .join('');
 
-  nav.querySelectorAll('.nav-link').forEach(el => {
+  nav.querySelectorAll('.nav-link').forEach((el) => {
     el.addEventListener('click', () => showPage(el.dataset.page));
   });
 
   const sidebarUser = document.getElementById('sidebarUser');
   if (sidebarUser) {
-    const initials = (user.name || '').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    const initials = (user.name || '')
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
     sidebarUser.innerHTML = `
       <div class="sidebar-avatar">${escapeHtml(initials)}</div>
       <div class="sidebar-user-info">
@@ -40,13 +82,17 @@ export function renderDashboard(user) {
 }
 
 export function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
   const page = document.getElementById(id);
   if (page) page.classList.add('active');
   if (id === 'profile') loadProfile();
   if (id === 'notifications') loadNotifications();
   if (id === 'homework') loadHomeworks();
-  if (id === 'home') { loadAnnouncements(); loadStats(); loadSchedule(); }
+  if (id === 'home') {
+    loadAnnouncements();
+    loadStats();
+    loadSchedule();
+  }
   if (id === 'logs') loadLogs();
 }
 
@@ -54,11 +100,11 @@ export function logout() {
   clearAllIntervals();
   localStorage.removeItem('user');
   const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
     if (key.startsWith('chatKey_')) keys.push(key);
   }
-  keys.forEach(k => localStorage.removeItem(k));
+  keys.forEach((k) => sessionStorage.removeItem(k));
   fetch(`${API}/logout`, { method: 'POST', credentials: 'same-origin' }).finally(() => {
     location.href = '/';
   });
@@ -72,10 +118,16 @@ async function checkUnreadNotifications() {
     const data = await res.json();
     const badge = document.getElementById('badge-notifications');
     if (badge) {
-      if (data.unread > 0) { badge.textContent = data.unread > 99 ? '99+' : data.unread; badge.style.display = 'inline'; }
-      else { badge.style.display = 'none'; }
+      if (data.unread > 0) {
+        badge.textContent = data.unread > 99 ? '99+' : data.unread;
+        badge.style.display = 'inline';
+      } else {
+        badge.style.display = 'none';
+      }
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 export function initDashboard() {
@@ -121,8 +173,10 @@ export function initDashboard() {
   }
 
   setInterval(checkUnreadNotifications, 15000);
-  // SSE real-time notifications
-  if (typeof EventSource !== 'undefined') {
+  // SSE real-time notifications with reconnect
+  let esReconnectTimer = null;
+  function connectSSE() {
+    if (typeof EventSource === 'undefined') return;
     const es = new EventSource(`${API}/notifications/stream`);
     es.onmessage = (e) => {
       try {
@@ -131,33 +185,59 @@ export function initDashboard() {
           checkUnreadNotifications();
           if (document.getElementById('notifications')?.classList.contains('active')) loadNotifications();
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     };
-    es.onerror = () => es.close();
+    es.onerror = () => {
+      es.close();
+      if (esReconnectTimer) clearTimeout(esReconnectTimer);
+      esReconnectTimer = setTimeout(connectSSE, 5000);
+    };
   }
-  setRefreshInterval('notif', setInterval(() => {
-    if (document.getElementById('notifications')?.classList.contains('active')) loadNotifications();
-  }, 30000));
-  setRefreshInterval('stats', setInterval(() => {
-    const home = document.getElementById('home')?.classList.contains('active');
-    if (home) { loadStats(); loadSchedule(); loadAnnouncements(); }
-  }, 30000));
-  setRefreshInterval('grades', setInterval(() => {
-    if (document.getElementById('diary')?.classList.contains('active')) loadGrades();
-  }, 30000));
+  connectSSE();
+  setRefreshInterval(
+    'notif',
+    setInterval(() => {
+      if (document.getElementById('notifications')?.classList.contains('active')) loadNotifications();
+    }, 30000),
+  );
+  setRefreshInterval(
+    'stats',
+    setInterval(() => {
+      const home = document.getElementById('home')?.classList.contains('active');
+      if (home) {
+        loadStats();
+        loadSchedule();
+        loadAnnouncements();
+      }
+    }, 30000),
+  );
+  setRefreshInterval(
+    'grades',
+    setInterval(() => {
+      if (document.getElementById('diary')?.classList.contains('active')) loadGrades();
+    }, 30000),
+  );
 
   document.getElementById('weekPrev')?.addEventListener('click', () => shiftWeek(-1));
   document.getElementById('weekNext')?.addEventListener('click', () => shiftWeek(1));
   document.getElementById('weekToday')?.addEventListener('click', () => resetWeek());
 
-  document.querySelectorAll('[data-action]').forEach(el => {
+  document.querySelectorAll('[data-action]').forEach((el) => {
     const action = el.dataset.action;
     if (action === 'logout') {
       el.addEventListener('click', logout);
     } else if (action === 'openModal') {
-      el.addEventListener('click', () => { const m = document.getElementById(el.dataset.modal); if (m) m.style.display = 'flex'; });
+      el.addEventListener('click', () => {
+        const m = document.getElementById(el.dataset.modal);
+        if (m) m.style.display = 'flex';
+      });
     } else if (action === 'closeModal') {
-      el.addEventListener('click', () => { const m = document.getElementById(el.dataset.modal); if (m) m.style.display = 'none'; });
+      el.addEventListener('click', () => {
+        const m = document.getElementById(el.dataset.modal);
+        if (m) m.style.display = 'none';
+      });
     } else if (action === 'filterGrades') {
       el.addEventListener('change', () => loadGrades(el.value));
     } else if (action === 'filterSchedule') {
@@ -208,7 +288,12 @@ export function initDashboard() {
   const imageInput = document.getElementById('imageInput');
   if (attachBtn && imageInput) {
     attachBtn.addEventListener('click', () => imageInput.click());
-    imageInput.addEventListener('change', (e) => { if (e.target.files[0]) { sendImage(e.target.files[0]); e.target.value = ''; } });
+    imageInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        sendImage(e.target.files[0]);
+        e.target.value = '';
+      }
+    });
   }
 
   document.addEventListener('click', (e) => {
@@ -229,12 +314,16 @@ export function initDashboard() {
   if (themeToggle) {
     const isDark = localStorage.getItem('theme') === 'dark';
     if (isDark) document.body.classList.add('dark');
-    themeToggle.innerHTML = isDark ? '<i class="bx bx-sun"></i> Светлая тема' : '<i class="bx bx-moon"></i> Тёмная тема';
+    themeToggle.innerHTML = isDark
+      ? '<i class="bx bx-sun"></i> Светлая тема'
+      : '<i class="bx bx-moon"></i> Тёмная тема';
     themeToggle.addEventListener('click', () => {
       document.body.classList.toggle('dark');
       const dark = document.body.classList.contains('dark');
       localStorage.setItem('theme', dark ? 'dark' : 'light');
-      themeToggle.innerHTML = dark ? '<i class="bx bx-sun"></i> Светлая тема' : '<i class="bx bx-moon"></i> Тёмная тема';
+      themeToggle.innerHTML = dark
+        ? '<i class="bx bx-sun"></i> Светлая тема'
+        : '<i class="bx bx-moon"></i> Тёмная тема';
     });
   }
 }

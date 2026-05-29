@@ -1,7 +1,5 @@
 # Безопасность
 
-Обзор мер безопасности проекта School AI.
-
 ---
 
 ## Обзор
@@ -13,13 +11,14 @@
 │  1. Сеть:       Caddy (SSL, HSTS, безопасные заголовки)
 │  2. Авторизация: JWT в httpOnly cookies             │
 │  3. Данные:     bcrypt (8+ символов + сложность)   │
-│  4. Валидация:  Zod-схемы для всех входных данных  │
+│  4. Валидация:  Zod-схемы + sanitizeEnvValue       │
 │  5. Rate-limit: IP + per-user лимиты               │
 │  6. SQL:        Параметризованные запросы           │
 │  7. XSS:        escapeHtml + CSP nonces + Helmet    │
 │  8. Cookie:     httpOnly + sameSite: strict         │
-│  9. Кэш:        In-memory TTL                      │
-│ 10. Логирование: Pino (structured JSON)            │
+│  9. Docker:     execFile + whitelist валидация     │
+│ 10. Кэш:        In-memory TTL                      │
+│ 11. Логирование: Pino (structured JSON)            │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -45,6 +44,32 @@
 
 - **Хеширование**: bcrypt (12 раундов в production)
 - **Минимум**: 8 символов + строчные + заглавные + цифры
+
+---
+
+## Command Injection Prevention
+
+DockerService использует `execFile` вместо `exec` с шаблонными строками:
+
+```javascript
+// Безопасно (execFile с массивом аргументов):
+this._exec('start', [name]);
+
+// Небезопасно (было):
+exec(`docker start ${name}`);
+```
+
+Все имена контейнеров валидируются regex `^[a-zA-Z0-9._-]+$`.
+
+---
+
+## Setup Wizard Security
+
+- **Санитизация .env**: значения очищаются от `\n`, `"`, `'`, `` ` ``
+- **Валидация домена**: regex `^[a-zA-Z0-9.-]+$`
+- **Пароль БД**: генерируется автоматически (`crypto.randomBytes`)
+- **JWT_SECRET**: генерируется автоматически
+- **Creds файл**: `.setup-creds.json` удаляется после первого входа
 
 ---
 
@@ -77,8 +102,6 @@ HTML-файлы отдаются через маршруты с инъекцие
 
 ## Кэширование
 
-In-memory TTL-кэш (`utils/cache.ts`):
-
 | Данные | TTL | Инвалидация |
 |--------|-----|-------------|
 | Classes | 5 мин | При create/update/delete |
@@ -87,20 +110,16 @@ In-memory TTL-кэш (`utils/cache.ts`):
 
 ---
 
-## Логирование (Pino)
+## Chat Keys
 
-```javascript
-logger.info({ method, path, status, duration, ip, userId })
-```
-
-Production: `warn` | Development: `info` | Test: `silent`
+Ключи шифрования хранятся в `sessionStorage` (не `localStorage`) — при закрытии вкладки ключи удаляются.
 
 ---
 
 ## Graceful Shutdown
 
 При SIGTERM/SIGINT:
-1. SSE-клиентам отправляется shutdown event
+1. SSE-клиентам отправляется `{"type":"shutdown"}`
 2. Все SSE-соединения закрываются
 3. HTTP-сервер завершает работу
 4. Пул БД закрывается

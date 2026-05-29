@@ -1,6 +1,6 @@
 # Тестирование
 
-Jest + Supertest + testcontainers. 164 теста, покрытие мин. 50%.
+Jest + Supertest + testcontainers. 222 теста, покрытие мин. 50%.
 
 ---
 
@@ -21,11 +21,12 @@ npm run test:ci         # CI-режим
 
 | Файл | Тестов | Покрытие |
 |------|--------|----------|
-| `api.test.js` | 50 | Auth, register, CRUD, chat, reports, SSE, cookie auth, password complexity, refresh token |
+| `api.test.js` | 50 | Auth, register, CRUD, chat, reports, SSE, cookie auth, password complexity |
+| `api-extended.test.js` | 58 | Setup wizard, System API (Docker, status, logs), Schedule CRUD, Grades create, Homework/Announcement delete, Notifications, Profile, Reports, Login case-insensitive |
 | `middleware.test.js` | 33 | Auth (Bearer/cookie/precedence), roles, validate, errorHandler, requireAuth |
 | `services.test.js` | 22 | Crypto, Notification, GradeService (SQL stats), Cache utility |
-| `services-extra.test.js` | | AdminService (кэш), ScheduleService, Homework, Announcement, asyncHandler |
-| `unit.test.js` | 20 | AppError, BackupService (_safePath), Cache utility |
+| `services-extra.test.js` | 33 | AdminService (cache invalidation), ScheduleService (cache), UserService, ChatService, Homework, Announcement, asyncHandler, DockerService |
+| `unit.test.js` | 28 | AppError, BackupService (_safePath + null bytes), Cache utility, DockerService |
 
 ---
 
@@ -34,50 +35,49 @@ npm run test:ci         # CI-режим
 ### api.test.js
 
 - Health check (status ok, без uptime)
-- Login (все роли, cookie auth, token не в body, неверные данные)
-- Регистрация (ученик, учитель с кодом, неверный код, дубликат email)
+- Login (все роли, cookie auth, token не в body, неверные данные, case-insensitive email)
+- Регистрация (ученик, учитель с кодом, неверный код, дубликат email, parent linked_student_email)
 - Публичные эндпоинты (classes)
 - Защищённые эндпоинты (grades, schedule, students, stats)
-- Профиль (данные без password)
+- Профиль (данные без password, разные роли)
 - Чат (сообщения, ключ, участники)
-- Домашние задания (CRUD)
-- Объявления (CRUD)
-- Отчёты (PDF, Excel, неверный тип)
-- Оценки (roles, валидация)
+- Домашние задания (CRUD, delete)
+- Объявления (CRUD, delete)
+- Отчёты (PDF, Excel, с class_id)
+- Оценки (create success, roles, валидация)
 - Сброс пароля (неизвестный email, неверный id)
 - Смена пароля (успех, неверный пароль, без токена, сложность)
 - Выход (с refresh-токеном, без)
 - Refresh token (без токена, невалидный)
 - 404 для неизвестных путей
 
-### middleware.test.js
+### api-extended.test.js
 
-- Auth (нет токена, Bearer, cookie, приоритет Bearer > cookie, истёкший, невалидный)
-- Roles (разрешён, запрещён, нет пользователя, несколько ролей)
-- Validate (login, register, grade схемы, email normalisation, html sanitization)
-- ErrorHandler (23505, AppError, ValidationError, JsonWebTokenError, generic, dev mode)
-- RequireAuth factory
-
-### services.test.js
-
-- CryptoService (generateKey, roundtrip, wrong key, invalid format, hash, unicode, empty)
-- NotificationService (create, list, markAsRead, unreadCount, limit)
-- GradeService (getStats SQL, empty class, getProgress, getSubjects)
-- Cache utility (set/get, expired, invalidate, invalidatePrefix, TTL, complex objects, overwrite)
+- Setup wizard (status, config, apply validation, generate-secret)
+- System API (status, containers, config, logs, backups — admin only)
+- Schedule CRUD (create, delete, student → 403)
+- Grades create (teacher success)
+- Homework/Announcement delete (non-existent → 404, teacher → 403)
+- Notifications mark-as-read
+- Reports с class_id
+- Login case-insensitive
+- Parent linked_student_email
 
 ### services-extra.test.js
 
-- AdminService (listClasses + cache, listStudents, listUsers + filter + search, getStats, deleteUser, createClass, getSettings, listRegistrationCodes, listLogs)
-- ScheduleService (list admin/teacher, cache, create)
-- HomeworkService (list, create)
-- AnnouncementService (list, create)
-- asyncHandler (error catch, success, sync error)
+- AdminService (cache hit/invalidation, CRUD, settings, logs)
+- ScheduleService (cache, create invalidates cache)
+- UserService (findByEmail, findById, createRefreshToken, consumeRefreshToken, invalidateAllRefreshTokens, getProfile, validateRegistrationCode)
+- ChatService (getOrCreateClassKey idempotent, clearStaleTyping)
+- DockerService (isAvailable, getDockerInfo, getContainers, getContainer non-existent)
+- asyncHandler
 
 ### unit.test.js
 
-- AppError (create, instanceof, stack, multiple)
-- BackupService (constructor, defaults, _safePath traversal × 3, valid path)
-- Cache utility (set/get, missing, expired, invalidate, invalidatePrefix, TTL values, complex objects, overwrite)
+- AppError (create, instanceof, stack, throw/catch)
+- BackupService (constructor, defaults, _safePath: .., /, \, null bytes, valid)
+- Cache utility (set/get, missing, expired, invalidate, invalidatePrefix, TTL, complex objects, overwrite, null, undefined, empty string, zero, false)
+- DockerService (isAvailable, getDockerInfo, getContainers, getContainer)
 
 ---
 
@@ -115,7 +115,6 @@ describe('My Feature', () => {
 ## Конфигурация Jest
 
 ```javascript
-// jest.config.js
 module.exports = {
   testEnvironment: 'node',
   globalSetup: './__tests__/globalSetup.js',

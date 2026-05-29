@@ -64,7 +64,7 @@ Backend:   Node.js + Express + TypeScript
 Database:  PostgreSQL 16
 Frontend:  Vanilla JS (ES Modules) + Chart.js
 Proxy:     Caddy (авто-SSL)
-Тесты:     Jest + Supertest + Testcontainers (164 теста)
-Деплой:    Docker + Docker Compose
-Безопасность: helmet + CSP nonces, JWT в httpOnly cookies, rate-limit
+Тесты:     Jest + Supertest + Testcontainers (222 теста)
+Деплой:    Docker + Docker Compose (install.sh — 3x-ui стиль)
+Безопасность: helmet + CSP nonces, JWT в httpOnly cookies, rate-limit, execFile для Docker
 ```
