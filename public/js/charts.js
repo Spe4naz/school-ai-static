@@ -8,7 +8,7 @@ export async function loadChart(subject, period) {
 
   try {
     const res = await fetch(`${API}/grades/progress?subject=${subj}&period=${per}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const data = await res.json();
 
@@ -56,7 +56,7 @@ export async function loadChart(subject, period) {
 
 export async function loadSubjectsForChart() {
   try {
-    const res = await fetch(`${API}/grades/subjects`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/grades/subjects`, { credentials: 'same-origin' });
     const subjects = await res.json();
     const select = document.getElementById('chartSubject');
     select.innerHTML = '<option value="all">Все предметы</option>' +
@@ -66,7 +66,7 @@ export async function loadSubjectsForChart() {
 
 export async function loadStats() {
   try {
-    const res = await fetch(`${API}/grades`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/grades`, { credentials: 'same-origin' });
     const grades = await res.json();
     if (grades.length > 0) {
       const avg = (grades.reduce((a, b) => a + b.grade, 0) / grades.length).toFixed(1);

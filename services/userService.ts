@@ -124,6 +124,10 @@ class UserService {
     await this.db.query('UPDATE refresh_tokens SET used = 1 WHERE id = $1', [record.id]);
     return { user_id: record.user_id };
   }
+
+  async invalidateAllRefreshTokens(userId) {
+    await this.db.query('UPDATE refresh_tokens SET used = 1 WHERE user_id = $1 AND used = 0', [userId]);
+  }
 }
 
 module.exports = UserService;

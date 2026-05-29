@@ -37,8 +37,7 @@ GET /api/health
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-01-15T10:00:00.000Z",
-  "uptime": 123.456
+  "timestamp": "2025-01-15T10:00:00.000Z"
 }
 ```
 
@@ -77,8 +76,6 @@ POST /api/login
 **Ответ**:
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIs...",
-  "refreshToken": "a1b2c3d4e5f6...",
   "user": {
     "id": "uuid",
     "name": "Админ",
@@ -88,6 +85,8 @@ POST /api/login
   }
 }
 ```
+
+Токены (access + refresh) устанавливаются как **httpOnly cookies** и не передаются в JSON-ответе.
 
 **Rate limit**: 5 запросов / 15 минут на IP
 
@@ -130,7 +129,7 @@ POST /api/register
 }
 ```
 
-**Ответ**: `{ "token", "refreshToken", "user" }` (аналогично входу)
+**Ответ**: `{ "user": { ... } }` (токены в httpOnly cookies)
 
 **Rate limit**: 3 запроса / 1 час на IP
 
@@ -140,7 +139,9 @@ POST /api/register
 POST /api/refresh
 ```
 
-**Body**:
+Refresh token передаётся в теле запроса или через httpOnly cookie.
+
+**Body** (опционально — если не в cookie):
 ```json
 {
   "refreshToken": "старый refreshToken"
@@ -150,10 +151,13 @@ POST /api/refresh
 **Ответ**:
 ```json
 {
-  "token": "новый accessToken",
-  "refreshToken": "новый refreshToken"
+  "success": true
 }
 ```
+
+Новые токены устанавливаются как httpOnly cookies.
+
+**Rate limit**: 10 запросов / 15 минут на IP
 
 ### Сброс пароля -- запрос
 
@@ -205,7 +209,9 @@ POST /api/password-reset/confirm
 POST /api/logout
 ```
 
-**Body**:
+Refresh token передаётся в теле запроса или через httpOnly cookie. Обе cookies очищаются.
+
+**Body** (опционально):
 ```json
 {
   "refreshToken": "токен для удаления"
@@ -215,6 +221,7 @@ POST /api/logout
 **Ответ**:
 ```json
 {
+  "success": true,
   "message": "Выход выполнен"
 }
 ```
@@ -227,18 +234,21 @@ POST /api/password/change
 
 **Требуется авторизация**.
 
+При смене пароля все refresh-токены пользователя аннулируются. Cookies очищаются.
+
 **Body**:
 ```json
 {
   "currentPassword": "старый пароль",
-  "newPassword": "новый пароль"
+  "newPassword": "новый пароль (мин. 8 символов, строчные + заглавные + цифры)"
 }
 ```
 
 **Ответ**:
 ```json
 {
-  "message": "Пароль успешно изменён"
+  "success": true,
+  "message": "Пароль изменён. Войдите заново."
 }
 ```
 
@@ -520,6 +530,7 @@ POST /api/chat/upload
 **Ограничения**:
 - Максимум 5 МБ
 - Форматы: jpg, png, gif, webp
+- Rate-limit: 10 загрузок / 10 минут
 
 **Ответ**:
 ```json
@@ -698,6 +709,11 @@ GET /api/notifications/stream
 
 Устанавливает long-lived SSE-соединение. Сервер отправляет heartbeat каждые 15 секунд.
 
+**Ограничения**:
+- CORS ограничен до `FRONTEND_URL`
+- Максимум 3 соединения на пользователя
+- Требуется httpOnly cookie с access token
+
 **Формат событий**:
 ```
 event: notification
@@ -834,12 +850,16 @@ GET /api/admin/settings
 |------|-----|----------|
 | 400 | `MISSING_FIELDS` | Не все обязательные поля заполнены |
 | 400 | `INVALID_EMAIL` | Неверный формат email |
-| 400 | `WEAK_PASSWORD` | Слишком простой пароль (мин. 6 символов) |
+| 400 | `WEAK_PASSWORD` | Пароль менее 8 символов или не соответствует требованиям сложности |
 | 400 | `INVALID_GRADE` | Оценка вне диапазона 2-5 |
-| 401 | `UNAUTHORIZED` | Токен отсутствует или невалиден |
+| 400 | `VALIDATION_ERROR` | Ошибка валидации параметра (например, невалидный UUID) |
+| 401 | `AUTH_REQUIRED` | Токен отсутствует |
+| 401 | `TOKEN_EXPIRED` | Токен истёк (нужен refresh) |
+| 401 | `INVALID_TOKEN` | Невалидный refresh-токен |
 | 403 | `FORBIDDEN` | Нет прав для выполнения операции |
-| 404 | `USER_NOT_FOUND` | Пользователь не найден |
+| 403 | `TOKEN_INVALID` | Невалидный access-токен |
+| 404 | `NOT_FOUND` | Пользователь или ресурс не найден |
 | 409 | `EMAIL_EXISTS` | Email уже зарегистрирован |
-| 409 | `UNIQUE_VIOLATION` | Нарушение уникальности (PostgreSQL 23505) |
-| 429 | `TOO_MANY_REQUESTS` | Превышен rate-limit |
+| 409 | `CONFLICT` | Нарушение уникальности (PostgreSQL 23505) |
+| 429 | `RATE_LIMITED` | Превышен rate-limit |
 | 500 | `INTERNAL_ERROR` | Внутренняя ошибка сервера |

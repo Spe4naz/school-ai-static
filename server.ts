@@ -1,21 +1,26 @@
 require('dotenv').config();
 
-const REQUIRED_ENV = ['JWT_SECRET'];
+const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
 const MISSING_ENV = REQUIRED_ENV.filter(k => !process.env[k]);
 if (MISSING_ENV.length > 0) {
   console.error(`FATAL: Missing required environment variables: ${MISSING_ENV.join(', ')}`);
   process.exit(1);
 }
 
-const RECOMMENDED_ENV = ['DATABASE_URL', 'SMTP_HOST', 'SMTP_PORT', 'SMTP_USER'];
+const RECOMMENDED_ENV = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER'];
 const MISSING_REC = RECOMMENDED_ENV.filter(k => !process.env[k]);
 if (MISSING_REC.length > 0 && process.env.NODE_ENV === 'production') {
   console.warn(`WARNING: Missing recommended env vars in production: ${MISSING_REC.join(', ')}`);
 }
 
-const DEFAULT_SECRETS = ['dev_secret_key_change_in_production', 'change_this_in_production_please_12345'];
+const DEFAULT_SECRETS = ['dev_secret_key_change_in_production', 'change_this_in_production_please_12345', 'change_this_to_a_secure_random_string_please'];
 if (DEFAULT_SECRETS.includes(process.env.JWT_SECRET)) {
   console.error('FATAL: JWT_SECRET is set to a known default value. Change it immediately.');
+  process.exit(1);
+}
+
+if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be at least 32 characters long.');
   process.exit(1);
 }
 
@@ -25,6 +30,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const cron = require('node-cron');
 const cookieParser = require('cookie-parser');
+const crypto = require('crypto');
 
 const db = require('./config/database');
 const errorHandler = require('./middleware/errorHandler');
@@ -50,12 +56,18 @@ app.set('trust proxy', 1);
 app.use(compression());
 app.use(cookieParser());
 
+// CSP nonce middleware
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://unpkg.com'],
+      scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`, 'https://cdn.jsdelivr.net', 'https://unpkg.com'],
       styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'data:', 'https://unpkg.com', 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:', 'blob:'],
@@ -75,15 +87,67 @@ app.use(express.static(path.join(__dirname, 'public'), {
       res.setHeader('Cache-Control', 'no-cache');
     }
   },
+  index: false,
 }));
 
-// Admin panel - SPA (auth handled client-side)
+// Serve HTML files with CSP nonce injection
+app.get('/', (req, res) => {
+  const nonce = res.locals.cspNonce;
+  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/dashboard.html', (req, res) => {
+  const nonce = res.locals.cspNonce;
+  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'dashboard.html'), 'utf8');
+  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/register.html', (req, res) => {
+  const nonce = res.locals.cspNonce;
+  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'register.html'), 'utf8');
+  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+app.get('/reset-password.html', (req, res) => {
+  const nonce = res.locals.cspNonce;
+  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'reset-password.html'), 'utf8');
+  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
+});
+
+// Admin panel - SPA with server-side auth check
 app.get('/admin-panel', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin-panel.html'));
+  const jwt = require('jsonwebtoken');
+  const config = require('./config/auth');
+  const token = req.cookies?.token;
+  if (!token) {
+    return res.redirect('/');
+  }
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
+    if (decoded.role !== 'admin') {
+      return res.redirect('/');
+    }
+  } catch {
+    return res.redirect('/');
+  }
+  const nonce = res.locals.cspNonce;
+  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'admin-panel.html'), 'utf8');
+  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
+  res.setHeader('Content-Type', 'text/html');
+  res.send(html);
 });
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), uptime: process.uptime() });
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 app.use('/api', apiLimiter);

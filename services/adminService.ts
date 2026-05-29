@@ -167,14 +167,23 @@ class AdminService {
   }
 
   async getSettings() {
+    const dbUrl = process.env.DATABASE_URL || '';
+    let dbHost = 'localhost';
+    let dbPort = 5432;
+    try {
+      const url = new URL(dbUrl);
+      dbHost = url.hostname;
+      dbPort = parseInt(url.port, 10) || 5432;
+    } catch {}
+
     return {
       nodeEnv: process.env.NODE_ENV || 'development',
       frontendUrl: process.env.FRONTEND_URL || '',
-      smtpHost: process.env.SMTP_HOST || '',
+      smtpHost: process.env.SMTP_HOST ? '***configured***' : 'not configured',
       backupDir: process.env.BACKUP_DIR || './backups',
       backupRetention: parseInt(process.env.BACKUP_RETENTION_DAYS || '7', 10),
-      dbHost: process.env.DB_HOST || 'localhost',
-      dbPort: parseInt(process.env.DB_PORT || '5432', 10),
+      dbHost,
+      dbPort,
     };
   }
 }

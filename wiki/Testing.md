@@ -99,9 +99,9 @@ describe('Auth', () => {
       .send({ email: 'admin@school.ru', password: '123456' });
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty('token');
-    expect(res.body).toHaveProperty('refreshToken');
+    expect(res.body).toHaveProperty('user');
     expect(res.body.user.role).toBe('admin');
+    // Токены установлены как httpOnly cookies
   });
 
   it('should reject invalid password', async () => {
@@ -255,19 +255,18 @@ afterAll(async () => {
 });
 
 describe('My Feature', () => {
-  let authToken;
+  let agent;
 
   beforeAll(async () => {
-    const res = await request(app)
+    agent = request.agent(app);
+    await agent
       .post('/api/login')
       .send({ email: 'admin@school.ru', password: '123456' });
-    authToken = res.body.token;
   });
 
   it('should do something', async () => {
-    const res = await request(app)
-      .get('/api/my-endpoint')
-      .set('Authorization', `Bearer ${authToken}`);
+    const res = await agent
+      .get('/api/my-endpoint');
 
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('data');
@@ -277,8 +276,9 @@ describe('My Feature', () => {
 
 ### Советы
 
-- Используйте `beforeAll` для авторизации (получите токен один раз)
+- Используйте `request.agent(app)` для сохранения cookies между запросами
 - Каждый тест должен быть независимым (не зависит от других)
 - Используйте `describe` для группировки по функциональности
 - Тестируйте как успех, так и ошибки
 - Используйте `global.__DB__` для прямых запросов к БД в тестах
+- Bearer-авторизация по-прежнему поддерживается для тестирования API-клиентов

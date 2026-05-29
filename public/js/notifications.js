@@ -2,7 +2,7 @@ import { API, escapeHtml } from './utils.js';
 
 export async function loadNotifications() {
   try {
-    const res = await fetch(`${API}/notifications`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/notifications`, { credentials: 'same-origin' });
     const notifs = await res.json();
     const list = document.getElementById('notifList');
 

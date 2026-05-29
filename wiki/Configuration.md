@@ -14,7 +14,7 @@
 | `NODE_ENV` | Режим: `development`, `production`, `test`, `ci` | `development` |
 | `JWT_SECRET` | Секрет для подписи JWT (мин. 32 символа) | `my-super-secret-key-123` |
 | `DATABASE_URL` | Строка подключения PostgreSQL | `postgresql://user:pass@localhost:5432/db` |
-| `FRONTEND_URL` | Полный URL фронтенда (для email-ссылок) | `https://school.example.com` |
+| `FRONTEND_URL` | Полный URL фронтенда (для email-ссылок и CORS) | `https://school.example.com` |
 
 ### Опциональные
 

@@ -12,13 +12,13 @@ export async function loadUsers() {
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const users = await res.json();
 
     const tbody = document.querySelector('#usersTable tbody');
     const classes = await fetch(`${API}/classes`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     }).then(r => r.json());
 
     const classMap = {};
@@ -46,7 +46,7 @@ export async function loadUsers() {
 
 export async function loadClassesForUserModal() {
   const res = await fetch(`${API}/classes`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    credentials: 'same-origin'
   });
   const classes = await res.json();
   document.getElementById('newUserClass').innerHTML = '<option value="">Без класса</option>' +
@@ -88,7 +88,8 @@ export async function createUser(e) {
   try {
     const res = await fetch(`${API}/admin/users`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify(payload)
     });
 
@@ -117,7 +118,7 @@ export async function deleteUser(userId) {
   try {
     const res = await fetch(`${API}/admin/users/${userId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
 
     if (res.ok) {

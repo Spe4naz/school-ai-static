@@ -71,12 +71,12 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
+            credentials: 'same-origin',
           });
 
           const data = await res.json();
 
-          if (data.token) {
-            localStorage.setItem('token', data.token);
+          if (res.ok && data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
             window.location.href = '/dashboard.html';
           } else {

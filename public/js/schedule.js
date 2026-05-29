@@ -11,7 +11,7 @@ export async function loadSchedule(classId = '') {
   if (classId) url += `?class_id=${classId}`;
 
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(url, { credentials: 'same-origin' });
     const schedule = await res.json();
 
     const byDay = {};
@@ -62,7 +62,7 @@ export async function loadClassesForSchedule() {
   const modalSelect = document.getElementById('scheduleClass');
 
   try {
-    const res = await fetch(`${API}/classes`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
     const classes = await res.json();
 
     if (filterSelect) {
@@ -101,7 +101,8 @@ export async function createSchedule(e) {
   try {
     const res = await fetch(`${API}/schedule`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify(payload)
     });
 
@@ -130,7 +131,7 @@ export async function deleteSchedule(id) {
   try {
     const res = await fetch(`${API}/schedule/${id}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
 
     if (res.ok) {

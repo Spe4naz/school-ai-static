@@ -28,6 +28,7 @@ router.get('/unread-count', asyncHandler(async (req, res) => {
 
 // SSE endpoint for real-time notifications
 const sseClients = new Map();
+const SSE_MAX_CONNECTIONS_PER_USER = 3;
 
 router.get('/stream', (req, res) => {
   let token = req.cookies?.token;
@@ -36,11 +37,21 @@ router.get('/stream', (req, res) => {
     const jwt = require('jsonwebtoken');
     const config = require('../config/auth');
     const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
+
+    // Limit SSE connections per user
+    const existingClients = sseClients.get(decoded.id) || [];
+    if (existingClients.length >= SSE_MAX_CONNECTIONS_PER_USER) {
+      // Close oldest connection
+      const oldest = existingClients.shift();
+      if (oldest && !oldest.destroyed) oldest.end();
+    }
+
+    const allowedOrigin = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': allowedOrigin,
     });
     res.write('data: {"connected":true}\n\n');
 

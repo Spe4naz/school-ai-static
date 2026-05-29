@@ -6,8 +6,8 @@ export async function loadProfile() {
 
   try {
     const [profileRes, gradesRes] = await Promise.all([
-      fetch(`${API}/profile`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-      fetch(`${API}/grades`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
+      fetch(`${API}/profile`, { credentials: 'same-origin' }),
+      fetch(`${API}/grades`, { credentials: 'same-origin' }),
     ]);
 
     const profile = await profileRes.json();

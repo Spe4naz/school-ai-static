@@ -59,7 +59,6 @@ export function showPage(id) {
 
 export function logout() {
   clearAllIntervals();
-  localStorage.removeItem('token');
   localStorage.removeItem('user');
   const keys = [];
   for (let i = 0; i < localStorage.length; i++) {
@@ -67,13 +66,15 @@ export function logout() {
     if (key.startsWith('chatKey_')) keys.push(key);
   }
   keys.forEach(k => localStorage.removeItem(k));
-  location.href = '/';
+  fetch(`${API}/logout`, { method: 'POST', credentials: 'same-origin' }).finally(() => {
+    location.href = '/';
+  });
 }
 
 async function checkUnreadNotifications() {
   try {
     const res = await fetch(`${API}/notifications/unread-count`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const data = await res.json();
     const badge = document.getElementById('badge-notifications');
@@ -85,10 +86,9 @@ async function checkUnreadNotifications() {
 }
 
 export function initDashboard() {
-  const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-  if (!token) {
+  if (!user.id) {
     if (location.pathname === '/dashboard.html') location.href = '/';
     return;
   }
@@ -129,7 +129,7 @@ export function initDashboard() {
 
   setInterval(checkUnreadNotifications, 15000);
   // SSE real-time notifications
-  if (token && typeof EventSource !== 'undefined') {
+  if (typeof EventSource !== 'undefined') {
     const es = new EventSource(`${API}/notifications/stream`);
     es.onmessage = (e) => {
       try {
@@ -194,7 +194,7 @@ export function initDashboard() {
     const btn = e.target.closest('[data-action="deleteHomework"]');
     if (btn) {
       const id = btn.dataset.id;
-      await fetch(`${API}/homework/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await fetch(`${API}/homework/${id}`, { method: 'DELETE', credentials: 'same-origin' });
       loadHomeworks();
     }
   });
@@ -203,7 +203,7 @@ export function initDashboard() {
     const btn = e.target.closest('[data-action="deleteAnnouncement"]');
     if (btn) {
       const id = btn.dataset.id;
-      await fetch(`${API}/announcements/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      await fetch(`${API}/announcements/${id}`, { method: 'DELETE', credentials: 'same-origin' });
       loadAnnouncements();
     }
   });

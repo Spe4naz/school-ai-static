@@ -131,7 +131,7 @@ export function initDashboard(user) {
 
 ```javascript
 export function escapeHtml(text)           // XSS-защита
-export function apiFetch(url, options)     // Обёртка для fetch с авторизацией
+export function apiFetch(url, options)     // Обёртка для fetch (credentials: same-origin)
 export function startInterval(key, fn, ms) // Управление интервалами
 export function clearAllIntervals()        // Очистка всех интервалов
 ```
@@ -252,10 +252,11 @@ export function clearAllIntervals()        // Очистка всех интер
 
 ## SSE (Server-Sent Events)
 
-Подключение к `/api/notifications/stream`:
+Подключение к `/api/notifications/stream`. Аутентификация через httpOnly cookie:
 
 ```javascript
 const eventSource = new EventSource('/api/notifications/stream');
+// Cookie с token отправляется автоматически (same-origin)
 
 eventSource.addEventListener('notification', (event) => {
   const data = JSON.parse(event.data);

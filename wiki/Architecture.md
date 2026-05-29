@@ -24,9 +24,10 @@
 │               EXPRESS SERVER (server.ts)             │
 │                                                     │
 │  Middleware:                                         │
-│  ┌─────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ │
-│  │ Helmet  │ │ Logger │ │RateLimit │ │Compress  │ │
-│  └─────────┘ └────────┘ └──────────┘ └──────────┘ │
+│  ┌─────────┐ ┌────────┐ ┌──────────┐ ┌──────────┐ ┌────────┐ │
+│  │ Helmet  │ │ Logger │ │RateLimit │ │Compress  │ │CSPNonce│ │
+│  │(+nonce) │ │        │ │(IP+user) │ │          │ │        │ │
+│  └─────────┘ └────────┘ └──────────┘ └──────────┘ └────────┘ │
 │                                                     │
 │  Auth Middleware:                                    │
 │  ┌────────┐ ┌───────┐ ┌────────────┐ ┌─────────┐  │
@@ -124,7 +125,8 @@ Request
   ▼
 compression()          -- gzip сжатие
 cookieParser()         -- парсинг cookies
-helmet()               -- безопасные HTTP-заголовки
+cspNonce()             -- генерация nonce для CSP
+helmet()               -- безопасные HTTP-заголовки (с nonces)
 express.json()         -- парсинг JSON body (лимит 1MB)
 logger()               -- логирование запросов
 apiLimiter()           -- глобальный rate-limit (100 req/10min)
@@ -216,6 +218,29 @@ await this.pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TE
 ### Клиентское шифрование чата
 
 Сообщения шифруются **в браузере** с помощью Web Crypto API (AES-256-GCM). Сервер хранит только зашифрованный контент. Это значит, что даже при утечке базы данных сообщения остаются конфиденциальными.
+
+### Cookie-based аутентификация
+
+Токены хранятся только в httpOnly cookies -- фронтенд не имеет доступа к JWT:
+
+```typescript
+// Установка cookie
+res.cookie('token', accessToken, { httpOnly: true, sameSite: 'strict', secure: true });
+
+// Фронтенд отправляет credentials: 'same-origin'
+fetch('/api/profile', { credentials: 'same-origin' });
+```
+
+### Серверная авторизация Admin Panel
+
+Админ-панель проверяется на сервере перед отдачей HTML:
+
+```typescript
+app.get('/admin-panel', (req, res) => {
+  // Проверка JWT + role === 'admin' через httpOnly cookie
+  // При неудаче — редирект на главную
+});
+```
 
 ### CommonJS в TypeScript
 

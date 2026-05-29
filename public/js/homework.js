@@ -3,7 +3,7 @@ import { API, escapeHtml } from './utils.js';
 export async function loadHomeworks() {
   try {
     const res = await fetch(`${API}/homework`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const homeworks = await res.json();
     const container = document.getElementById('homeworkList');
@@ -46,7 +46,8 @@ export async function submitHomework(e) {
   try {
     const res = await fetch(`${API}/homework`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ subject, title, description, due_date })
     });
     if (res.ok) {

@@ -349,13 +349,11 @@ tr:hover td { background: rgba(59,130,246,.04); }
 <script>
 const API = '/api/admin';
 
-function getToken() { return localStorage.getItem('token'); }
+function getToken() { return 'cookie'; }
 
 function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
-  const token = getToken();
-  if (getToken()) headers['Authorization'] = `Bearer ${getToken()}`;
-  return fetch(`${API}${path}`, { ...opts, headers })
+  return fetch(`${API}${path}`, { ...opts, headers, credentials: 'same-origin' })
     .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
     .catch(err => ({ ok: false, status: 0, data: { error: err.message } }));
 }
@@ -625,7 +623,7 @@ async function deleteClass(id) {
 async function loadGrades() {
   const tbody = document.getElementById('gradesBody');
   loading(tbody);
-  const r = await fetch('/api/grades?limit=100', { headers: { 'Authorization': `Bearer ${getToken()}` }}).then(r => r.json()).catch(() => []);
+  const r = await fetch('/api/grades?limit=100', { credentials: 'same-origin' }).then(r => r.json()).catch(() => []);
   if (!Array.isArray(r) || !r.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Нет оценок</td></tr>'; return; }
   tbody.innerHTML = r.map(g => `<tr>
     <td>${esc(g.student_name || '—')}</td>
@@ -644,7 +642,7 @@ async function loadSchedule(delta) {
   document.getElementById('scheduleWeekLabel').textContent = delta === 0 ? 'Загрузка...' : '';
   const tbody = document.getElementById('scheduleBody');
   loading(tbody);
-  const r = await fetch(`/api/schedule?week_offset=${scheduleOffset}`, { headers: { 'Authorization': `Bearer ${getToken()}` }}).then(r => r.json()).catch(() => []);
+  const r = await fetch(`/api/schedule?week_offset=${scheduleOffset}`, { credentials: 'same-origin' }).then(r => r.json()).catch(() => []);
   if (!Array.isArray(r) || !r.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Нет занятий</td></tr>'; return; }
   const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
   tbody.innerHTML = r.map(s => `<tr>
@@ -809,14 +807,16 @@ const loaders = {
 // Load user info
 (async function() {
   try {
-    const r = await fetch('/api/profile', { headers: { 'Authorization': `Bearer ${getToken()}` }}).then(r => r.json());
+        const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
     document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name || '')}</span><br>${r.role || ''}`;
   } catch(e) {}
 })();
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
-  localStorage.removeItem('token');
-  showLogin();
+  fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => {
+    localStorage.removeItem('user');
+    showLogin();
+  });
 });
 
 // Auto-reload dashboard every 30s
@@ -852,6 +852,7 @@ async function handleLogin() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
+      credentials: 'same-origin',
     });
     const data = await r.json();
 
@@ -864,8 +865,7 @@ async function handleLogin() {
     }
 
     // Check admin role
-    const payload = JSON.parse(atob(data.token.split('.')[1]));
-    if (payload.role !== 'admin') {
+    if (!data.user || data.user.role !== 'admin') {
       errEl.textContent = 'Доступ только для администраторов';
       errEl.style.display = 'block';
       btn.disabled = false;
@@ -873,14 +873,14 @@ async function handleLogin() {
       return;
     }
 
-    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
     hideLogin();
     document.getElementById('loginPassword').value = '';
     // Re-init
     loadDashboard();
     (async function() {
       try {
-        const r = await fetch('/api/profile', { headers: { 'Authorization': `Bearer ${getToken()}` }}).then(r => r.json());
+        const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
         document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name || '')}</span><br>${r.role || ''}`;
       } catch(e) {}
     })();
@@ -902,15 +902,10 @@ document.getElementById('loginEmail').addEventListener('keydown', e => {
 
 // Init: check existing token, show login or panel
 (function init() {
-  const t = getToken();
-  if (t) {
-    try {
-      const payload = JSON.parse(atob(t.split('.')[1]));
-      if (payload.role === 'admin') {
-        hideLogin();
-        return;
-      }
-    } catch(e) {}
+  const u = JSON.parse(localStorage.getItem('user') || '{}');
+  if (u.id && u.role === 'admin') {
+    hideLogin();
+    return;
   }
   showLogin();
 })();

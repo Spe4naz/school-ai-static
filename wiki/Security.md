@@ -10,14 +10,15 @@
 ┌─────────────────────────────────────────────────────┐
 │                   УРОВНИ ЗАЩИТЫ                     │
 ├─────────────────────────────────────────────────────┤
-│  1. Сеть:       Caddy (SSL, HSTS,安全ные заголовки)│
-│  2. Авторизация: JWT + Refresh Tokens              │
+│  1. Сеть:       Caddy (SSL, HSTS, безопасные заголовки)
+│  2. Авторизация: JWT + Refresh Tokens (httpOnly cookies)
 │  3. Данные:     bcrypt паролей, AES-256-GCM чата   │
 │  4. Валидация:  Zod-схемы для всех входных данных  │
-│  5. Rate-limit: Защита от brute-force и DDoS       │
+│  5. Rate-limit: IP + per-user лимиты               │
 │  6. SQL:        Параметризованные запросы           │
-│  7. XSS:        escapeHtml + CSP + Helmet           │
-│  8. Файлы:      Проверка типов и размера           │
+│  7. XSS:        escapeHtml + CSP nonces + Helmet    │
+│  8. Файлы:      Проверка типов, размера, rate-limit │
+│  9. Cookie:     httpOnly + sameSite: strict         │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -27,9 +28,10 @@
 
 ### JWT (JSON Web Tokens)
 
-- **Алгоритм**: HS256 (HMAC-SHA256)
+- **Алгоритм**: HS256 (HMAC-SHA256), зафиксирован в verify
 - **Срок жизни access token**: 24 часа
 - **Issuer claim**: `school-ai` (проверяется при верификации)
+- **Хранение**: httpOnly cookie (недоступна для JavaScript)
 
 ### Refresh Tokens
 
@@ -37,24 +39,31 @@
 - **Использование**: одноразовый (consumed после каждого использования)
 - **Хранение**: в БД (таблица `refresh_tokens`)
 - **Генерация**: 48 криптографически стойких случайных байт
+- **Инвалидация**: при смене пароля все refresh-токены пользователя аннулируются
+- **Хранение**: httpOnly cookie
 
 ### Пароли
 
 - **Хеширование**: bcrypt
 - **Раунды**: 12 (production) / 8 (development)
-- **Отказ от дефолтных секретов**: сервер проверяет и отклоняет известные JWT-секреты
+- **Минимальная длина**: 8 символов
+- **Требования к сложности**: строчные + заглавные буквы + цифры
+- **Отказ от дефолтных секретов**: сервер проверяет и отклоняет известные JWT-секреты + требует мин. 32 символа
 
 ---
 
 ## Rate Limiting
 
-| Лимит | Лимит | Окно | Область |
-|-------|-------|------|---------|
+| Лимит | Количество | Окно | Область |
+|-------|-----------|------|---------|
 | Вход | 5 запросов | 15 мин | IP |
 | Регистрация | 3 запроса | 1 час | IP |
 | Сброс пароля | 3 запроса | 15 мин | IP |
+| Обновление токена | 10 запросов | 15 мин | IP |
 | API (глобальный) | 100 запросов | 10 мин | IP |
 | Запись (POST/PUT/DELETE) | 30 запросов | 1 мин | IP |
+| Загрузка файлов | 10 запросов | 10 мин | IP |
+| Per-user (аутентифицированные) | 60 запросов | 1 мин | user ID |
 
 Все лимиты отключаются в `test`/`ci` режимах.
 
@@ -67,9 +76,12 @@ helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],   // Chart.js CDN
+      scriptSrc: ["'self'", nonce],     // Per-request nonce вместо unsafe-inline
       styleSrc: ["'self'", "'unsafe-inline'", "https://unpkg.com"],  // BoxIcons
       imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
     }
   },
   hsts: { maxAge: 31536000, includeSubDomains: true },
@@ -78,6 +90,20 @@ helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 })
 ```
+
+### CSP Nonces
+
+Для каждого HTTP-запроса генерируется уникальный nonce через `crypto.randomBytes(16)`:
+
+```typescript
+// server.ts
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+```
+
+HTML-файлы подаются через маршруты с инъекцией nonce в теги `<script>`.
 
 ---
 
@@ -114,10 +140,21 @@ CryptoKey (AES-256-GCM)
 ```typescript
 // Примеры валидации:
 email: z.string().email()           // Проверка формата email
-password: z.string().min(6)         // Минимум 6 символов
+password: z.string().min(8)         // Минимум 8 символов + сложность
 grade: z.number().int().min(2).max(5)  // Оценка 2-5
 role: z.enum(['admin', 'teacher', ...]) // Допустимые значения
-name: z.string().transform(s => s.replace(/[<>]/g, ''))  // Удаление XSS-символов
+name: z.string().transform(s => s.replace(/[<>]/g, '').replace(/&/g, '&amp;')...)  // XSS-санитизация
+```
+
+### Требования к паролю
+
+```typescript
+password: z.string()
+  .min(8, 'Минимум 8 символов')
+  .max(128)
+  .regex(/[a-z]/, 'Хотя бы одна строчная буква')
+  .regex(/[A-Z]/, 'Хотя бы одна заглавная буква')
+  .regex(/[0-9]/, 'Хотя бы одна цифра')
 ```
 
 ---
@@ -143,17 +180,21 @@ await db.query(`SELECT * FROM users WHERE email = '${email}'`);
 
 ### На сервере
 
-- **Helmet**: CSP-заголовки ограничивают источники скриптов
-- **Zod**: Удаление `<` и `>` из имени пользователя
+- **Helmet**: CSP-заголовки с per-request nonces ограничивают источники скриптов
+- **Zod**: Санитизация имени пользователя (удаление `<>`, экранирование `&"'`)
 
 ### На клиенте
 
 ```javascript
 // utils.js
-export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
+export function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
 }
 ```
 
@@ -176,6 +217,10 @@ const upload = multer({
 });
 ```
 
+- **Rate-limit**: 10 загрузок / 10 минут на IP
+- **Имена файлов**: `crypto.randomBytes(8)` вместо `Math.random()`
+- **Двойная проверка**: MIME-тип + расширение файла
+
 ### Бэкапы
 
 ```typescript
@@ -190,6 +235,38 @@ _safePath(name) {
 
 ---
 
+## Безопасность куки
+
+### Access Token
+
+```javascript
+res.cookie('token', accessToken, {
+  httpOnly: true,        // Недоступна для JavaScript
+  sameSite: 'strict',    // Защита от CSRF
+  secure: true,          // Только HTTPS (в production)
+  maxAge: 24 * 60 * 60 * 1000,  // 24 часа
+});
+```
+
+### Refresh Token
+
+```javascript
+res.cookie('refreshToken', refreshToken, {
+  httpOnly: true,        // Недоступна для JavaScript
+  sameSite: 'strict',    // Защита от CSRF
+  secure: true,          // Только HTTPS (в production)
+  maxAge: 30 * 24 * 60 * 60 * 1000,  // 30 дней
+});
+```
+
+### Ключевые особенности
+
+- **Только httpOnly cookies** — токен НЕ передаётся в JSON-ответе
+- **Фронтенд** использует `credentials: 'same-origin'` для автоматической отправки cookies
+- **Logout** очищает обе cookies и аннулирует refresh-токен
+
+---
+
 ## Защита от brute-force
 
 Rate limiting на критических эндпоинтах:
@@ -198,20 +275,44 @@ Rate limiting на критических эндпоинтах:
 |-----------|-------|---------|
 | `POST /api/login` | 5 / 15 мин | Защита от подбора пароля |
 | `POST /api/register` | 3 / 1 час | Защита от спама |
-| `POST /api/password-reset/request` | 3 / 1 мин | Защита от перебора |
+| `POST /api/password-reset/request` | 3 / 15 мин | Защита от перебора |
+| `POST /api/refresh` | 10 / 15 мин | Защита от перебора refresh-токенов |
+| `POST /api/chat/upload` | 10 / 10 мин | Защита от заполнения диска |
 
 ---
 
-## Безопасность куки
+## Серверная авторизация Admin Panel
 
-```javascript
-res.cookie('token', token, {
-  httpOnly: true,        // Недоступна для JavaScript
-  sameSite: 'strict',    // Защита от CSRF
-  secure: true,          // Только HTTPS (в production)
-  path: '/',             // доступна на всех путях
+Админ-панель защищена на серверном уровне — проверяется JWT и роль `admin`:
+
+```typescript
+app.get('/admin-panel', (req, res) => {
+  const token = req.cookies?.token;
+  if (!token) return res.redirect('/');
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
+    if (decoded.role !== 'admin') return res.redirect('/');
+  } catch { return res.redirect('/'); }
+  // ... отдаём HTML
 });
 ```
+
+---
+
+## SSE-защита
+
+### Ограничение CORS
+
+```typescript
+const allowedOrigin = process.env.FRONTEND_URL || `${req.protocol}://${req.get('host')}`;
+res.writeHead(200, {
+  'Access-Control-Allow-Origin': allowedOrigin,  // Не '*', а конкретный origin
+});
+```
+
+### Ограничение соединений
+
+Максимум 3 SSE-соединения на пользователя. При превышении самое старое закрывается.
 
 ---
 
@@ -243,6 +344,22 @@ app.set('trust proxy', 1);
 
 ---
 
+## Минимальная длина пароля
+
+Сервер проверяет `JWT_SECRET` при старте:
+
+```typescript
+// Требования:
+if (process.env.JWT_SECRET.length < 32) {
+  console.error('FATAL: JWT_SECRET must be at least 32 characters long.');
+  process.exit(1);
+}
+```
+
+`DATABASE_URL` является обязательной переменной — приложение не стартует без неё.
+
+---
+
 ## Рекомендации для продакшена
 
 - [ ] Использовать сильный `JWT_SECRET` (мин. 32 символа, не дефолтный)
@@ -252,3 +369,4 @@ app.set('trust proxy', 1);
 - [ ] Регулярно обновлять зависимости (`npm audit`)
 - [ ] Настроить firewall (порты 80/443 открыты, 3000 закрыт)
 - [ ] Мониторить логи на подозрительную активность
+- [ ] Не коммитить `.env` файлы (все `.env.*` в `.gitignore`)

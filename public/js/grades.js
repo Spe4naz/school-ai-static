@@ -7,7 +7,7 @@ export async function loadClasses(user) {
   const select = document.getElementById('classFilter');
   if (['teacher', 'admin'].includes(user.role)) {
     select.style.display = 'block';
-    const res = await fetch(`${API}/classes`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/classes`, {       credentials: 'same-origin' });
     const classes = await res.json();
     select.innerHTML = '<option value="">Все классы</option>' + classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
     loadStudentsForModal();
@@ -16,7 +16,7 @@ export async function loadClasses(user) {
 
 export async function loadStudentsForModal() {
   try {
-    const res = await fetch(`${API}/students`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API}/students`, {       credentials: 'same-origin' });
     const students = await res.json();
     const select = document.getElementById('modalStudentId');
     select.innerHTML = '<option value="">Выберите ученика</option>' +
@@ -49,7 +49,7 @@ export async function loadGrades(class_id = '') {
   if (class_id) url += `&class_id=${class_id}`;
 
   try {
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(url, {       credentials: 'same-origin' });
     const grades = await res.json();
     const tbody = document.querySelector('#gradesTable tbody');
     tbody.innerHTML = grades.map(g => `
@@ -91,7 +91,8 @@ export async function submitGrade(e) {
   try {
     const res = await fetch(`${API}/grades`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify(payload)
     });
 

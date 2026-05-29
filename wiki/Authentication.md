@@ -15,6 +15,9 @@
 │          │────▶│  Protected   │     └──────────────┘
 │          │◀────│  Routes      │
 └──────────┘     └──────────────┘
+
+Ключевой момент: токены хранятся ТОЛЬКО в httpOnly cookies.
+Фронтенд НЕ получает токен в JSON-ответе.
 ```
 
 ---
@@ -24,8 +27,9 @@
 ### Access Token
 
 - **Срок жизни**: 24 часа
-- **Алгоритм**: HS256
+- **Алгоритм**: HS256 (зафиксирован в verify)
 - **Issuer**: `school-ai`
+- **Хранение**: httpOnly cookie
 
 **Payload**:
 ```json
@@ -44,9 +48,10 @@
 ### Refresh Token
 
 - **Срок жизни**: 30 дней
-- **Хранение**: в БД (таблица `refresh_tokens`)
+- **Хранение**: в БД (таблица `refresh_tokens`) + httpOnly cookie
 - **Использование**: одноразовый (consumed после использования)
 - **Генерация**: 48 случайных байт → hex строка
+- **Инвалидация**: при смене пароля все refresh-токены пользователя аннулируются
 
 ---
 
@@ -65,14 +70,19 @@
   │                                │  5. Генерация access token (24h)
   │                                │  6. Создание refresh token (30d)
   │                                │  7. Сохранение refresh token в БД
+  │                                │  8. Установка httpOnly cookies
   │                                │
-  │  { token, refreshToken, user } │
+  │  Set-Cookie: token=...; HttpOnly
+  │  Set-Cookie: refreshToken=...; HttpOnly
+  │  { user: { id, name, role, ... } }
   │◀───────────────────────────────│
   │                                │
-  │  Authorization: Bearer <token> │
+  │  GET /api/profile              │
+  │  Cookie: token=...             │
   │───────────────────────────────▶│
-  │                                │  8. Верификация JWT
-  │                                │  9. req.user = payload
+  │                                │  9. Извлечение токена из cookie
+  │                                │ 10. Верификация JWT
+  │                                │ 11. req.user = payload
   │                                │
   │  Protected Route Response      │
   │◀───────────────────────────────│
@@ -89,7 +99,7 @@
   POST /api/register
   {
     "email": "student@school.ru",
-    "password": "securePass",
+    "password": "SecurePass123",
     "name": "Иванов Пётр",
     "role": "student",
     "class_id": "uuid-3a"
@@ -99,7 +109,7 @@
   POST /api/register
   {
     "email": "parent@family.ru",
-    "password": "securePass",
+    "password": "SecurePass123",
     "name": "Петрова Мария",
     "role": "parent",
     "linked_student_email": "ivan@school.ru"
@@ -112,7 +122,7 @@
 POST /api/register
 {
   "email": "teacher@school.ru",
-  "password": "securePass",
+  "password": "SecurePass123",
   "name": "Иванова А.П.",
   "role": "teacher",
   "code": "SCHOOL2024"
@@ -183,7 +193,7 @@ router.post('/', auth, roles('admin', 'teacher'), validate(createGradeSchema), g
    ▼
 5. Подтверждение
    POST /api/password-reset/confirm
-   { "id": "resetId", "email": "user@school.ru", "newPassword": "newPass" }
+   { "id": "resetId", "email": "user@school.ru", "newPassword": "NewSecure123" }
    │
    ▼
 6. Валидация
@@ -206,17 +216,38 @@ router.post('/', auth, roles('admin', 'teacher'), validate(createGradeSchema), g
 │  - sameSite: strict                         │
 │  - secure: true (в production)              │
 │  - httpOnly: true                           │
-│  - path: /                                  │
+│  - maxAge: 24 часа                          │
 │                                             │
-│  Используется для SSE иookie-based auth     │
+│  Используется для всех API-запросов         │
+│  Фронтенд отправляет через credentials:     │
+│  'same-origin'                              │
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│  Authorization Header (Bearer token)        │
-│  - Используется для API-запросов            │
-│  - Отправляется в каждом запросе            │
+│  HTTP-only Cookie (refreshToken)            │
+│  - sameSite: strict                         │
+│  - secure: true (в production)              │
+│  - httpOnly: true                           │
+│  - maxAge: 30 дней                          │
+│                                             │
+│  Используется для обновления access token   │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  localStorage (user)                        │
+│  - Хранит только данные пользователя        │
+│  - { id, name, role, class_id }             │
+│  - НЕ содержит токен                        │
+│  - Используется для UI-решений              │
 └─────────────────────────────────────────────┘
 ```
+
+### Важно
+
+- **Токен НЕ передаётся** в JSON-ответе (раньше передавался — теперь нет)
+- **Фронтенд** использует `credentials: 'same-origin'` вместо `Authorization: Bearer`
+- **Bearer токен** всё ещё поддерживается для обратной совместимости (API-клиенты)
+- **Logout** очищает обе cookies и аннулирует refresh-токен в БД
 
 ---
 
@@ -231,9 +262,17 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Пароль обязателен'),
 });
 
+// Пример схемы пароля (с требованиями сложности)
+const passwordSchema = z.string()
+  .min(8, 'Минимум 8 символов')
+  .max(128)
+  .regex(/[a-z]/, 'Хотя бы одна строчная буква')
+  .regex(/[A-Z]/, 'Хотя бы одна заглавная буква')
+  .regex(/[0-9]/, 'Хотя бы одна цифра');
+
 // Пример схемы оценки
 const createGradeSchema = z.object({
-  student_id: z.string().min(1, 'ID ученика обязателен'),
+  student_id: z.string().uuid('Неверный формат ID'),
   subject: z.string().min(1, 'Предмет обязателен'),
   grade: z.number().int().min(2, 'Минимальная оценка 2').max(5, 'Максимальная оценка 5'),
   comment: z.string().optional(),
@@ -242,9 +281,10 @@ const createGradeSchema = z.object({
 
 **Обработка ошибок Zod**:
 - `INVALID_EMAIL` -- неверный формат email
-- `WEAK_PASSWORD` -- пароль менее 6 символов
+- `WEAK_PASSWORD` -- пароль менее 8 символов или не соответствует требованиям сложности
 - `MISSING_FIELDS` -- отсутствует обязательное поле
 - `INVALID_GRADE` -- оценка вне диапазона 2-5
+- `VALIDATION_ERROR` -- общая ошибка валидации
 
 ---
 
@@ -255,8 +295,11 @@ const createGradeSchema = z.object({
 | Login | 5 запросов | 15 мин | `POST /api/login` |
 | Register | 3 запроса | 1 час | `POST /api/register` |
 | Password Reset | 3 запроса | 15 мин | `POST /api/password-reset/request` |
+| Refresh Token | 10 запросов | 15 мин | `POST /api/refresh` |
 | API (глобальный) | 100 запросов | 10 мин | Все `/api/*` |
 | Write (операции записи) | 30 запросов | 1 мин | POST/PUT/DELETE операции |
+| Upload | 10 запросов | 10 мин | `POST /api/chat/upload` |
+| Per-user | 60 запросов | 1 мин | Аутентифицированные эндпоинты |
 
 Все лимиты отключаются в режиме `test`/`ci`.
 
@@ -264,31 +307,99 @@ const createGradeSchema = z.object({
 
 ## Примеры запросов с авторизацией
 
-### cURL
+### cURL (cookie-based)
+
+```bash
+# Вход (cookies сохраняются автоматически)
+curl -c cookies.txt -X POST http://localhost:3000/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@school.ru","password":"SecurePass123"}'
+
+# Запрос с cookies
+curl -b cookies.txt http://localhost:3000/api/profile
+
+# Выход
+curl -b cookies.txt -c cookies.txt -X POST http://localhost:3000/api/logout
+```
+
+### cURL (Bearer token — для API-клиентов)
 
 ```bash
 # Вход
 TOKEN=$(curl -s -X POST http://localhost:3000/api/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@school.ru","password":"123456"}' | jq -r '.token')
+  -d '{"email":"admin@school.ru","password":"SecurePass123"}' | jq -r '.token')
 
-# Запрос с токеном
+# Запрос с токеном (если токен доступен)
 curl -H "Authorization: Bearer $TOKEN" http://localhost:3000/api/profile
 ```
 
-### JavaScript (fetch)
+### JavaScript (fetch — cookie-based)
 
 ```javascript
 // Вход
 const response = await fetch('/api/login', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'admin@school.ru', password: '123456' }),
+  body: JSON.stringify({ email: 'admin@school.ru', password: 'SecurePass123' }),
+  credentials: 'same-origin',
 });
-const { token, refreshToken, user } = await response.json();
+const { user } = await response.json();
+// Cookies установлены автоматически
 
-// Запрос с токеном
+// Запрос (cookies отправляются автоматически)
 const profile = await fetch('/api/profile', {
-  headers: { 'Authorization': `Bearer ${token}` },
+  credentials: 'same-origin',
 });
+
+// Выход
+await fetch('/api/logout', {
+  method: 'POST',
+  credentials: 'same-origin',
+});
+```
+
+---
+
+## Обновление токена (Refresh)
+
+```
+Клиент                          Сервер
+  │                                │
+  │  POST /api/refresh             │
+  │  Cookie: refreshToken=...      │
+  │───────────────────────────────▶│
+  │                                │  1. Извлечение refreshToken из cookie
+  │                                │  2. Поиск в БД + проверка used/expiry
+  │                                │  3. Пометка как used (одноразовый)
+  │                                │  4. Генерация нового access token
+  │                                │  5. Генерация нового refresh token
+  │                                │  6. Установка новых cookies
+  │                                │
+  │  Set-Cookie: token=...; HttpOnly
+  │  Set-Cookie: refreshToken=...; HttpOnly
+  │  { success: true }
+  │◀───────────────────────────────│
+```
+
+---
+
+## Смена пароля
+
+При смене пароля **все refresh-токены** пользователя аннулируются:
+
+```
+POST /api/password/change
+Cookie: token=...
+{
+  "currentPassword": "старый пароль",
+  "newPassword": "новый пароль"
+}
+│
+▼
+1. Проверка текущего пароля (bcrypt)
+2. Хеширование нового пароля
+3. Инвалидация ВСЕХ refresh-токенов пользователя
+4. Очистка cookies (token + refreshToken)
+5. Ответ: "Пароль изменён. Войдите заново."
 ```

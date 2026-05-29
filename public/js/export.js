@@ -1,7 +1,7 @@
 import { API, escapeHtml } from './utils.js';
 
 export async function loadClassesForExport() {
-  const res = await fetch(`${API}/classes`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+  const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
   const classes = await res.json();
   document.getElementById('exportClass').innerHTML = '<option value="">Все классы</option>' +
     classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
@@ -18,7 +18,7 @@ export async function exportReport(e) {
 
   try {
     const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
 
     const blob = await res.blob();

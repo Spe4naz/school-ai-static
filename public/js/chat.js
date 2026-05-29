@@ -56,7 +56,7 @@ async function ensureEncryptionKey() {
   let storedKey = localStorage.getItem(keyStorageName);
   if (!storedKey) {
     try {
-      const res = await fetch(`${API}/chat/key`, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch(`${API}/chat/key`, { credentials: 'same-origin' });
       storedKey = (await res.json()).key;
       localStorage.setItem(keyStorageName, storedKey);
     } catch {
@@ -117,7 +117,7 @@ export async function loadChatMessages() {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${API}/chat/messages?offset=0&limit=50`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      credentials: 'same-origin',
       signal: controller.signal
     });
     clearTimeout(timeout);
@@ -144,7 +144,7 @@ async function loadMoreMessages() {
 
   try {
     const res = await fetch(`${API}/chat/messages?offset=${newOffset}&limit=50`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const data = await res.json();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -220,7 +220,7 @@ async function deleteMessage(msgId) {
   try {
     const res = await fetch(`${API}/chat/messages/${msgId}`, {
       method: 'DELETE',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     if (res.ok) {
       const el = document.querySelector(`.msg[data-msg-id="${msgId}"]`);
@@ -249,7 +249,8 @@ export async function sendMessage() {
   try {
     const res = await fetch(`${API}/chat/messages`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
       body: JSON.stringify({ content: encryptedContent })
     });
     if (res.ok) {
@@ -266,7 +267,7 @@ export async function sendImage(file) {
   try {
     const res = await fetch(`${API}/chat/upload`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      credentials: 'same-origin',
       body: formData
     });
     if (res.ok) await loadChatMessages();
@@ -277,10 +278,10 @@ async function loadParticipants() {
   try {
     const [partRes, typingRes] = await Promise.all([
       fetch(`${API}/chat/participants`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'same-origin'
       }),
       fetch(`${API}/chat/typing`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        credentials: 'same-origin'
       }).then(r => r.json()).catch(() => []),
     ]);
     const participants = await partRes.json();
@@ -299,14 +300,15 @@ async function loadParticipants() {
 function emitTyping() {
   fetch(`${API}/chat/typing`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` }
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
   }).catch(() => {});
 }
 
 async function pollTyping() {
   try {
     const typing = await fetch(`${API}/chat/typing`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     }).then(r => r.json());
     const el = document.getElementById('typingIndicator');
     const nameEl = document.getElementById('typingNames');

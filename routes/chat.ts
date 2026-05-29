@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const multer = require('multer');
+const crypto = require('crypto');
 const asyncHandler = require('../middleware/asyncHandler');
 const auth = require('../middleware/auth');
 const logger = require('../middleware/logger');
 const resolveClass = require('../utils/classResolver');
 const { chatService } = require('../config/container');
 const { ERR, LIMITS } = require('../config/constants');
-const { writeLimiter } = require('../middleware/rateLimit');
+const { writeLimiter, uploadLimiter } = require('../middleware/rateLimit');
 
 router.use(auth, logger);
 
@@ -18,7 +19,7 @@ if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname)}`),
+  filename: (req, file, cb) => cb(null, `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${path.extname(file.originalname)}`),
 });
 const ALLOWED_MIMES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 const upload = multer({
@@ -59,7 +60,7 @@ router.delete('/messages/:id', asyncHandler(async (req, res) => {
   res.json({ ok: true });
 }));
 
-router.post('/upload', upload.single('image'), asyncHandler(async (req, res) => {
+router.post('/upload', uploadLimiter, upload.single('image'), asyncHandler(async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Файл не загружен', code: ERR.MISSING_FIELDS });
 
   const classId = await resolveClass(chatService, req.user);

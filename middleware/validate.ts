@@ -2,8 +2,16 @@ const { z } = require('zod');
 const { ERR, ROLES } = require('../config/constants');
 
 const emailSchema = z.string().email('Неверный формат email').max(255).transform(v => v.trim().toLowerCase());
-const passwordSchema = z.string().min(6, 'Пароль должен быть минимум 6 символов').max(128, 'Пароль слишком длинный');
-const nameSchema = z.string().min(1).max(100).transform(v => v.replace(/[<>]/g, '').trim());
+const passwordSchema = z.string().min(8, 'Пароль должен быть минимум 8 символов').max(128, 'Пароль слишком длинный')
+  .regex(/[a-z]/, 'Пароль должен содержать хотя бы одну строчную букву')
+  .regex(/[A-Z]/, 'Пароль должен содержать хотя бы одну заглавную букву')
+  .regex(/[0-9]/, 'Пароль должен содержать хотя бы одну цифру');
+const nameSchema = z.string().min(1).max(100).transform(v => {
+  let s = v.replace(/[<>]/g, '').trim();
+  s = s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
+  return s;
+});
+const uuidSchema = z.string().uuid('Неверный формат ID');
 const roleSchema = z.enum(ROLES.ALL).optional();
 const registrableRoleSchema = z.enum(ROLES.REGISTRABLE);
 const classIdSchema = z.string().min(1).optional();
@@ -71,6 +79,16 @@ function validate(schema) {
   };
 }
 
+function validateParams(paramName, schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.params[paramName]);
+    if (!result.success) {
+      return res.status(400).json({ error: 'Неверный формат параметра', code: ERR.VALIDATION_ERROR });
+    }
+    next();
+  };
+}
+
 function mapErrorCode(err) {
   const path = err.path || [];
   const pathStr = path.join('.');
@@ -86,6 +104,8 @@ function mapErrorCode(err) {
 
 module.exports = {
   validate,
+  validateParams,
+  uuidSchema,
   loginSchema,
   registerSchema,
   createUserSchema,

@@ -418,13 +418,11 @@
     </div>
 
     <script src="dashboard.bundle.js"></script>
-    <script>
+    <script nonce>
     (function() {
       try {
-        const tok = localStorage.getItem('token');
-        if (!tok) return;
-        const payload = JSON.parse(atob(tok.split('.')[1]));
-        if (payload.role !== 'admin') return;
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.role !== 'admin') return;
         const nav = document.getElementById('navMenu');
         if (!nav) return;
         const a = document.createElement('a');

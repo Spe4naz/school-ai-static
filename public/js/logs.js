@@ -3,7 +3,7 @@ import { API, escapeHtml } from './utils.js';
 export async function loadLogs() {
   try {
     const res = await fetch(`${API}/logs`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      credentials: 'same-origin'
     });
     const logs = await res.json();
     const tbody = document.getElementById('logsBody');

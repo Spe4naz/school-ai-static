@@ -8,7 +8,7 @@ const { userService } = require('../config/container');
 const config = require('../config/auth');
 const emailTransporter = require('../config/email');
 const auth = require('../middleware/auth');
-const { loginLimiter, passwordResetLimiter } = require('../middleware/rateLimit');
+const { loginLimiter, passwordResetLimiter, refreshLimiter } = require('../middleware/rateLimit');
 const logger = require('../middleware/logger');
 const { validate, loginSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
@@ -38,15 +38,20 @@ router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(
     maxAge: 24 * 60 * 60 * 1000,
   });
 
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
   res.json({
-    token: accessToken,
-    refreshToken,
     user: { id: user.id, name: user.name, role: user.role, class_id: user.class_id, linked_student_id: user.linked_student_id },
   });
 }));
 
-router.post('/refresh', logger, asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
+router.post('/refresh', refreshLimiter, logger, asyncHandler(async (req, res) => {
+  const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
   if (!refreshToken) {
     return res.status(400).json({ error: 'refreshToken обязателен', code: ERR.MISSING_FIELDS });
   }
@@ -76,7 +81,14 @@ router.post('/refresh', logger, asyncHandler(async (req, res) => {
     maxAge: 24 * 60 * 60 * 1000,
   });
 
-  res.json({ token: accessToken, refreshToken: newRefreshToken });
+  res.cookie('refreshToken', newRefreshToken, {
+    httpOnly: true,
+    sameSite: 'strict',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+
+  res.json({ success: true });
 }));
 
 router.post('/password-reset/request', passwordResetLimiter, logger, validate(passwordResetRequestSchema), asyncHandler(async (req, res) => {
@@ -113,17 +125,21 @@ router.post('/password-reset/confirm', passwordResetLimiter, logger, validate(pa
 }));
 
 router.post('/logout', logger, asyncHandler(async (req, res) => {
-  const { refreshToken } = req.body;
+  const refreshToken = req.body.refreshToken || req.cookies?.refreshToken;
   if (refreshToken) {
     await userService.consumeRefreshToken(refreshToken).catch(() => {});
   }
   res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
   res.json({ success: true, message: 'Выход выполнен' });
 }));
 
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, 'currentPassword обязателен'),
-  newPassword: z.string().min(6, 'Новый пароль должен быть минимум 6 символов').max(128),
+  newPassword: z.string().min(8, 'Новый пароль должен быть минимум 8 символов').max(128)
+    .regex(/[a-z]/, 'Пароль должен содержать хотя бы одну строчную букву')
+    .regex(/[A-Z]/, 'Пароль должен содержать хотя бы одну заглавную букву')
+    .regex(/[0-9]/, 'Пароль должен содержать хотя бы одну цифру'),
 });
 
 router.post('/password/change', auth, logger, validate(passwordChangeSchema), asyncHandler(async (req, res) => {
@@ -133,7 +149,10 @@ router.post('/password/change', auth, logger, validate(passwordChangeSchema), as
     return res.status(400).json({ error: 'Неверный текущий пароль', code: ERR.INVALID_CREDENTIALS });
   }
   await userService.updatePassword(req.user.id, newPassword);
-  res.json({ success: true, message: 'Пароль изменён' });
+  await userService.invalidateAllRefreshTokens(req.user.id);
+  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  res.json({ success: true, message: 'Пароль изменён. Войдите заново.' });
 }));
 
 module.exports = router;

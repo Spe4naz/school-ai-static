@@ -275,7 +275,7 @@ docker compose exec app node -e "require('./dist/services/backupService').create
 
 ```bash
 curl http://localhost:3000/api/health
-# {"status":"ok","timestamp":"...","uptime":123.456}
+# {"status":"ok","timestamp":"..."}
 ```
 
 ### Docker Health Check
@@ -323,9 +323,12 @@ cat backup.sql | docker compose exec -T db psql -U school school_db
 - [ ] `JWT_SECRET` -- сложный ключ (мин. 32 символа), не дефолтный
 - [ ] `NODE_ENV=production`
 - [ ] `BCRYPT_ROUNDS` -- 12 (по умолчанию в production)
+- [ ] `DATABASE_URL` -- задана и обязательна
 - [ ] PostgreSQL -- надёжный пароль, не `school_pass`
 - [ ] SMTP -- настроен для email-уведомлений
 - [ ] Домен -- прописан в `DOMAIN` и `FRONTEND_URL`
 - [ ] SSL -- работает через Caddy
 - [ ] Бэкапы -- настроена директория и ретенция
 - [ ] Firewall -- порты 80/443 открыты, 3000 закрыт
+- [ ] `.env` файлы -- не коммитятся (`.gitignore` содержит `.env*`)
+- [ ] Пароли -- seed-пароли (`123456`) заменены на безопасные
