@@ -78,50 +78,32 @@ app.use(helmet({
   },
 }));
 app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, 'public'), {
-  extensions: ['html'],
-  maxAge: '1y',
-  immutable: true,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
-    }
-  },
-  index: false,
-}));
 
-// Serve HTML files with CSP nonce injection
-app.get('/', (req, res) => {
+// HTML cache (loaded once at startup)
+const htmlCache = {};
+const fs = require('fs');
+const htmlFiles = ['index.html', 'dashboard.html', 'register.html', 'reset-password.html', 'admin-panel.html'];
+htmlFiles.forEach(file => {
+  const filePath = path.join(__dirname, 'public', file);
+  if (fs.existsSync(filePath)) {
+    htmlCache[file] = fs.readFileSync(filePath, 'utf8');
+  }
+});
+
+function serveHtml(filename, res) {
+  let html = htmlCache[filename];
+  if (!html) return res.status(404).send('Not found');
   const nonce = res.locals.cspNonce;
-  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
   html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
-});
+}
 
-app.get('/dashboard.html', (req, res) => {
-  const nonce = res.locals.cspNonce;
-  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'dashboard.html'), 'utf8');
-  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-});
-
-app.get('/register.html', (req, res) => {
-  const nonce = res.locals.cspNonce;
-  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'register.html'), 'utf8');
-  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-});
-
-app.get('/reset-password.html', (req, res) => {
-  const nonce = res.locals.cspNonce;
-  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'reset-password.html'), 'utf8');
-  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-});
+// HTML routes BEFORE static middleware to prevent bypass
+app.get('/', (req, res) => serveHtml('index.html', res));
+app.get('/dashboard.html', (req, res) => serveHtml('dashboard.html', res));
+app.get('/register.html', (req, res) => serveHtml('register.html', res));
+app.get('/reset-password.html', (req, res) => serveHtml('reset-password.html', res));
 
 // Admin panel - SPA with server-side auth check
 app.get('/admin-panel', (req, res) => {
@@ -139,12 +121,19 @@ app.get('/admin-panel', (req, res) => {
   } catch {
     return res.redirect('/');
   }
-  const nonce = res.locals.cspNonce;
-  let html = require('fs').readFileSync(path.join(__dirname, 'public', 'admin-panel.html'), 'utf8');
-  html = html.replace(/<script>/g, `<script nonce="${nonce}">`);
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
+  serveHtml('admin-panel.html', res);
 });
+
+// Static files AFTER HTML routes — no extensions: ['html'] to prevent bypass
+app.use(express.static(path.join(__dirname, 'public'), {
+  maxAge: '1y',
+  immutable: true,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  },
+}));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

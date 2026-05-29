@@ -349,8 +349,6 @@ tr:hover td { background: rgba(59,130,246,.04); }
 <script>
 const API = '/api/admin';
 
-function getToken() { return 'cookie'; }
-
 function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json', ...opts.headers };
   return fetch(`${API}${path}`, { ...opts, headers, credentials: 'same-origin' })
@@ -720,7 +718,7 @@ async function loadBackups() {
       <td>${size}</td>
       <td style="color:var(--text3)">${new Date(b.created).toLocaleString('ru')}</td>
       <td>
-        <a class="btn btn-ghost btn-sm btn-icon" href="${API}/backups/${encodeURIComponent(b.name)}/download?token=${getToken()}" title="Скачать"><i class="ti ti-download"></i></a>
+        <a class="btn btn-ghost btn-sm btn-icon" href="${API}/backups/${encodeURIComponent(b.name)}/download" title="Скачать"><i class="ti ti-download"></i></a>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteBackup('${b.name}')" title="Удалить"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
@@ -912,7 +910,7 @@ document.getElementById('loginEmail').addEventListener('keydown', e => {
 
 function esc(s) {
   if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
 }
 </script>
 </body>

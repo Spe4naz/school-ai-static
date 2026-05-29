@@ -13,6 +13,11 @@ const logger = require('../middleware/logger');
 const { validate, loginSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
+}
+
 router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -109,7 +114,7 @@ router.post('/password-reset/request', passwordResetLimiter, logger, validate(pa
     text: `Здравствуйте, ${user.name}!\n\nСсылка для сброса: ${resetLink}\n\nДействительна 1 час.`,
     html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;">
       <h2 style="color:#2563eb">Сброс пароля</h2>
-      <p>Здравствуйте, <strong>${user.name}</strong>!</p>
+      <p>Здравствуйте, <strong>${escapeHtml(user.name)}</strong>!</p>
       <p><a href="${resetLink}" style="background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:8px;display:inline-block;margin:20px 0">Сбросить пароль</a></p>
       <p style="font-size:0.9rem;color:#666">Ссылка действительна <strong>1 час</strong>.</p>
     </div>`,

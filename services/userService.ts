@@ -104,8 +104,7 @@ class UserService {
   }
 
   async createRefreshToken(userId) {
-    const token = require('crypto').randomBytes(48).toString('hex');
-    const config = require('../config/auth');
+    const token = crypto.randomBytes(48).toString('hex');
     const expiresAt = new Date(Date.now() + config.refreshExpiresInMs);
     await this.db.query(
       'INSERT INTO refresh_tokens (token, user_id, expires_at) VALUES ($1, $2, $3)',
@@ -126,7 +125,7 @@ class UserService {
   }
 
   async invalidateAllRefreshTokens(userId) {
-    await this.db.query('UPDATE refresh_tokens SET used = 1 WHERE user_id = $1 AND used = 0', [userId]);
+    await this.db.query('DELETE FROM refresh_tokens WHERE user_id = $1 AND used = 0', [userId]);
   }
 }
 

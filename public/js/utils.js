@@ -30,7 +30,7 @@ export function safeSetHTML(el, html) {
 
 export async function apiFetch(url, options = {}) {
   const headers = {
-    'Content-Type': 'application/json',
+    ...(options.body && { 'Content-Type': 'application/json' }),
     ...options.headers,
   };
 
