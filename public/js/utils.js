@@ -1,5 +1,25 @@
 export const API = window.location.origin + '/api';
 
+export const ROLE_LABELS = {
+  admin: 'Администратор',
+  teacher: 'Учитель',
+  student: 'Ученик',
+  parent: 'Родитель',
+  head_teacher: 'Завуч',
+};
+
+export function getRoleLabel(role) {
+  return ROLE_LABELS[role] || role;
+}
+
+export function debounce(fn, ms) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
+
 export function getChartInstance() { return window._chartInstance; }
 export function setChartInstance(instance) { window._chartInstance = instance; }
 export function getChatInterval() { return window._chatInterval; }

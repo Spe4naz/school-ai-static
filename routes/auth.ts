@@ -10,13 +10,69 @@ const emailTransporter = require('../config/email');
 const auth = require('../middleware/auth');
 const { loginLimiter, passwordResetLimiter, refreshLimiter } = require('../middleware/rateLimit');
 const logger = require('../middleware/logger');
-const { validate, loginSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
+const { validate, loginSchema, registerSchema, passwordSchema, passwordResetRequestSchema, passwordResetConfirmSchema } = require('../middleware/validate');
 const { ERR } = require('../config/constants');
+
+const isProd = process.env.NODE_ENV === 'production';
+const COOKIE_BASE = { httpOnly: true, sameSite: 'strict', secure: isProd };
+const TOKEN_COOKIE = { ...COOKIE_BASE, maxAge: 24 * 60 * 60 * 1000 };
+const REFRESH_COOKIE = { ...COOKIE_BASE, maxAge: 30 * 24 * 60 * 60 * 1000 };
 
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;');
 }
+
+function signAccessToken(user) {
+  return jwt.sign(
+    { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn, issuer: 'school-ai' },
+  );
+}
+
+function setAuthCookies(res, accessToken, refreshToken) {
+  res.cookie('token', accessToken, TOKEN_COOKIE);
+  res.cookie('refreshToken', refreshToken, REFRESH_COOKIE);
+}
+
+function clearAuthCookies(res) {
+  res.clearCookie('token', COOKIE_BASE);
+  res.clearCookie('refreshToken', COOKIE_BASE);
+}
+
+router.post('/register', validate(registerSchema), asyncHandler(async (req, res) => {
+  const { email, password, name, role, class_id, student_email, code } = req.body;
+
+  if (['teacher', 'head_teacher'].includes(role)) {
+    if (!code) {
+      return res.status(400).json({ error: 'Требуется код регистрации', code: ERR.MISSING_FIELDS });
+    }
+    const valid = await userService.validateRegistrationCode(code, role);
+    if (!valid) {
+      return res.status(400).json({ error: 'Неверный или использованный код', code: ERR.INVALID_TOKEN });
+    }
+  }
+
+  let linked_student_id = null;
+  if (role === 'parent' && student_email) {
+    const student = await userService.findByEmail(student_email);
+    if (student) linked_student_id = student.id;
+  }
+
+  const existing = await userService.findByEmail(email);
+  if (existing) {
+    return res.status(409).json({ error: 'Email уже зарегистрирован', code: ERR.EMAIL_EXISTS });
+  }
+
+  const newUser = await userService.create({
+    email, password, name, role,
+    class_id: role === 'student' ? class_id || null : null,
+    linked_student_id,
+  });
+
+  res.status(201).json({ success: true, user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role } });
+}));
 
 router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -28,27 +84,10 @@ router.post('/login', loginLimiter, logger, validate(loginSchema), asyncHandler(
 
   await userService.updateLastLogin(user.id);
 
-  const accessToken = jwt.sign(
-    { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn, issuer: 'school-ai' },
-  );
-
+  const accessToken = signAccessToken(user);
   const refreshToken = await userService.createRefreshToken(user.id);
 
-  res.cookie('token', accessToken, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
+  setAuthCookies(res, accessToken, refreshToken);
 
   res.json({
     user: { id: user.id, name: user.name, role: user.role, class_id: user.class_id, linked_student_id: user.linked_student_id },
@@ -71,27 +110,10 @@ router.post('/refresh', refreshLimiter, logger, asyncHandler(async (req, res) =>
     return res.status(401).json({ error: 'Пользователь не найден', code: ERR.NOT_FOUND });
   }
 
-  const accessToken = jwt.sign(
-    { id: user.id, role: user.role, name: user.name, class_id: user.class_id, linked_student_id: user.linked_student_id },
-    config.jwtSecret,
-    { expiresIn: config.jwtExpiresIn, issuer: 'school-ai' },
-  );
-
+  const accessToken = signAccessToken(user);
   const newRefreshToken = await userService.createRefreshToken(user.id);
 
-  res.cookie('token', accessToken, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000,
-  });
-
-  res.cookie('refreshToken', newRefreshToken, {
-    httpOnly: true,
-    sameSite: 'strict',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 30 * 24 * 60 * 60 * 1000,
-  });
+  setAuthCookies(res, accessToken, newRefreshToken);
 
   res.json({ success: true });
 }));
@@ -134,17 +156,13 @@ router.post('/logout', logger, asyncHandler(async (req, res) => {
   if (refreshToken) {
     await userService.consumeRefreshToken(refreshToken).catch(() => {});
   }
-  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  clearAuthCookies(res);
   res.json({ success: true, message: 'Выход выполнен' });
 }));
 
 const passwordChangeSchema = z.object({
   currentPassword: z.string().min(1, 'currentPassword обязателен'),
-  newPassword: z.string().min(8, 'Новый пароль должен быть минимум 8 символов').max(128)
-    .regex(/[a-z]/, 'Пароль должен содержать хотя бы одну строчную букву')
-    .regex(/[A-Z]/, 'Пароль должен содержать хотя бы одну заглавную букву')
-    .regex(/[0-9]/, 'Пароль должен содержать хотя бы одну цифру'),
+  newPassword: passwordSchema,
 });
 
 router.post('/password/change', auth, logger, validate(passwordChangeSchema), asyncHandler(async (req, res) => {
@@ -155,8 +173,7 @@ router.post('/password/change', auth, logger, validate(passwordChangeSchema), as
   }
   await userService.updatePassword(req.user.id, newPassword);
   await userService.invalidateAllRefreshTokens(req.user.id);
-  res.clearCookie('token', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
-  res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production' });
+  clearAuthCookies(res);
   res.json({ success: true, message: 'Пароль изменён. Войдите заново.' });
 }));
 

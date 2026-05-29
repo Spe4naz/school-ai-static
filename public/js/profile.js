@@ -1,4 +1,4 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, getRoleLabel } from './utils.js';
 
 export async function loadProfile() {
   const container = document.getElementById('profileContainer');
@@ -82,9 +82,4 @@ export async function loadProfile() {
     container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--danger)">Ошибка загрузки профиля</div>';
     console.error(err);
   }
-}
-
-function getRoleLabel(role) {
-  const labels = { admin: 'Администратор', teacher: 'Учитель', student: 'Ученик', parent: 'Родитель' };
-  return labels[role] || role;
 }

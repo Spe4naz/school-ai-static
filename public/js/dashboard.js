@@ -1,4 +1,4 @@
-import { escapeHtml, clearAllIntervals, setRefreshInterval } from './utils.js';
+import { escapeHtml, clearAllIntervals, setRefreshInterval, API, getRoleLabel } from './utils.js';
 import { loadClasses, loadGrades, submitGrade, shiftWeek, resetWeek } from './grades.js';
 import { loadSchedule, loadClassesForSchedule, createSchedule } from './schedule.js';
 import { loadNotifications } from './notifications.js';
@@ -10,13 +10,6 @@ import { loadUsers, loadClassesForUserModal, createUser, toggleUserClassField } 
 import { loadHomeworks, submitHomework } from './homework.js';
 import { loadAnnouncements, submitAnnouncement } from './announcements.js';
 import { loadLogs } from './logs.js';
-
-const API = window.location.origin + '/api';
-
-function getRoleLabel(role) {
-  const labels = { admin: 'Администратор', teacher: 'Учитель', student: 'Ученик', parent: 'Родитель' };
-  return labels[role] || role;
-}
 
 export function renderDashboard(user) {
   const nav = document.getElementById('navMenu');

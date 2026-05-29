@@ -171,7 +171,7 @@ describe('validate (Zod)', () => {
   });
 
   test('registerSchema: valid → passes', () => {
-    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: 'Test', role: 'student' } });
+    const req = mockReq({ body: { email: 'new@test.com', password: 'SecurePass1', name: 'Test', role: 'student' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -193,7 +193,7 @@ describe('validate (Zod)', () => {
   });
 
   test('registerSchema: invalid role → 400', () => {
-    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: 'Test', role: 'invalid' } });
+    const req = mockReq({ body: { email: 'new@test.com', password: 'SecurePass1', name: 'Test', role: 'invalid' } });
     const res = mockRes();
     const next = mockNext();
 
@@ -204,7 +204,7 @@ describe('validate (Zod)', () => {
   });
 
   test('registerSchema: html in name is sanitized', () => {
-    const req = mockReq({ body: { email: 'new@test.com', password: '123456', name: '<script>alert(1)</script>', role: 'student' } });
+    const req = mockReq({ body: { email: 'new@test.com', password: 'SecurePass1', name: '<script>alert(1)</script>', role: 'student' } });
     const res = mockRes();
     const next = mockNext();
 

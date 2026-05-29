@@ -803,12 +803,16 @@ const loaders = {
 };
 
 // Load user info
-(async function() {
+async function loadUserInfo() {
   try {
-        const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
-    document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name || '')}</span><br>${r.role || ''}`;
+    const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
+    if (r.name) {
+      document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name)}</span><br>${r.role || ''}`;
+    }
   } catch(e) {}
-})();
+}
+
+loadUserInfo();
 
 document.getElementById('logoutBtn').addEventListener('click', () => {
   fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => {
@@ -876,12 +880,7 @@ async function handleLogin() {
     document.getElementById('loginPassword').value = '';
     // Re-init
     loadDashboard();
-    (async function() {
-      try {
-        const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
-        document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name || '')}</span><br>${r.role || ''}`;
-      } catch(e) {}
-    })();
+    loadUserInfo();
   } catch (e) {
     errEl.textContent = 'Ошибка соединения';
     errEl.style.display = 'block';

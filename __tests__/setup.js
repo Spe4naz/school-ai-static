@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 
 process.env.NODE_ENV = 'test';
-process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
+process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only_32chars!';
 
 const stateFile = path.join(__dirname, '.container-state.json');
 

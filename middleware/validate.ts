@@ -102,6 +102,7 @@ module.exports = {
   validate,
   validateParams,
   uuidSchema,
+  passwordSchema,
   loginSchema,
   registerSchema,
   createUserSchema,

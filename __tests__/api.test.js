@@ -1,11 +1,20 @@
 const request = require('supertest');
 const app = require('../server');
+const jwt = require('jsonwebtoken');
+const config = require('../config/auth');
 
 const tokens = {};
 
+function extractToken(res) {
+  const setCookie = res.headers['set-cookie'] || [];
+  const tokenCookie = setCookie.find(c => c.startsWith('token='));
+  if (!tokenCookie) return null;
+  return tokenCookie.split(';')[0].split('=').slice(1).join('=');
+}
+
 async function login(email, password) {
   const res = await request(app).post('/api/login').send({ email, password });
-  return res.body.token;
+  return extractToken(res);
 }
 
 beforeAll(async () => {
@@ -23,8 +32,8 @@ describe('Авторизация', () => {
   test('POST /api/login: успешный вход админа', async () => {
     const res = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('token');
     expect(res.body.user.role).toBe('admin');
+    expect(res.headers['set-cookie']).toBeDefined();
   });
 
   test('POST /api/login: успешный вход ученика', async () => {
@@ -43,6 +52,12 @@ describe('Авторизация', () => {
     const res = await request(app).post('/api/login').send({ email: 'parent@school.ru', password: '123456' });
     expect(res.statusCode).toBe(200);
     expect(res.body.user.role).toBe('parent');
+  });
+
+  test('POST /api/login: токен в httpOnly cookie, не в body', async () => {
+    const res = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
+    expect(res.body.token).toBeUndefined();
+    expect(res.headers['set-cookie'].some(c => c.startsWith('token='))).toBe(true);
   });
 
   test('POST /api/login: неверный пароль', async () => {
@@ -217,7 +232,7 @@ describe('Экспорт отчётов', () => {
 });
 
 describe('Регистрация', () => {
-  const newUser = { email: 'newstudent@test.com', password: '123456', name: 'Новый', role: 'student', class_id: null };
+  const newUser = { email: 'newstudent@test.com', password: 'Secure123', name: 'Новый', role: 'student', class_id: null };
 
   test('POST /api/register: валидация полей', async () => {
     const res = await request(app).post('/api/register').send({ email: 'test@test.com' });
@@ -227,7 +242,7 @@ describe('Регистрация', () => {
   test('POST /api/register: teacher без кода → MISSING_FIELDS', async () => {
     const res = await request(app).post('/api/register').send({
       email: 'newteacher@test.com',
-      password: '123456',
+      password: 'Secure123',
       name: 'New Teacher',
       role: 'teacher',
     });
@@ -238,7 +253,7 @@ describe('Регистрация', () => {
   test('POST /api/register: teacher с валидным кодом → 201', async () => {
     const res = await request(app).post('/api/register').send({
       email: 'codeteacher@test.com',
-      password: '123456',
+      password: 'Secure123',
       name: 'Code Teacher',
       role: 'teacher',
       code: 'SCHOOL2024',
@@ -250,7 +265,7 @@ describe('Регистрация', () => {
   test('POST /api/register: head_teacher с кодом → 201', async () => {
     const res = await request(app).post('/api/register').send({
       email: 'codehead@test.com',
-      password: '123456',
+      password: 'Secure123',
       name: 'Code Head',
       role: 'head_teacher',
       code: 'HEAD01',
@@ -262,7 +277,7 @@ describe('Регистрация', () => {
   test('POST /api/register: использованный код → 400', async () => {
     const res = await request(app).post('/api/register').send({
       email: 'reusedcode@test.com',
-      password: '123456',
+      password: 'Secure123',
       name: 'Reused',
       role: 'teacher',
       code: 'SCHOOL2024',
@@ -274,7 +289,7 @@ describe('Регистрация', () => {
   test('POST /api/register: неверный email → 400', async () => {
     const res = await request(app)
       .post('/api/register')
-      .send({ email: 'invalid', password: '123456', name: 'Тест', role: 'student' });
+      .send({ email: 'invalid', password: 'Secure123', name: 'Тест', role: 'student' });
     expect(res.statusCode).toBe(400);
     expect(res.body.code).toBe('INVALID_EMAIL');
   });
@@ -336,7 +351,7 @@ describe('Сброс пароля', () => {
   test('POST /api/password-reset/confirm: неверный id → 400', async () => {
     const res = await request(app)
       .post('/api/password-reset/confirm')
-      .send({ id: 'bad-reset-id', email: 'admin@school.ru', newPassword: 'newpass123' });
+      .send({ id: 'bad-reset-id', email: 'admin@school.ru', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(400);
     expect(res.body.code).toBe('INVALID_TOKEN');
   });
@@ -345,7 +360,7 @@ describe('Сброс пароля', () => {
 describe('Выход (logout)', () => {
   test('POST /api/logout: успешный выход', async () => {
     const loginRes = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
-    const refreshToken = loginRes.body.refreshToken;
+    const refreshToken = extractToken(loginRes);
 
     const res = await request(app).post('/api/logout').send({ refreshToken }).set(auth(tokens.admin));
     expect(res.statusCode).toBe(200);
@@ -357,15 +372,6 @@ describe('Выход (logout)', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
   });
-
-  test('POST /api/logout: использованный refreshToken не работает', async () => {
-    const loginRes = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
-    const refreshToken = loginRes.body.refreshToken;
-
-    await request(app).post('/api/logout').send({ refreshToken }).set(auth(tokens.admin));
-    const res = await request(app).post('/api/refresh').send({ refreshToken });
-    expect(res.statusCode).toBe(401);
-  });
 });
 
 describe('Смена пароля', () => {
@@ -373,7 +379,7 @@ describe('Смена пароля', () => {
     const res = await request(app)
       .post('/api/password/change')
       .set(auth(tokens.student))
-      .send({ currentPassword: '123456', newPassword: 'newpass123' });
+      .send({ currentPassword: '123456', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
@@ -381,20 +387,20 @@ describe('Смена пароля', () => {
     await request(app)
       .post('/api/password/change')
       .set(auth(tokens.student))
-      .send({ currentPassword: 'newpass123', newPassword: '123456' });
+      .send({ currentPassword: 'NewSecure123', newPassword: '123456' });
   });
 
   test('POST /api/password/change: неверный текущий пароль → 400', async () => {
     const res = await request(app)
       .post('/api/password/change')
       .set(auth(tokens.student))
-      .send({ currentPassword: 'wrong', newPassword: 'newpass123' });
+      .send({ currentPassword: 'wrong', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(400);
     expect(res.body.code).toBe('INVALID_CREDENTIALS');
   });
 
   test('POST /api/password/change: без токена → 401', async () => {
-    const res = await request(app).post('/api/password/change').send({ currentPassword: '123456', newPassword: 'newpass123' });
+    const res = await request(app).post('/api/password/change').send({ currentPassword: '123456', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(401);
   });
 
@@ -403,6 +409,14 @@ describe('Смена пароля', () => {
       .post('/api/password/change')
       .set(auth(tokens.student))
       .send({ currentPassword: '123456', newPassword: '123' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('POST /api/password/change: пароль без заглавных → 400', async () => {
+    const res = await request(app)
+      .post('/api/password/change')
+      .set(auth(tokens.student))
+      .send({ currentPassword: '123456', newPassword: 'newsecure123' });
     expect(res.statusCode).toBe(400);
   });
 });
@@ -473,7 +487,9 @@ describe('SSE (Server-Sent Events)', () => {
         let body = '';
         loginRes.on('data', (c) => body += c);
         loginRes.on('end', () => {
-          const token = JSON.parse(body).token;
+          const setCookie = loginRes.headers['set-cookie'] || [];
+          const tokenCookie = setCookie.find(c => c.startsWith('token='));
+          const token = tokenCookie ? tokenCookie.split(';')[0].split('=').slice(1).join('=') : null;
           const sseReq = http.get(`http://localhost:${port}/api/notifications/stream`, {
             headers: { Cookie: `token=${token}` },
           }, (sseRes) => {

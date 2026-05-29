@@ -1,6 +1,9 @@
 require('dotenv').config();
 
-const REQUIRED_ENV = ['JWT_SECRET', 'DATABASE_URL'];
+const REQUIRED_ENV = ['JWT_SECRET'];
+if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'ci') {
+  REQUIRED_ENV.push('DATABASE_URL');
+}
 const MISSING_ENV = REQUIRED_ENV.filter(k => !process.env[k]);
 if (MISSING_ENV.length > 0) {
   console.error(`FATAL: Missing required environment variables: ${MISSING_ENV.join(', ')}`);
@@ -19,7 +22,7 @@ if (DEFAULT_SECRETS.includes(process.env.JWT_SECRET)) {
   process.exit(1);
 }
 
-if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32 && process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'ci') {
   console.error('FATAL: JWT_SECRET must be at least 32 characters long.');
   process.exit(1);
 }
