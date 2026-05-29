@@ -1,6 +1,7 @@
 const AppError = require('../utils/AppError');
 const BackupService = require('../services/backupService');
 const { getCached, setCache, invalidate, invalidatePrefix, TTL } = require('../utils/cache');
+const dockerService = require('../services/dockerService');
 
 describe('AppError', () => {
   test('creates error with status and code', () => {
@@ -26,6 +27,17 @@ describe('AppError', () => {
     const e2 = new AppError(500, 'ERR2', 'msg2');
     expect(e1.status).not.toBe(e2.status);
     expect(e1.code).not.toBe(e2.code);
+  });
+
+  test('can throw and catch', () => {
+    expect(() => {
+      throw new AppError(422, 'VALIDATION', 'Bad input');
+    }).toThrow('Bad input');
+  });
+
+  test('error has correct name', () => {
+    const err = new AppError(400, 'TEST', 'msg');
+    expect(err.name).toBe('Error');
   });
 });
 
@@ -56,9 +68,14 @@ describe('BackupService', () => {
     expect(() => svc._safePath('/etc/passwd')).toThrow();
   });
 
-  test('_safePath rejects path traversal with \\'  , () => {
+  test('_safePath rejects path traversal with \\', () => {
     const svc = new BackupService();
     expect(() => svc._safePath('..\\..\\windows\\system32')).toThrow();
+  });
+
+  test('_safePath rejects null bytes', () => {
+    const svc = new BackupService();
+    expect(() => svc._safePath('backup\x00.sql')).toThrow();
   });
 
   test('_safePath accepts valid filename', () => {
@@ -66,10 +83,18 @@ describe('BackupService', () => {
     const result = svc._safePath('backup_2024.sql');
     expect(result).toContain('backup_2024.sql');
   });
+
+  test('_safePath accepts filename with underscores', () => {
+    const svc = new BackupService();
+    const result = svc._safePath('backup_2024-01-15.sql');
+    expect(result).toContain('backup_2024-01-15.sql');
+  });
 });
 
 describe('Cache utility (comprehensive)', () => {
-  beforeEach(() => { invalidatePrefix('test:'); });
+  beforeEach(() => {
+    invalidatePrefix('test:');
+  });
 
   test('setCache and getCached', () => {
     setCache('test:a', 'value', 5000);
@@ -89,6 +114,10 @@ describe('Cache utility (comprehensive)', () => {
     setCache('test:inv', 42, 5000);
     invalidate('test:inv');
     expect(getCached('test:inv')).toBeUndefined();
+  });
+
+  test('invalidate non-existent key does not throw', () => {
+    expect(() => invalidate('test:nonexistent')).not.toThrow();
   });
 
   test('invalidatePrefix removes all matching', () => {
@@ -118,5 +147,53 @@ describe('Cache utility (comprehensive)', () => {
     setCache('test:ow', 'old', 5000);
     setCache('test:ow', 'new', 5000);
     expect(getCached('test:ow')).toBe('new');
+  });
+
+  test('cache handles null value', () => {
+    setCache('test:null', null, 5000);
+    expect(getCached('test:null')).toBeNull();
+  });
+
+  test('cache handles undefined value', () => {
+    setCache('test:undef', undefined, 5000);
+    expect(getCached('test:undef')).toBeUndefined();
+  });
+
+  test('cache handles empty string', () => {
+    setCache('test:empty', '', 5000);
+    expect(getCached('test:empty')).toBe('');
+  });
+
+  test('cache handles number zero', () => {
+    setCache('test:zero', 0, 5000);
+    expect(getCached('test:zero')).toBe(0);
+  });
+
+  test('cache handles boolean false', () => {
+    setCache('test:false', false, 5000);
+    expect(getCached('test:false')).toBe(false);
+  });
+});
+
+describe('DockerService', () => {
+  test('isAvailable returns boolean', async () => {
+    const result = await dockerService.isAvailable();
+    expect(typeof result).toBe('boolean');
+  });
+
+  test('getDockerInfo returns available flag', async () => {
+    const info = await dockerService.getDockerInfo();
+    expect(info).toHaveProperty('available');
+    expect(typeof info.available).toBe('boolean');
+  });
+
+  test('getContainers returns array', async () => {
+    const containers = await dockerService.getContainers();
+    expect(Array.isArray(containers)).toBe(true);
+  });
+
+  test('getContainer for non-existent returns null', async () => {
+    const container = await dockerService.getContainer('nonexistent-container-xyz');
+    expect(container).toBeNull();
   });
 });

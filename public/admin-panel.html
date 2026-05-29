@@ -1,464 +1,1046 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Панель управления</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-<style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #0f1218;
-  --bg2: #1a1f2e;
-  --bg3: #232a3b;
-  --bg4: #2c3447;
-  --text: #d1d5db;
-  --text2: #9ca3af;
-  --text3: #6b7280;
-  --accent: #3b82f6;
-  --accent-dark: #2563eb;
-  --accent-light: #60a5fa;
-  --green: #22c55e;
-  --red: #ef4444;
-  --yellow: #eab308;
-  --orange: #f97316;
-  --radius: 8px;
-  --radius-sm: 6px;
-  --shadow: 0 1px 3px rgba(0,0,0,.3);
-  --sidebar: 240px;
-  --header: 56px;
-  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
-html, body { height: 100%; font-family: var(--font); background: var(--bg); color: var(--text); font-size: 14px; }
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Панель управления</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      :root {
+        --bg: #0f1218;
+        --bg2: #1a1f2e;
+        --bg3: #232a3b;
+        --bg4: #2c3447;
+        --text: #d1d5db;
+        --text2: #9ca3af;
+        --text3: #6b7280;
+        --accent: #3b82f6;
+        --accent-dark: #2563eb;
+        --accent-light: #60a5fa;
+        --green: #22c55e;
+        --red: #ef4444;
+        --yellow: #eab308;
+        --orange: #f97316;
+        --radius: 8px;
+        --radius-sm: 6px;
+        --shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        --sidebar: 240px;
+        --header: 56px;
+        --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      }
+      html,
+      body {
+        height: 100%;
+        font-family: var(--font);
+        background: var(--bg);
+        color: var(--text);
+        font-size: 14px;
+      }
+      a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
 
-/* Layout */
-.app { display: flex; height: 100vh; overflow: hidden; }
+      /* Layout */
+      .app {
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
 
-/* Sidebar */
-.sidebar {
-  width: var(--sidebar); min-width: var(--sidebar);
-  background: var(--bg2); border-right: 1px solid var(--bg3);
-  display: flex; flex-direction: column; overflow-y: auto;
-}
-.sidebar .logo {
-  padding: 16px 18px; font-size: 16px; font-weight: 700; color: #fff;
-  border-bottom: 1px solid var(--bg3); display: flex; align-items: center; gap: 10px;
-}
-.sidebar .logo i { color: var(--accent); font-size: 22px; }
-.sidebar nav { flex: 1; padding: 8px 0; }
-.sidebar nav a {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 18px; color: var(--text2); font-size: 13px;
-  transition: all .15s; border-left: 3px solid transparent;
-}
-.sidebar nav a:hover { background: var(--bg3); color: var(--text); }
-.sidebar nav a.active { background: var(--bg3); color: #fff; border-left-color: var(--accent); }
-.sidebar nav a i { font-size: 18px; width: 22px; text-align: center; }
-.sidebar .user-info {
-  padding: 12px 18px; border-top: 1px solid var(--bg3);
-  font-size: 12px; color: var(--text3);
-}
-.sidebar .user-info .name { color: var(--text2); font-weight: 600; }
-.sidebar .logout-btn {
-  display: block; padding: 10px 18px; color: var(--red);
-  border-top: 1px solid var(--bg3); cursor: pointer;
-  transition: background .15s;
-}
-.sidebar .logout-btn:hover { background: var(--bg3); }
+      /* Sidebar */
+      .sidebar {
+        width: var(--sidebar);
+        min-width: var(--sidebar);
+        background: var(--bg2);
+        border-right: 1px solid var(--bg3);
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .sidebar .logo {
+        padding: 16px 18px;
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+        border-bottom: 1px solid var(--bg3);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sidebar .logo i {
+        color: var(--accent);
+        font-size: 22px;
+      }
+      .sidebar nav {
+        flex: 1;
+        padding: 8px 0;
+      }
+      .sidebar nav a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 18px;
+        color: var(--text2);
+        font-size: 13px;
+        transition: all 0.15s;
+        border-left: 3px solid transparent;
+      }
+      .sidebar nav a:hover {
+        background: var(--bg3);
+        color: var(--text);
+      }
+      .sidebar nav a.active {
+        background: var(--bg3);
+        color: #fff;
+        border-left-color: var(--accent);
+      }
+      .sidebar nav a i {
+        font-size: 18px;
+        width: 22px;
+        text-align: center;
+      }
+      .sidebar .user-info {
+        padding: 12px 18px;
+        border-top: 1px solid var(--bg3);
+        font-size: 12px;
+        color: var(--text3);
+      }
+      .sidebar .user-info .name {
+        color: var(--text2);
+        font-weight: 600;
+      }
+      .sidebar .logout-btn {
+        display: block;
+        padding: 10px 18px;
+        color: var(--red);
+        border-top: 1px solid var(--bg3);
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .sidebar .logout-btn:hover {
+        background: var(--bg3);
+      }
 
-/* Main */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.topbar {
-  height: var(--header); min-height: var(--header);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 24px; background: var(--bg2); border-bottom: 1px solid var(--bg3);
-}
-.topbar h2 { font-size: 18px; font-weight: 600; }
-.topbar .breadcrumb { color: var(--text3); font-size: 12px; }
-.content {
-  flex: 1; overflow-y: auto; padding: 24px;
-}
+      /* Main */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .topbar {
+        height: var(--header);
+        min-height: var(--header);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        background: var(--bg2);
+        border-bottom: 1px solid var(--bg3);
+      }
+      .topbar h2 {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .topbar .breadcrumb {
+        color: var(--text3);
+        font-size: 12px;
+      }
+      .content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px;
+      }
 
-/* Cards */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
-.card {
-  background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius);
-  padding: 20px; box-shadow: var(--shadow);
-}
-.card .label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; font-weight: 600; }
-.card .value { font-size: 28px; font-weight: 700; margin-top: 6px; color: #fff; }
-.card .sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+      /* Cards */
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .card {
+        background: var(--bg2);
+        border: 1px solid var(--bg3);
+        border-radius: var(--radius);
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+      .card .label {
+        font-size: 12px;
+        color: var(--text3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .card .value {
+        font-size: 28px;
+        font-weight: 700;
+        margin-top: 6px;
+        color: #fff;
+      }
+      .card .sub {
+        font-size: 12px;
+        color: var(--text2);
+        margin-top: 4px;
+      }
 
-/* Tables */
-.table-wrap { overflow-x: auto; background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius); }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead { background: var(--bg3); }
-th { text-align: left; padding: 10px 14px; font-weight: 600; color: var(--text2); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; white-space: nowrap; }
-td { padding: 10px 14px; border-top: 1px solid var(--bg3); }
-tr:hover td { background: rgba(59,130,246,.04); }
+      /* Tables */
+      .table-wrap {
+        overflow-x: auto;
+        background: var(--bg2);
+        border: 1px solid var(--bg3);
+        border-radius: var(--radius);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      thead {
+        background: var(--bg3);
+      }
+      th {
+        text-align: left;
+        padding: 10px 14px;
+        font-weight: 600;
+        color: var(--text2);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+      }
+      td {
+        padding: 10px 14px;
+        border-top: 1px solid var(--bg3);
+      }
+      tr:hover td {
+        background: rgba(59, 130, 246, 0.04);
+      }
 
-/* Badges */
-.badge {
-  display: inline-block; padding: 2px 8px; border-radius: 10px;
-  font-size: 11px; font-weight: 600; text-transform: lowercase;
-}
-.badge-student { background: rgba(59,130,246,.15); color: var(--accent-light); }
-.badge-parent { background: rgba(34,197,94,.15); color: var(--green); }
-.badge-teacher { background: rgba(249,115,22,.15); color: var(--orange); }
-.badge-head_teacher { background: rgba(168,85,247,.15); color: #a855f7; }
-.badge-admin { background: rgba(239,68,68,.15); color: var(--red); }
-.badge-yes { background: rgba(34,197,94,.15); color: var(--green); }
-.badge-no { background: rgba(239,68,68,.15); color: var(--red); }
+      /* Badges */
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: lowercase;
+      }
+      .badge-student {
+        background: rgba(59, 130, 246, 0.15);
+        color: var(--accent-light);
+      }
+      .badge-parent {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--green);
+      }
+      .badge-teacher {
+        background: rgba(249, 115, 22, 0.15);
+        color: var(--orange);
+      }
+      .badge-head_teacher {
+        background: rgba(168, 85, 247, 0.15);
+        color: #a855f7;
+      }
+      .badge-admin {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
+      .badge-yes {
+        background: rgba(34, 197, 94, 0.15);
+        color: var(--green);
+      }
+      .badge-no {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--red);
+      }
 
-/* Buttons */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--radius-sm);
-  border: none; cursor: pointer; font-size: 13px; font-weight: 500;
-  transition: all .15s;
-}
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: var(--accent-dark); }
-.btn-danger { background: var(--red); color: #fff; }
-.btn-danger:hover { background: #dc2626; }
-.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--bg4); }
-.btn-ghost:hover { background: var(--bg3); color: var(--text); }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn-icon { padding: 6px; min-width: 32px; justify-content: center; }
-.toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 14px;
+        border-radius: var(--radius-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-dark);
+      }
+      .btn-danger {
+        background: var(--red);
+        color: #fff;
+      }
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--text2);
+        border: 1px solid var(--bg4);
+      }
+      .btn-ghost:hover {
+        background: var(--bg3);
+        color: var(--text);
+      }
+      .btn-sm {
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+      .btn-icon {
+        padding: 6px;
+        min-width: 32px;
+        justify-content: center;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
 
-/* Forms */
-.form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
-.form-group input, .form-group select {
-  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
-  background: var(--bg3); border: 1px solid var(--bg4);
-  color: var(--text); font-size: 13px; outline: none; transition: border .15s;
-}
-.form-group input:focus, .form-group select:focus { border-color: var(--accent); }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      /* Forms */
+      .form-group {
+        margin-bottom: 14px;
+      }
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 4px;
+      }
+      .form-group input,
+      .form-group select {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: var(--radius-sm);
+        background: var(--bg3);
+        border: 1px solid var(--bg4);
+        color: var(--text);
+        font-size: 13px;
+        outline: none;
+        transition: border 0.15s;
+      }
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: var(--accent);
+      }
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
 
-/* Modal */
-.modal-overlay {
-  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
-  z-index: 1000; justify-content: center; align-items: center;
-}
-.modal-overlay.show { display: flex; }
-.modal {
-  background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius);
-  padding: 24px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
-}
-.modal h3 { font-size: 16px; margin-bottom: 16px; }
-.modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+      /* Modal */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay.show {
+        display: flex;
+      }
+      .modal {
+        background: var(--bg2);
+        border: 1px solid var(--bg3);
+        border-radius: var(--radius);
+        padding: 24px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .modal h3 {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+      .modal .btn-row {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 16px;
+      }
 
-/* Loading & Empty */
-.loading { text-align: center; padding: 40px; color: var(--text3); }
-.loading i { font-size: 32px; display: block; margin-bottom: 12px; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.empty { text-align: center; padding: 40px; color: var(--text3); }
-.empty i { font-size: 40px; display: block; margin-bottom: 12px; opacity: .5; }
+      /* Loading & Empty */
+      .loading {
+        text-align: center;
+        padding: 40px;
+        color: var(--text3);
+      }
+      .loading i {
+        font-size: 32px;
+        display: block;
+        margin-bottom: 12px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .empty {
+        text-align: center;
+        padding: 40px;
+        color: var(--text3);
+      }
+      .empty i {
+        font-size: 40px;
+        display: block;
+        margin-bottom: 12px;
+        opacity: 0.5;
+      }
 
-/* Toast */
-.toast-container { position: fixed; top: 16px; right: 16px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
-.toast {
-  padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px;
-  box-shadow: 0 4px 12px rgba(0,0,0,.4); animation: slideIn .2s ease-out;
-  max-width: 360px;
-}
-.toast-success { background: #166534; color: #86efac; border: 1px solid #22c55e; }
-.toast-error { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
-.toast-info { background: #1e3a5f; color: #93c5fd; border: 1px solid #3b82f6; }
-@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 2000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 12px 18px;
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        animation: slideIn 0.2s ease-out;
+        max-width: 360px;
+      }
+      .toast-success {
+        background: #166534;
+        color: #86efac;
+        border: 1px solid #22c55e;
+      }
+      .toast-error {
+        background: #7f1d1d;
+        color: #fca5a5;
+        border: 1px solid #ef4444;
+      }
+      .toast-info {
+        background: #1e3a5f;
+        color: #93c5fd;
+        border: 1px solid #3b82f6;
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
 
-/* Tab page visibility */
-.page { display: none; }
-.page.active { display: block; }
+      /* Tab page visibility */
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+      }
 
-/* scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+      /* scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--bg4);
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--text3);
+      }
 
-/* Login overlay */
-.login-overlay {
-  position: fixed; inset: 0; z-index: 5000;
-  display: flex; justify-content: center; align-items: center;
-  background: var(--bg);
-}
-.login-overlay.hidden { display: none; }
-.login-box {
-  background: var(--bg2); border: 1px solid var(--bg3); border-radius: var(--radius);
-  padding: 40px 36px; width: 100%; max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.5);
-}
-.login-box .logo {
-  text-align: center; margin-bottom: 28px;
-}
-.login-box .logo i { font-size: 40px; color: var(--accent); }
-.login-box .logo h1 { font-size: 20px; margin-top: 10px; color: #fff; }
-.login-box .logo p { font-size: 13px; color: var(--text3); margin-top: 4px; }
-.login-box .form-group { margin-bottom: 16px; }
-.login-box .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; }
-.login-box .form-group input {
-  width: 100%; padding: 10px 14px; border-radius: var(--radius-sm);
-  background: var(--bg3); border: 1px solid var(--bg4);
-  color: var(--text); font-size: 14px; outline: none; transition: border .15s;
-}
-.login-box .form-group input:focus { border-color: var(--accent); }
-.login-box .btn {
-  width: 100%; padding: 10px; justify-content: center; font-size: 14px;
-}
-.login-box .error { color: var(--red); font-size: 13px; margin-top: 10px; text-align: center; display: none; }
-.login-box .footer { text-align: center; margin-top: 16px; font-size: 12px; color: var(--text3); }
-</style>
-</head>
-<body>
-<!-- Login overlay -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-box">
-    <div class="logo">
-      <i class="ti ti-shield-lock"></i>
-      <h1>Панель управления</h1>
-      <p>School AI — вход для администратора</p>
+      /* Login overlay */
+      .login-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 5000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: var(--bg);
+      }
+      .login-overlay.hidden {
+        display: none;
+      }
+      .login-box {
+        background: var(--bg2);
+        border: 1px solid var(--bg3);
+        border-radius: var(--radius);
+        padding: 40px 36px;
+        width: 100%;
+        max-width: 400px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .login-box .logo {
+        text-align: center;
+        margin-bottom: 28px;
+      }
+      .login-box .logo i {
+        font-size: 40px;
+        color: var(--accent);
+      }
+      .login-box .logo h1 {
+        font-size: 20px;
+        margin-top: 10px;
+        color: #fff;
+      }
+      .login-box .logo p {
+        font-size: 13px;
+        color: var(--text3);
+        margin-top: 4px;
+      }
+      .login-box .form-group {
+        margin-bottom: 16px;
+      }
+      .login-box .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text2);
+        margin-bottom: 5px;
+      }
+      .login-box .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--bg3);
+        border: 1px solid var(--bg4);
+        color: var(--text);
+        font-size: 14px;
+        outline: none;
+        transition: border 0.15s;
+      }
+      .login-box .form-group input:focus {
+        border-color: var(--accent);
+      }
+      .login-box .btn {
+        width: 100%;
+        padding: 10px;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .login-box .error {
+        color: var(--red);
+        font-size: 13px;
+        margin-top: 10px;
+        text-align: center;
+        display: none;
+      }
+      .login-box .footer {
+        text-align: center;
+        margin-top: 16px;
+        font-size: 12px;
+        color: var(--text3);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Login overlay -->
+    <div class="login-overlay" id="loginOverlay">
+      <div class="login-box">
+        <div class="logo">
+          <i class="ti ti-shield-lock"></i>
+          <h1>Панель управления</h1>
+          <p>School AI — вход для администратора</p>
+        </div>
+        <div class="form-group">
+          <label>Email</label
+          ><input type="email" id="loginEmail" placeholder="admin@school.ru" autocomplete="email" autofocus />
+        </div>
+        <div class="form-group">
+          <label>Пароль</label
+          ><input type="password" id="loginPassword" placeholder="Пароль" autocomplete="current-password" />
+        </div>
+        <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Войти</button>
+        <div class="error" id="loginError">Неверный email или пароль</div>
+        <div class="footer"><a href="/" style="color: var(--text3)">← На главную</a></div>
+      </div>
     </div>
-    <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@school.ru" autocomplete="email" autofocus></div>
-    <div class="form-group"><label>Пароль</label><input type="password" id="loginPassword" placeholder="Пароль" autocomplete="current-password"></div>
-    <button class="btn btn-primary" id="loginBtn" onclick="handleLogin()">Войти</button>
-    <div class="error" id="loginError">Неверный email или пароль</div>
-    <div class="footer"><a href="/" style="color:var(--text3)">← На главную</a></div>
-  </div>
-</div>
 
-<div class="app" id="app">
-  <aside class="sidebar" id="sidebar">
-    <div class="logo"><i class="ti ti-school"></i> School AI</div>
-    <nav>
-      <a href="#" data-page="dashboard" class="active"><i class="ti ti-dashboard"></i> Дашборд</a>
-      <a href="#" data-page="users"><i class="ti ti-users"></i> Пользователи</a>
-      <a href="#" data-page="classes"><i class="ti ti-building-community"></i> Классы</a>
-      <a href="#" data-page="grades"><i class="ti ti-chart-bar"></i> Оценки</a>
-      <a href="#" data-page="schedule"><i class="ti ti-calendar"></i> Расписание</a>
-      <a href="#" data-page="codes"><i class="ti ti-key"></i> Коды регистрации</a>
-      <a href="#" data-page="backups"><i class="ti ti-cloud-upload"></i> Резервные копии</a>
-      <a href="#" data-page="logs"><i class="ti ti-list-details"></i> Журнал действий</a>
-      <a href="#" data-page="settings"><i class="ti ti-settings"></i> Настройки</a>
-    </nav>
-    <div class="user-info" id="userInfo"><span class="name">Загрузка...</span></div>
-    <a class="logout-btn" id="logoutBtn"><i class="ti ti-logout"></i> Выйти</a>
-  </aside>
-  <div class="main">
-    <div class="topbar">
-      <div>
-        <h2 id="pageTitle">Дашборд</h2>
-        <div class="breadcrumb" id="breadcrumb">Главная / Дашборд</div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <a href="/" class="btn btn-ghost btn-sm"><i class="ti ti-arrow-left"></i> На сайт</a>
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="logo"><i class="ti ti-school"></i> School AI</div>
+        <nav>
+          <a href="#" data-page="dashboard" class="active"><i class="ti ti-dashboard"></i> Дашборд</a>
+          <a href="#" data-page="users"><i class="ti ti-users"></i> Пользователи</a>
+          <a href="#" data-page="classes"><i class="ti ti-building-community"></i> Классы</a>
+          <a href="#" data-page="grades"><i class="ti ti-chart-bar"></i> Оценки</a>
+          <a href="#" data-page="schedule"><i class="ti ti-calendar"></i> Расписание</a>
+          <a href="#" data-page="codes"><i class="ti ti-key"></i> Коды регистрации</a>
+          <a href="#" data-page="backups"><i class="ti ti-cloud-upload"></i> Резервные копии</a>
+          <a href="#" data-page="logs"><i class="ti ti-list-details"></i> Журнал действий</a>
+          <a href="#" data-page="system"><i class="ti ti-server"></i> Система</a>
+          <a href="#" data-page="settings"><i class="ti ti-settings"></i> Настройки</a>
+        </nav>
+        <div class="user-info" id="userInfo"><span class="name">Загрузка...</span></div>
+        <a class="logout-btn" id="logoutBtn"><i class="ti ti-logout"></i> Выйти</a>
+      </aside>
+      <div class="main">
+        <div class="topbar">
+          <div>
+            <h2 id="pageTitle">Дашборд</h2>
+            <div class="breadcrumb" id="breadcrumb">Главная / Дашборд</div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <a href="/" class="btn btn-ghost btn-sm"><i class="ti ti-arrow-left"></i> На сайт</a>
+          </div>
+        </div>
+        <div class="content" id="content">
+          <!-- Dashboard -->
+          <div class="page active" id="page-dashboard">
+            <div class="cards" id="statsCards"></div>
+            <div class="card">
+              <h3 style="margin-bottom: 12px; font-size: 14px">Последние действия</h3>
+              <div id="recentLogs"></div>
+            </div>
+          </div>
+
+          <!-- Users -->
+          <div class="page" id="page-users">
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="showAddUserModal()"><i class="ti ti-plus"></i> Создать</button>
+              <input
+                id="userSearch"
+                type="search"
+                placeholder="Поиск по имени или email..."
+                oninput="loadUsers()"
+                style="
+                  padding: 6px 10px;
+                  border-radius: 6px;
+                  background: var(--bg3);
+                  border: 1px solid var(--bg4);
+                  color: var(--text);
+                  font-size: 12px;
+                  flex: 1;
+                  max-width: 280px;
+                "
+              />
+              <select
+                id="userRoleFilter"
+                onchange="loadUsers()"
+                style="
+                  padding: 6px 10px;
+                  border-radius: 6px;
+                  background: var(--bg3);
+                  border: 1px solid var(--bg4);
+                  color: var(--text);
+                  font-size: 12px;
+                "
+              >
+                <option value="">Все роли</option>
+                <option value="student">Ученик</option>
+                <option value="parent">Родитель</option>
+                <option value="teacher">Учитель</option>
+                <option value="head_teacher">Завуч</option>
+                <option value="admin">Админ</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Имя</th>
+                    <th>Email</th>
+                    <th>Роль</th>
+                    <th>Класс</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="usersBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Classes -->
+          <div class="page" id="page-classes">
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="showAddClassModal()"><i class="ti ti-plus"></i> Создать</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Название</th>
+                    <th>Учеников</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="classesBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Grades -->
+          <div class="page" id="page-grades">
+            <div class="toolbar"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Ученик</th>
+                    <th>Класс</th>
+                    <th>Предмет</th>
+                    <th>Оценка</th>
+                    <th>Дата</th>
+                    <th>Учитель</th>
+                  </tr>
+                </thead>
+                <tbody id="gradesBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Schedule -->
+          <div class="page" id="page-schedule">
+            <div class="toolbar">
+              <button class="btn btn-ghost btn-sm" onclick="loadSchedule(-1)">
+                <i class="ti ti-chevron-left"></i>
+              </button>
+              <span
+                id="scheduleWeekLabel"
+                style="font-size: 13px; font-weight: 600; min-width: 120px; text-align: center"
+              ></span>
+              <button class="btn btn-ghost btn-sm" onclick="loadSchedule(1)">
+                <i class="ti ti-chevron-right"></i>
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>День</th>
+                    <th>Время</th>
+                    <th>Предмет</th>
+                    <th>Класс</th>
+                    <th>Учитель</th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Registration Codes -->
+          <div class="page" id="page-codes">
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="showAddCodeModal()">
+                <i class="ti ti-plus"></i> Создать код
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Код</th>
+                    <th>Роль</th>
+                    <th>Использован</th>
+                    <th>Создан</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="codesBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Backups -->
+          <div class="page" id="page-backups">
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="createBackup()">
+                <i class="ti ti-cloud-upload"></i> Создать копию
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Файл</th>
+                    <th>Размер</th>
+                    <th>Дата</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="backupsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Logs -->
+          <div class="page" id="page-logs">
+            <div class="toolbar">
+              <select
+                id="logUserFilter"
+                onchange="loadLogs()"
+                style="
+                  padding: 6px 10px;
+                  border-radius: 6px;
+                  background: var(--bg3);
+                  border: 1px solid var(--bg4);
+                  color: var(--text);
+                  font-size: 12px;
+                "
+              >
+                <option value="">Все пользователи</option>
+              </select>
+            </div>
+            <div class="table-wrap" style="max-height: calc(100vh - 200px); overflow-y: auto">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Время</th>
+                    <th>Пользователь</th>
+                    <th>Действие</th>
+                    <th>IP</th>
+                  </tr>
+                </thead>
+                <tbody id="logsBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- System -->
+          <div class="page" id="page-system">
+            <div class="toolbar">
+              <button class="btn btn-primary" onclick="loadSystemStatus()">
+                <i class="ti ti-refresh"></i> Обновить
+              </button>
+            </div>
+            <div class="cards" id="systemCards"></div>
+            <h3 style="margin: 16px 0 12px; font-size: 14px">Контейнеры Docker</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Имя</th>
+                    <th>Образ</th>
+                    <th>Статус</th>
+                    <th>Порты</th>
+                    <th>Действия</th>
+                  </tr>
+                </thead>
+                <tbody id="containersBody"></tbody>
+              </table>
+            </div>
+            <h3 style="margin: 16px 0 12px; font-size: 14px">Логи приложения</h3>
+            <div style="display: flex; gap: 8px; margin-bottom: 8px">
+              <button class="btn btn-ghost btn-sm" onclick="loadAppLogs(100)">100 строк</button>
+              <button class="btn btn-ghost btn-sm" onclick="loadAppLogs(500)">500 строк</button>
+              <button class="btn btn-ghost btn-sm" onclick="loadAppLogs(1000)">1000 строк</button>
+            </div>
+            <pre
+              id="appLogs"
+              style="
+                background: var(--bg3);
+                padding: 12px;
+                border-radius: 8px;
+                font-size: 12px;
+                max-height: 400px;
+                overflow: auto;
+                white-space: pre-wrap;
+              "
+            ></pre>
+          </div>
+
+          <!-- Settings -->
+          <div class="page" id="page-settings">
+            <div class="card" style="max-width: 600px">
+              <h3 style="margin-bottom: 16px">Параметры системы</h3>
+              <div id="settingsBody"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <div class="content" id="content">
-      <!-- Dashboard -->
-      <div class="page active" id="page-dashboard">
-        <div class="cards" id="statsCards"></div>
-        <div class="card"><h3 style="margin-bottom:12px;font-size:14px">Последние действия</h3><div id="recentLogs"></div></div>
-      </div>
 
-      <!-- Users -->
-      <div class="page" id="page-users">
-        <div class="toolbar">
-          <button class="btn btn-primary" onclick="showAddUserModal()"><i class="ti ti-plus"></i> Создать</button>
-          <input id="userSearch" type="search" placeholder="Поиск по имени или email..." oninput="loadUsers()" style="padding:6px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--bg4);color:var(--text);font-size:12px;flex:1;max-width:280px">
-          <select id="userRoleFilter" onchange="loadUsers()" style="padding:6px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--bg4);color:var(--text);font-size:12px">
-            <option value="">Все роли</option>
-            <option value="student">Ученик</option>
-            <option value="parent">Родитель</option>
-            <option value="teacher">Учитель</option>
-            <option value="head_teacher">Завуч</option>
-            <option value="admin">Админ</option>
-          </select>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>Имя</th><th>Email</th><th>Роль</th><th>Класс</th><th>Действия</th></tr></thead><tbody id="usersBody"></tbody></table></div>
-      </div>
+    <!-- Modals -->
+    <div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
+    <div class="toast-container" id="toastContainer"></div>
 
-      <!-- Classes -->
-      <div class="page" id="page-classes">
-        <div class="toolbar">
-          <button class="btn btn-primary" onclick="showAddClassModal()"><i class="ti ti-plus"></i> Создать</button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>Название</th><th>Учеников</th><th>Действия</th></tr></thead><tbody id="classesBody"></tbody></table></div>
-      </div>
+    <script>
+      const API = '/api/admin';
 
-      <!-- Grades -->
-      <div class="page" id="page-grades">
-        <div class="toolbar"></div>
-        <div class="table-wrap"><table><thead><tr><th>Ученик</th><th>Класс</th><th>Предмет</th><th>Оценка</th><th>Дата</th><th>Учитель</th></tr></thead><tbody id="gradesBody"></tbody></table></div>
-      </div>
+      function api(path, opts = {}) {
+        const headers = { 'Content-Type': 'application/json', ...opts.headers };
+        return fetch(`${API}${path}`, { ...opts, headers, credentials: 'same-origin' })
+          .then((r) => r.json().then((data) => ({ ok: r.ok, status: r.status, data })))
+          .catch((err) => ({ ok: false, status: 0, data: { error: err.message } }));
+      }
 
-      <!-- Schedule -->
-      <div class="page" id="page-schedule">
-        <div class="toolbar">
-          <button class="btn btn-ghost btn-sm" onclick="loadSchedule(-1)"><i class="ti ti-chevron-left"></i></button>
-          <span id="scheduleWeekLabel" style="font-size:13px;font-weight:600;min-width:120px;text-align:center"></span>
-          <button class="btn btn-ghost btn-sm" onclick="loadSchedule(1)"><i class="ti ti-chevron-right"></i></button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>День</th><th>Время</th><th>Предмет</th><th>Класс</th><th>Учитель</th></tr></thead><tbody id="scheduleBody"></tbody></table></div>
-      </div>
+      function toast(msg, type = 'info') {
+        const el = document.createElement('div');
+        el.className = `toast toast-${type}`;
+        el.textContent = msg;
+        document.getElementById('toastContainer').appendChild(el);
+        setTimeout(() => el.remove(), 3500);
+      }
 
-      <!-- Registration Codes -->
-      <div class="page" id="page-codes">
-        <div class="toolbar">
-          <button class="btn btn-primary" onclick="showAddCodeModal()"><i class="ti ti-plus"></i> Создать код</button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>Код</th><th>Роль</th><th>Использован</th><th>Создан</th><th>Действия</th></tr></thead><tbody id="codesBody"></tbody></table></div>
-      </div>
+      function showModal(html) {
+        document.getElementById('modalContent').innerHTML = html;
+        document.getElementById('modalOverlay').classList.add('show');
+      }
+      function hideModal() {
+        document.getElementById('modalOverlay').classList.remove('show');
+      }
+      document.getElementById('modalOverlay').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) hideModal();
+      });
 
-      <!-- Backups -->
-      <div class="page" id="page-backups">
-        <div class="toolbar">
-          <button class="btn btn-primary" onclick="createBackup()"><i class="ti ti-cloud-upload"></i> Создать копию</button>
-        </div>
-        <div class="table-wrap"><table><thead><tr><th>Файл</th><th>Размер</th><th>Дата</th><th>Действия</th></tr></thead><tbody id="backupsBody"></tbody></table></div>
-      </div>
+      function loading(el) {
+        el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Загрузка...</div>';
+      }
 
-      <!-- Logs -->
-      <div class="page" id="page-logs">
-        <div class="toolbar">
-          <select id="logUserFilter" onchange="loadLogs()" style="padding:6px 10px;border-radius:6px;background:var(--bg3);border:1px solid var(--bg4);color:var(--text);font-size:12px"><option value="">Все пользователи</option></select>
-        </div>
-        <div class="table-wrap" style="max-height:calc(100vh - 200px);overflow-y:auto"><table><thead><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>IP</th></tr></thead><tbody id="logsBody"></tbody></table></div>
-      </div>
+      function errMsg(d) {
+        return d?.error || d?.message || 'Неизвестная ошибка';
+      }
 
-      <!-- Settings -->
-      <div class="page" id="page-settings">
-        <div class="card" style="max-width:600px">
-          <h3 style="margin-bottom:16px">Параметры системы</h3>
-          <div id="settingsBody"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+      // Navigation
+      document.querySelectorAll('[data-page]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = a.dataset.page;
+          document.querySelectorAll('.sidebar nav a').forEach((x) => x.classList.remove('active'));
+          a.classList.add('active');
+          document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
+          const pageEl = document.getElementById(`page-${page}`);
+          if (pageEl) pageEl.classList.add('active');
+          const titles = {
+            dashboard: 'Дашборд',
+            users: 'Пользователи',
+            classes: 'Классы',
+            grades: 'Оценки',
+            schedule: 'Расписание',
+            codes: 'Коды регистрации',
+            backups: 'Резервные копии',
+            logs: 'Журнал действий',
+            settings: 'Настройки',
+          };
+          document.getElementById('pageTitle').textContent = titles[page] || page;
+          document.getElementById('breadcrumb').textContent = `Главная / ${titles[page] || page}`;
+          loaders[page] && loaders[page]();
+        });
+      });
 
-<!-- Modals -->
-<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"></div></div>
-<div class="toast-container" id="toastContainer"></div>
-
-<script>
-const API = '/api/admin';
-
-function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json', ...opts.headers };
-  return fetch(`${API}${path}`, { ...opts, headers, credentials: 'same-origin' })
-    .then(r => r.json().then(data => ({ ok: r.ok, status: r.status, data })))
-    .catch(err => ({ ok: false, status: 0, data: { error: err.message } }));
-}
-
-function toast(msg, type = 'info') {
-  const el = document.createElement('div');
-  el.className = `toast toast-${type}`;
-  el.textContent = msg;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
-function showModal(html) {
-  document.getElementById('modalContent').innerHTML = html;
-  document.getElementById('modalOverlay').classList.add('show');
-}
-function hideModal() {
-  document.getElementById('modalOverlay').classList.remove('show');
-}
-document.getElementById('modalOverlay').addEventListener('click', e => {
-  if (e.target === e.currentTarget) hideModal();
-});
-
-function loading(el) {
-  el.innerHTML = '<div class="loading"><i class="ti ti-loader"></i> Загрузка...</div>';
-}
-
-function errMsg(d) {
-  return d?.error || d?.message || 'Неизвестная ошибка';
-}
-
-// Navigation
-document.querySelectorAll('[data-page]').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const page = a.dataset.page;
-    document.querySelectorAll('.sidebar nav a').forEach(x => x.classList.remove('active'));
-    a.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const pageEl = document.getElementById(`page-${page}`);
-    if (pageEl) pageEl.classList.add('active');
-    const titles = { dashboard:'Дашборд', users:'Пользователи', classes:'Классы', grades:'Оценки', schedule:'Расписание', codes:'Коды регистрации', backups:'Резервные копии', logs:'Журнал действий', settings:'Настройки' };
-    document.getElementById('pageTitle').textContent = titles[page] || page;
-    document.getElementById('breadcrumb').textContent = `Главная / ${titles[page] || page}`;
-    loaders[page] && loaders[page]();
-  });
-});
-
-// ============= DASHBOARD =============
-async function loadDashboard() {
-  const statsEl = document.getElementById('statsCards');
-  loading(statsEl);
-  const r = await api('/stats');
-  if (!r.ok) { statsEl.innerHTML = '<div class="empty">Ошибка загрузки</div>'; return; }
-  const s = r.data;
-  statsEl.innerHTML = `
+      // ============= DASHBOARD =============
+      async function loadDashboard() {
+        const statsEl = document.getElementById('statsCards');
+        loading(statsEl);
+        const r = await api('/stats');
+        if (!r.ok) {
+          statsEl.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+          return;
+        }
+        const s = r.data;
+        statsEl.innerHTML = `
     <div class="card"><div class="label">Пользователей</div><div class="value">${s.totalUsers}</div></div>
     <div class="card"><div class="label">Оценок</div><div class="value">${s.totalGrades}</div></div>
     <div class="card"><div class="label">Классов</div><div class="value">${s.totalClasses}</div></div>
     <div class="card"><div class="label">Резервная копия</div><div class="value" style="font-size:16px">${s.lastBackup ? new Date(s.lastBackup).toLocaleString('ru') : 'Нет'}</div></div>
   `;
 
-  // Recent logs
-  const logsEl = document.getElementById('recentLogs');
-  const lr = await api('/logs?limit=10');
-  if (!lr.ok) { logsEl.innerHTML = '<div class="empty">Нет данных</div>'; return; }
-  if (!lr.data.length) { logsEl.innerHTML = '<div class="empty"><i class="ti ti-inbox"></i>Нет действий</div>'; return; }
-  logsEl.innerHTML = '<div style="max-height:300px;overflow-y:auto">' + lr.data.map(l =>
-    `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg3);font-size:12px">
+        // Recent logs
+        const logsEl = document.getElementById('recentLogs');
+        const lr = await api('/logs?limit=10');
+        if (!lr.ok) {
+          logsEl.innerHTML = '<div class="empty">Нет данных</div>';
+          return;
+        }
+        if (!lr.data.length) {
+          logsEl.innerHTML = '<div class="empty"><i class="ti ti-inbox"></i>Нет действий</div>';
+          return;
+        }
+        logsEl.innerHTML =
+          '<div style="max-height:300px;overflow-y:auto">' +
+          lr.data
+            .map(
+              (l) =>
+                `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bg3);font-size:12px">
       <span>${l.action}</span>
       <span style="color:var(--text3)">${l.user_name || '—'} · ${new Date(l.timestamp).toLocaleString('ru')}</span>
-    </div>`
-  ).join('') + '</div>';
-}
+    </div>`,
+            )
+            .join('') +
+          '</div>';
+      }
 
-// ============= USERS =============
-async function loadUsers() {
-  const tbody = document.getElementById('usersBody');
-  loading(tbody);
-  const role = document.getElementById('userRoleFilter').value;
-  const q = document.getElementById('userSearch').value.trim();
-  const params = new URLSearchParams();
-  if (role) params.set('role', role);
-  if (q) params.set('q', q);
-  const r = await api(`/users?${params}`);
-  if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Ошибка загрузки</td></tr>'; return; }
-  if (!r.data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-users"></i>Нет пользователей</td></tr>'; return; }
-  tbody.innerHTML = r.data.map(u => {
-    const badge = `badge-${u.role}`;
-    const roleNames = { student:'Ученик', parent:'Родитель', teacher:'Учитель', head_teacher:'Завуч', admin:'Админ' };
-    return `<tr>
+      // ============= USERS =============
+      async function loadUsers() {
+        const tbody = document.getElementById('usersBody');
+        loading(tbody);
+        const role = document.getElementById('userRoleFilter').value;
+        const q = document.getElementById('userSearch').value.trim();
+        const params = new URLSearchParams();
+        if (role) params.set('role', role);
+        if (q) params.set('q', q);
+        const r = await api(`/users?${params}`);
+        if (!r.ok) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty">Ошибка загрузки</td></tr>';
+          return;
+        }
+        if (!r.data.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-users"></i>Нет пользователей</td></tr>';
+          return;
+        }
+        tbody.innerHTML = r.data
+          .map((u) => {
+            const badge = `badge-${u.role}`;
+            const roleNames = {
+              student: 'Ученик',
+              parent: 'Родитель',
+              teacher: 'Учитель',
+              head_teacher: 'Завуч',
+              admin: 'Админ',
+            };
+            return `<tr>
       <td style="font-weight:600">${esc(u.name)}</td>
       <td>${esc(u.email)}</td>
       <td><span class="badge ${badge}">${roleNames[u.role] || u.role}</span></td>
-      <td>${u.class_id ? esc(u.class_id.substring(0,8))+'…' : '—'}</td>
+      <td>${u.class_id ? esc(u.class_id.substring(0, 8)) + '…' : '—'}</td>
       <td>
         <button class="btn btn-ghost btn-sm btn-icon" onclick="editUser('${u.id}')" title="Редактировать"><i class="ti ti-edit"></i></button>
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteUser('${u.id}')" title="Удалить"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
-  }).join('');
-}
+          })
+          .join('');
+      }
 
-async function showAddUserModal() {
-  const cls = await api('/classes');
-  const classes = cls.ok ? cls.data : [];
-  showModal(`
+      async function showAddUserModal() {
+        const cls = await api('/classes');
+        const classes = cls.ok ? cls.data : [];
+        showModal(`
     <h3>Создать пользователя</h3>
     <div class="form-group"><label>Имя</label><input id="f-name" placeholder="Имя"></div>
     <div class="form-group"><label>Email</label><input id="f-email" type="email" placeholder="email@example.com"></div>
@@ -472,7 +1054,7 @@ async function showAddUserModal() {
         </select>
       </div>
       <div class="form-group" id="f-class-group"><label>Класс</label>
-        <select id="f-class"><option value="">—</option>${classes.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
+        <select id="f-class"><option value="">—</option>${classes.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}</select>
       </div>
     </div>
     <div class="btn-row">
@@ -480,40 +1062,60 @@ async function showAddUserModal() {
       <button class="btn btn-primary" onclick="submitAddUser()">Создать</button>
     </div>
   `);
-}
-async function submitAddUser() {
-  const name = document.getElementById('f-name').value;
-  const email = document.getElementById('f-email').value;
-  const password = document.getElementById('f-password').value;
-  const role = document.getElementById('f-role').value;
-  const class_id = role === 'student' ? document.getElementById('f-class').value : '';
-  if (!name || !email || !password) { toast('Заполните все поля', 'error'); return; }
-  const r = await api('/users', { method:'POST', body:JSON.stringify({ name, email, password, role, class_id: class_id || undefined }) });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Пользователь создан', 'success');
-  hideModal();
-  loadUsers();
-}
+      }
+      async function submitAddUser() {
+        const name = document.getElementById('f-name').value;
+        const email = document.getElementById('f-email').value;
+        const password = document.getElementById('f-password').value;
+        const role = document.getElementById('f-role').value;
+        const class_id = role === 'student' ? document.getElementById('f-class').value : '';
+        if (!name || !email || !password) {
+          toast('Заполните все поля', 'error');
+          return;
+        }
+        const r = await api('/users', {
+          method: 'POST',
+          body: JSON.stringify({ name, email, password, role, class_id: class_id || undefined }),
+        });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Пользователь создан', 'success');
+        hideModal();
+        loadUsers();
+      }
 
-async function editUser(id) {
-  const ur = await api('/users/'+id);
-  if (!ur.ok) { toast(errMsg(ur.data), 'error'); return; }
-  const u = ur.data;
-  const cls = await api('/classes');
-  const classes = cls.ok ? cls.data : [];
-  const roleNames = { student:'Ученик', parent:'Родитель', teacher:'Учитель', head_teacher:'Завуч', admin:'Админ' };
-  showModal(`
+      async function editUser(id) {
+        const ur = await api('/users/' + id);
+        if (!ur.ok) {
+          toast(errMsg(ur.data), 'error');
+          return;
+        }
+        const u = ur.data;
+        const cls = await api('/classes');
+        const classes = cls.ok ? cls.data : [];
+        const roleNames = {
+          student: 'Ученик',
+          parent: 'Родитель',
+          teacher: 'Учитель',
+          head_teacher: 'Завуч',
+          admin: 'Админ',
+        };
+        showModal(`
     <h3>Редактировать: ${esc(u.name)}</h3>
     <div class="form-group"><label>Имя</label><input id="f-name" value="${esc(u.name)}"></div>
     <div class="form-group"><label>Email</label><input id="f-email" type="email" value="${esc(u.email)}"></div>
     <div class="form-row">
       <div class="form-group"><label>Роль</label>
         <select id="f-role" onchange="document.getElementById('f-class-group2').style.display=this.value==='student'?'block':'none'">
-          ${Object.entries(roleNames).map(([k,v]) => `<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}
+          ${Object.entries(roleNames)
+            .map(([k, v]) => `<option value="${k}" ${u.role === k ? 'selected' : ''}>${v}</option>`)
+            .join('')}
         </select>
       </div>
-      <div class="form-group" id="f-class-group2" style="${u.role==='student'?'block':'none'}"><label>Класс</label>
-        <select id="f-class"><option value="">—</option>${classes.map(c => `<option value="${c.id}" ${u.class_id===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
+      <div class="form-group" id="f-class-group2" style="${u.role === 'student' ? 'block' : 'none'}"><label>Класс</label>
+        <select id="f-class"><option value="">—</option>${classes.map((c) => `<option value="${c.id}" ${u.class_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>
       </div>
     </div>
     <div class="btn-row">
@@ -521,52 +1123,70 @@ async function editUser(id) {
       <button class="btn btn-primary" onclick="submitEditUser('${id}')">Сохранить</button>
     </div>
   `);
-  document.getElementById('f-class-group2').style.display = u.role === 'student' ? 'block' : 'none';
-}
-async function submitEditUser(id) {
-  const body = {
-    name: document.getElementById('f-name').value,
-    email: document.getElementById('f-email').value,
-    role: document.getElementById('f-role').value,
-  };
-  body.class_id = body.role === 'student' ? document.getElementById('f-class').value || null : null;
-  const r = await api('/users/'+id, { method:'PUT', body:JSON.stringify(body) });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Сохранено', 'success');
-  hideModal();
-  loadUsers();
-}
+        document.getElementById('f-class-group2').style.display = u.role === 'student' ? 'block' : 'none';
+      }
+      async function submitEditUser(id) {
+        const body = {
+          name: document.getElementById('f-name').value,
+          email: document.getElementById('f-email').value,
+          role: document.getElementById('f-role').value,
+        };
+        body.class_id = body.role === 'student' ? document.getElementById('f-class').value || null : null;
+        const r = await api('/users/' + id, { method: 'PUT', body: JSON.stringify(body) });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Сохранено', 'success');
+        hideModal();
+        loadUsers();
+      }
 
-async function deleteUser(id) {
-  if (!confirm('Удалить этого пользователя?')) return;
-  const r = await api('/users/'+id, { method:'DELETE' });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Удалён', 'success');
-  loadUsers();
-}
+      async function deleteUser(id) {
+        if (!confirm('Удалить этого пользователя?')) return;
+        const r = await api('/users/' + id, { method: 'DELETE' });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Удалён', 'success');
+        loadUsers();
+      }
 
-// ============= CLASSES =============
-async function loadClasses() {
-  const tbody = document.getElementById('classesBody');
-  loading(tbody);
-  const [cr, ur] = await Promise.all([api('/classes'), api('/users?role=student')]);
-  if (!cr.ok) { tbody.innerHTML = '<tr><td colspan="3" class="empty">Ошибка</td></tr>'; return; }
-  const students = ur.ok ? ur.data : [];
-  const counts = {};
-  students.forEach(s => { counts[s.class_id] = (counts[s.class_id]||0) + 1; });
-  if (!cr.data.length) { tbody.innerHTML = '<tr><td colspan="3" class="empty"><i class="ti ti-inbox"></i>Нет классов</td></tr>'; return; }
-  tbody.innerHTML = cr.data.map(c => `<tr>
+      // ============= CLASSES =============
+      async function loadClasses() {
+        const tbody = document.getElementById('classesBody');
+        loading(tbody);
+        const [cr, ur] = await Promise.all([api('/classes'), api('/users?role=student')]);
+        if (!cr.ok) {
+          tbody.innerHTML = '<tr><td colspan="3" class="empty">Ошибка</td></tr>';
+          return;
+        }
+        const students = ur.ok ? ur.data : [];
+        const counts = {};
+        students.forEach((s) => {
+          counts[s.class_id] = (counts[s.class_id] || 0) + 1;
+        });
+        if (!cr.data.length) {
+          tbody.innerHTML = '<tr><td colspan="3" class="empty"><i class="ti ti-inbox"></i>Нет классов</td></tr>';
+          return;
+        }
+        tbody.innerHTML = cr.data
+          .map(
+            (c) => `<tr>
     <td style="font-weight:600">${esc(c.name)}</td>
     <td>${counts[c.id] || 0}</td>
     <td>
       <button class="btn btn-ghost btn-sm btn-icon" onclick="editClass('${c.id}')" title="Редактировать"><i class="ti ti-edit"></i></button>
       <button class="btn btn-danger btn-sm btn-icon" onclick="deleteClass('${c.id}')" title="Удалить"><i class="ti ti-trash"></i></button>
     </td>
-  </tr>`).join('');
-}
+  </tr>`,
+          )
+          .join('');
+      }
 
-function showAddClassModal() {
-  showModal(`
+      function showAddClassModal() {
+        showModal(`
     <h3>Создать класс</h3>
     <div class="form-group"><label>Название</label><input id="f-class-name" placeholder="Например: 5А"></div>
     <div class="btn-row">
@@ -574,23 +1194,29 @@ function showAddClassModal() {
       <button class="btn btn-primary" onclick="submitAddClass()">Создать</button>
     </div>
   `);
-}
-async function submitAddClass() {
-  const name = document.getElementById('f-class-name').value;
-  if (!name) { toast('Введите название', 'error'); return; }
-  const r = await api('/classes', { method:'POST', body:JSON.stringify({ name }) });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Класс создан', 'success');
-  hideModal();
-  loadClasses();
-}
+      }
+      async function submitAddClass() {
+        const name = document.getElementById('f-class-name').value;
+        if (!name) {
+          toast('Введите название', 'error');
+          return;
+        }
+        const r = await api('/classes', { method: 'POST', body: JSON.stringify({ name }) });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Класс создан', 'success');
+        hideModal();
+        loadClasses();
+      }
 
-async function editClass(id) {
-  const cr = await api('/classes');
-  if (!cr.ok) return;
-  const cls = cr.data.find(c => c.id === id);
-  if (!cls) return;
-  showModal(`
+      async function editClass(id) {
+        const cr = await api('/classes');
+        if (!cr.ok) return;
+        const cls = cr.data.find((c) => c.id === id);
+        if (!cls) return;
+        showModal(`
     <h3>Редактировать: ${esc(cls.name)}</h3>
     <div class="form-group"><label>Название</label><input id="f-class-name" value="${esc(cls.name)}"></div>
     <div class="btn-row">
@@ -598,80 +1224,117 @@ async function editClass(id) {
       <button class="btn btn-primary" onclick="submitEditClass('${id}')">Сохранить</button>
     </div>
   `);
-}
-async function submitEditClass(id) {
-  const name = document.getElementById('f-class-name').value;
-  if (!name) { toast('Введите название', 'error'); return; }
-  const r = await api('/classes/'+id, { method:'PUT', body:JSON.stringify({ name }) });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Сохранено', 'success');
-  hideModal();
-  loadClasses();
-}
+      }
+      async function submitEditClass(id) {
+        const name = document.getElementById('f-class-name').value;
+        if (!name) {
+          toast('Введите название', 'error');
+          return;
+        }
+        const r = await api('/classes/' + id, { method: 'PUT', body: JSON.stringify({ name }) });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Сохранено', 'success');
+        hideModal();
+        loadClasses();
+      }
 
-async function deleteClass(id) {
-  if (!confirm('Удалить класс? Он должен быть без учеников.')) return;
-  const r = await api('/classes/'+id, { method:'DELETE' });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Удалён', 'success');
-  loadClasses();
-}
+      async function deleteClass(id) {
+        if (!confirm('Удалить класс? Он должен быть без учеников.')) return;
+        const r = await api('/classes/' + id, { method: 'DELETE' });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Удалён', 'success');
+        loadClasses();
+      }
 
-// ============= GRADES =============
-async function loadGrades() {
-  const tbody = document.getElementById('gradesBody');
-  loading(tbody);
-  const r = await fetch('/api/grades?limit=100', { credentials: 'same-origin' }).then(r => r.json()).catch(() => []);
-  if (!Array.isArray(r) || !r.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Нет оценок</td></tr>'; return; }
-  tbody.innerHTML = r.map(g => `<tr>
+      // ============= GRADES =============
+      async function loadGrades() {
+        const tbody = document.getElementById('gradesBody');
+        loading(tbody);
+        const r = await fetch('/api/grades?limit=100', { credentials: 'same-origin' })
+          .then((r) => r.json())
+          .catch(() => []);
+        if (!Array.isArray(r) || !r.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="empty"><i class="ti ti-inbox"></i>Нет оценок</td></tr>';
+          return;
+        }
+        tbody.innerHTML = r
+          .map(
+            (g) => `<tr>
     <td>${esc(g.student_name || '—')}</td>
     <td>${esc(g.class_name || '—')}</td>
     <td>${esc(g.subject || '—')}</td>
     <td style="font-weight:700;color:${g.grade < 3 ? 'var(--red)' : g.grade < 4 ? 'var(--yellow)' : 'var(--green)'}">${g.grade}</td>
     <td style="color:var(--text3)">${g.created_at ? new Date(g.created_at).toLocaleDateString('ru') : '—'}</td>
     <td>${esc(g.teacher_name || '—')}</td>
-  </tr>`).join('');
-}
+  </tr>`,
+          )
+          .join('');
+      }
 
-// ============= SCHEDULE =============
-let scheduleOffset = 0;
-async function loadSchedule(delta) {
-  if (delta !== undefined) scheduleOffset += delta;
-  document.getElementById('scheduleWeekLabel').textContent = delta === 0 ? 'Загрузка...' : '';
-  const tbody = document.getElementById('scheduleBody');
-  loading(tbody);
-  const r = await fetch(`/api/schedule?week_offset=${scheduleOffset}`, { credentials: 'same-origin' }).then(r => r.json()).catch(() => []);
-  if (!Array.isArray(r) || !r.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Нет занятий</td></tr>'; return; }
-  const dayNames = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-  tbody.innerHTML = r.map(s => `<tr>
-    <td>${dayNames[s.day_of_week-1] || s.day_of_week}</td>
+      // ============= SCHEDULE =============
+      let scheduleOffset = 0;
+      async function loadSchedule(delta) {
+        if (delta !== undefined) scheduleOffset += delta;
+        document.getElementById('scheduleWeekLabel').textContent = delta === 0 ? 'Загрузка...' : '';
+        const tbody = document.getElementById('scheduleBody');
+        loading(tbody);
+        const r = await fetch(`/api/schedule?week_offset=${scheduleOffset}`, { credentials: 'same-origin' })
+          .then((r) => r.json())
+          .catch(() => []);
+        if (!Array.isArray(r) || !r.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Нет занятий</td></tr>';
+          return;
+        }
+        const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+        tbody.innerHTML = r
+          .map(
+            (s) => `<tr>
+    <td>${dayNames[s.day_of_week - 1] || s.day_of_week}</td>
     <td>${esc(s.time || '—')}</td>
     <td>${esc(s.subject || '—')}</td>
     <td>${esc(s.class_name || '—')}</td>
     <td>${esc(s.teacher_name || '—')}</td>
-  </tr>`).join('');
-  document.getElementById('scheduleWeekLabel').textContent = `Неделя ${Math.abs(scheduleOffset)+1}`;
-}
+  </tr>`,
+          )
+          .join('');
+        document.getElementById('scheduleWeekLabel').textContent = `Неделя ${Math.abs(scheduleOffset) + 1}`;
+      }
 
-// ============= CODES =============
-async function loadCodes() {
-  const tbody = document.getElementById('codesBody');
-  loading(tbody);
-  const r = await api('/registration-codes');
-  if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5" class="empty">Ошибка</td></tr>'; return; }
-  if (!r.data.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Нет кодов</td></tr>'; return; }
-  const roleNames = { teacher:'Учитель', head_teacher:'Завуч' };
-  tbody.innerHTML = r.data.map(c => `<tr>
+      // ============= CODES =============
+      async function loadCodes() {
+        const tbody = document.getElementById('codesBody');
+        loading(tbody);
+        const r = await api('/registration-codes');
+        if (!r.ok) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty">Ошибка</td></tr>';
+          return;
+        }
+        if (!r.data.length) {
+          tbody.innerHTML = '<tr><td colspan="5" class="empty"><i class="ti ti-inbox"></i>Нет кодов</td></tr>';
+          return;
+        }
+        const roleNames = { teacher: 'Учитель', head_teacher: 'Завуч' };
+        tbody.innerHTML = r.data
+          .map(
+            (c) => `<tr>
     <td style="font-family:monospace;font-weight:600">${esc(c.code)}</td>
     <td><span class="badge badge-${c.role}">${roleNames[c.role] || c.role}</span></td>
     <td><span class="badge ${c.used ? 'badge-yes' : 'badge-no'}">${c.used ? 'Да' : 'Нет'}</span></td>
     <td style="color:var(--text3)">${new Date(c.created_at).toLocaleDateString('ru')}</td>
     <td><button class="btn btn-danger btn-sm btn-icon" onclick="deleteCode('${c.code}')" title="Удалить"><i class="ti ti-trash"></i></button></td>
-  </tr>`).join('');
-}
+  </tr>`,
+          )
+          .join('');
+      }
 
-function showAddCodeModal() {
-  showModal(`
+      function showAddCodeModal() {
+        showModal(`
     <h3>Создать код регистрации</h3>
     <div class="form-group"><label>Код</label><input id="f-code" placeholder="TEACHER2024" style="text-transform:uppercase;font-family:monospace"></div>
     <div class="form-group"><label>Роль</label>
@@ -685,35 +1348,56 @@ function showAddCodeModal() {
       <button class="btn btn-primary" onclick="submitAddCode()">Создать</button>
     </div>
   `);
-}
-async function submitAddCode() {
-  const code = document.getElementById('f-code').value.toUpperCase();
-  const role = document.getElementById('f-code-role').value;
-  if (!code) { toast('Введите код', 'error'); return; }
-  const r = await api('/registration-codes', { method:'POST', body:JSON.stringify({ code, role }) });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Код создан', 'success');
-  hideModal();
-  loadCodes();
-}
-async function deleteCode(code) {
-  if (!confirm('Удалить код?')) return;
-  const r = await api(`/registration-codes/${encodeURIComponent(code)}`, { method:'DELETE' });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Удалён', 'success');
-  loadCodes();
-}
+      }
+      async function submitAddCode() {
+        const code = document.getElementById('f-code').value.toUpperCase();
+        const role = document.getElementById('f-code-role').value;
+        if (!code) {
+          toast('Введите код', 'error');
+          return;
+        }
+        const r = await api('/registration-codes', { method: 'POST', body: JSON.stringify({ code, role }) });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Код создан', 'success');
+        hideModal();
+        loadCodes();
+      }
+      async function deleteCode(code) {
+        if (!confirm('Удалить код?')) return;
+        const r = await api(`/registration-codes/${encodeURIComponent(code)}`, { method: 'DELETE' });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Удалён', 'success');
+        loadCodes();
+      }
 
-// ============= BACKUPS =============
-async function loadBackups() {
-  const tbody = document.getElementById('backupsBody');
-  loading(tbody);
-  const r = await api('/backups');
-  if (!r.ok) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Ошибка</td></tr>'; return; }
-  if (!r.data.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty"><i class="ti ti-inbox"></i>Нет копий</td></tr>'; return; }
-  tbody.innerHTML = r.data.map(b => {
-    const size = b.size > 1024*1024 ? (b.size/1024/1024).toFixed(1)+' MB' : b.size > 1024 ? (b.size/1024).toFixed(1)+' KB' : b.size+' B';
-    return `<tr>
+      // ============= BACKUPS =============
+      async function loadBackups() {
+        const tbody = document.getElementById('backupsBody');
+        loading(tbody);
+        const r = await api('/backups');
+        if (!r.ok) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">Ошибка</td></tr>';
+          return;
+        }
+        if (!r.data.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty"><i class="ti ti-inbox"></i>Нет копий</td></tr>';
+          return;
+        }
+        tbody.innerHTML = r.data
+          .map((b) => {
+            const size =
+              b.size > 1024 * 1024
+                ? (b.size / 1024 / 1024).toFixed(1) + ' MB'
+                : b.size > 1024
+                  ? (b.size / 1024).toFixed(1) + ' KB'
+                  : b.size + ' B';
+            return `<tr>
       <td style="font-family:monospace;font-size:12px">${esc(b.name)}</td>
       <td>${size}</td>
       <td style="color:var(--text3)">${new Date(b.created).toLocaleString('ru')}</td>
@@ -722,195 +1406,307 @@ async function loadBackups() {
         <button class="btn btn-danger btn-sm btn-icon" onclick="deleteBackup('${b.name}')" title="Удалить"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
-  }).join('');
-}
+          })
+          .join('');
+      }
 
-async function createBackup() {
-  const btn = document.querySelector('#page-backups .btn-primary');
-  btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader"></i> Создание...';
-  const r = await api('/backups', { method:'POST' });
-  btn.disabled = false; btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Создать копию';
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Резервная копия создана', 'success');
-  loadBackups();
-}
-async function deleteBackup(name) {
-  if (!confirm('Удалить резервную копию?')) return;
-  const r = await api(`/backups/${encodeURIComponent(name)}`, { method:'DELETE' });
-  if (!r.ok) { toast(errMsg(r.data), 'error'); return; }
-  toast('Удалена', 'success');
-  loadBackups();
-}
+      async function createBackup() {
+        const btn = document.querySelector('#page-backups .btn-primary');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ti ti-loader"></i> Создание...';
+        const r = await api('/backups', { method: 'POST' });
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-cloud-upload"></i> Создать копию';
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Резервная копия создана', 'success');
+        loadBackups();
+      }
+      async function deleteBackup(name) {
+        if (!confirm('Удалить резервную копию?')) return;
+        const r = await api(`/backups/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        if (!r.ok) {
+          toast(errMsg(r.data), 'error');
+          return;
+        }
+        toast('Удалена', 'success');
+        loadBackups();
+      }
 
-// ============= LOGS =============
-async function loadLogs() {
-  const tbody = document.getElementById('logsBody');
-  loading(tbody);
-  const r = await api('/logs?limit=200');
-  if (!r.ok) { tbody.innerHTML = '<tr><td colspan="4" class="empty">Ошибка</td></tr>'; return; }
-  if (!r.data.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty"><i class="ti ti-inbox"></i>Нет записей</td></tr>'; return; }
+      // ============= LOGS =============
+      async function loadLogs() {
+        const tbody = document.getElementById('logsBody');
+        loading(tbody);
+        const r = await api('/logs?limit=200');
+        if (!r.ok) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">Ошибка</td></tr>';
+          return;
+        }
+        if (!r.data.length) {
+          tbody.innerHTML = '<tr><td colspan="4" class="empty"><i class="ti ti-inbox"></i>Нет записей</td></tr>';
+          return;
+        }
 
-  // populate filter
-  const filter = document.getElementById('logUserFilter');
-  const names = [...new Set(r.data.map(l => l.user_name).filter(Boolean))];
-  const currentVal = filter.value;
-  if (filter.options.length <= 1) {
-    names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; filter.appendChild(o); });
-  }
-  filter.value = currentVal;
+        // populate filter
+        const filter = document.getElementById('logUserFilter');
+        const names = [...new Set(r.data.map((l) => l.user_name).filter(Boolean))];
+        const currentVal = filter.value;
+        if (filter.options.length <= 1) {
+          names.forEach((n) => {
+            const o = document.createElement('option');
+            o.value = n;
+            o.textContent = n;
+            filter.appendChild(o);
+          });
+        }
+        filter.value = currentVal;
 
-  const filtered = currentVal ? r.data.filter(l => l.user_name === currentVal) : r.data;
-  tbody.innerHTML = filtered.map(l => `<tr>
+        const filtered = currentVal ? r.data.filter((l) => l.user_name === currentVal) : r.data;
+        tbody.innerHTML = filtered
+          .map(
+            (l) => `<tr>
     <td style="color:var(--text3);white-space:nowrap">${new Date(l.timestamp).toLocaleString('ru')}</td>
     <td>${esc(l.user_name || '—')}</td>
     <td>${esc(l.action)}</td>
     <td style="color:var(--text3);font-family:monospace;font-size:12px">${esc(l.ip || '—')}</td>
-  </tr>`).join('');
-}
+  </tr>`,
+          )
+          .join('');
+      }
 
-// ============= SETTINGS =============
-async function loadSettings() {
-  const el = document.getElementById('settingsBody');
-  loading(el);
-  const r = await api('/settings');
-  if (!r.ok) { el.innerHTML = '<div class="empty">Ошибка загрузки</div>'; return; }
-  const s = r.data;
-  el.innerHTML = Object.entries({
-    'Окружение': s.nodeEnv,
-    'Frontend URL': s.frontendUrl,
-    'SMTP Host': s.smtpHost,
-    'Директория бэкапов': s.backupDir,
-    'Хранение бэкапов (дней)': s.backupRetention,
-    'Сервер БД': s.dbHost,
-    'Порт БД': s.dbPort,
-  }).map(([k,v]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:13px">
+      // ============= SETTINGS =============
+      async function loadSettings() {
+        const el = document.getElementById('settingsBody');
+        loading(el);
+        const r = await api('/settings');
+        if (!r.ok) {
+          el.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+          return;
+        }
+        const s = r.data;
+        el.innerHTML = Object.entries({
+          Окружение: s.nodeEnv,
+          'Frontend URL': s.frontendUrl,
+          'SMTP Host': s.smtpHost,
+          'Директория бэкапов': s.backupDir,
+          'Хранение бэкапов (дней)': s.backupRetention,
+          'Сервер БД': s.dbHost,
+          'Порт БД': s.dbPort,
+        })
+          .map(
+            ([
+              k,
+              v,
+            ]) => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bg3);font-size:13px">
     <span style="color:var(--text2)">${k}</span>
     <span style="color:var(--text);font-family:monospace;font-size:12px">${v}</span>
-  </div>`).join('');
-}
+  </div>`,
+          )
+          .join('');
+      }
 
-// ============= INIT =============
-const loaders = {
-  dashboard: loadDashboard,
-  users: loadUsers,
-  classes: loadClasses,
-  grades: loadGrades,
-  schedule: () => loadSchedule(0),
-  codes: loadCodes,
-  backups: loadBackups,
-  logs: loadLogs,
-  settings: loadSettings,
-};
+      // ============= SYSTEM =============
+      async function loadSystemStatus() {
+        const cardsEl = document.getElementById('systemCards');
+        loading(cardsEl);
+        const containersEl = document.getElementById('containersBody');
+        loading(containersEl);
 
-// Load user info
-async function loadUserInfo() {
-  try {
-    const r = await fetch('/api/profile', { credentials: 'same-origin' }).then(r => r.json());
-    if (r.name) {
-      document.getElementById('userInfo').innerHTML = `<span class="name">${esc(r.name)}</span><br>${r.role || ''}`;
-    }
-  } catch(e) {}
-}
+        const r = await api('/system/status');
+        if (!r.ok) {
+          cardsEl.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+          return;
+        }
+        const s = r.data;
 
-loadUserInfo();
+        cardsEl.innerHTML = `
+    <div class="card"><div class="label">Статус БД</div><div class="value" style="font-size:16px;color:${s.database.status === 'ok' ? 'var(--green)' : 'var(--red)'}">${s.database.status === 'ok' ? 'Подключена' : 'Ошибка'}</div></div>
+    <div class="card"><div class="label">Docker</div><div class="value" style="font-size:16px;color:${s.docker.available ? 'var(--green)' : 'var(--red)'}">${s.docker.available ? 'Доступен' : 'Недоступен'}</div><div class="sub">${s.docker.dockerVersion || ''}</div></div>
+    <div class="card"><div class="label">Память</div><div class="value" style="font-size:16px">${(s.system.freeMemory / 1024 / 1024 / 1024).toFixed(1)} GB</div><div class="sub">свободно из ${(s.system.totalMemory / 1024 / 1024 / 1024).toFixed(1)} GB</div></div>
+    <div class="card"><div class="label">CPU</div><div class="value" style="font-size:16px">${s.system.cpus} ядер</div><div class="sub">Load: ${s.system.loadAverage.map((l) => l.toFixed(2)).join(', ')}</div></div>
+    <div class="card"><div class="label">Uptime</div><div class="value" style="font-size:16px">${Math.floor(s.server.uptime / 3600)}ч ${Math.floor((s.server.uptime % 3600) / 60)}м</div></div>
+    <div class="card"><div class="label">Node.js</div><div class="value" style="font-size:16px">${s.server.nodeVersion}</div><div class="sub">${s.server.platform} ${s.server.arch}</div></div>
+  `;
 
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => {
-    localStorage.removeItem('user');
-    showLogin();
-  });
-});
+        if (s.containers.length === 0) {
+          containersEl.innerHTML = '<tr><td colspan="5" class="empty">Нет запущенных контейнеров</td></tr>';
+        } else {
+          containersEl.innerHTML = s.containers
+            .map(
+              (c) => `<tr>
+      <td style="font-weight:600">${esc(c.name)}</td>
+      <td style="font-size:12px;color:var(--text2)">${esc(c.image)}</td>
+      <td><span class="badge ${c.status.includes('Up') ? 'badge-yes' : 'badge-no'}">${esc(c.status)}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${esc(c.ports || '—')}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="restartContainer('${esc(c.name)}')" title="Перезапустить"><i class="ti ti-refresh"></i></button>
+        <button class="btn btn-ghost btn-sm" onclick="viewContainerLogs('${esc(c.name)}')" title="Логи"><i class="ti ti-file-text"></i></button>
+      </td>
+    </tr>`,
+            )
+            .join('');
+        }
+      }
 
-// Auto-reload dashboard every 30s
-setInterval(() => {
-  const active = document.querySelector('.page.active');
-  if (active && active.id === 'page-dashboard') loadDashboard();
-}, 30000);
+      async function restartContainer(name) {
+        if (!confirm(`Перезапустить контейнер ${name}?`)) return;
+        const r = await api(`/system/containers/${name}/restart`, { method: 'POST' });
+        if (r.ok) {
+          toast(r.data.message, 'success');
+          loadSystemStatus();
+        } else toast(errMsg(r.data), 'error');
+      }
 
-// Login
-function showLogin() {
-  document.getElementById('loginOverlay').classList.remove('hidden');
-  document.getElementById('app').style.display = 'none';
-}
-function hideLogin() {
-  document.getElementById('loginOverlay').classList.add('hidden');
-  document.getElementById('app').style.display = 'flex';
-}
+      async function viewContainerLogs(name) {
+        const r = await api(`/system/containers/${name}/logs?lines=200`);
+        if (r.ok) {
+          document.getElementById('appLogs').textContent = r.data.logs;
+          toast(`Логи контейнера ${name}`, 'info');
+        }
+      }
 
-async function handleLogin() {
-  const btn = document.getElementById('loginBtn');
-  const email = document.getElementById('loginEmail').value;
-  const password = document.getElementById('loginPassword').value;
-  const errEl = document.getElementById('loginError');
+      async function loadAppLogs(lines = 200) {
+        const el = document.getElementById('appLogs');
+        el.textContent = 'Загрузка...';
+        const r = await api(`/system/logs?lines=${lines}`);
+        el.textContent = r.ok ? r.data.logs : 'Ошибка загрузки';
+      }
 
-  if (!email || !password) { errEl.textContent = 'Введите email и пароль'; errEl.style.display = 'block'; return; }
+      // ============= INIT =============
+      const loaders = {
+        dashboard: loadDashboard,
+        users: loadUsers,
+        classes: loadClasses,
+        grades: loadGrades,
+        schedule: () => loadSchedule(0),
+        codes: loadCodes,
+        backups: loadBackups,
+        logs: loadLogs,
+        system: loadSystemStatus,
+        settings: loadSettings,
+      };
 
-  btn.disabled = true;
-  btn.textContent = 'Вход...';
-  errEl.style.display = 'none';
+      // Load user info
+      async function loadUserInfo() {
+        try {
+          const r = await fetch('/api/profile', { credentials: 'same-origin' }).then((r) => r.json());
+          if (r.name) {
+            document.getElementById('userInfo').innerHTML =
+              `<span class="name">${esc(r.name)}</span><br>${r.role || ''}`;
+          }
+        } catch (e) {}
+      }
 
-  try {
-    const r = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-      credentials: 'same-origin',
-    });
-    const data = await r.json();
+      loadUserInfo();
 
-    if (!r.ok) {
-      errEl.textContent = data.error || 'Неверный email или пароль';
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Войти';
-      return;
-    }
+      document.getElementById('logoutBtn').addEventListener('click', () => {
+        fetch('/api/logout', { method: 'POST', credentials: 'same-origin' }).finally(() => {
+          localStorage.removeItem('user');
+          showLogin();
+        });
+      });
 
-    // Check admin role
-    if (!data.user || data.user.role !== 'admin') {
-      errEl.textContent = 'Доступ только для администраторов';
-      errEl.style.display = 'block';
-      btn.disabled = false;
-      btn.textContent = 'Войти';
-      return;
-    }
+      // Auto-reload dashboard every 30s
+      setInterval(() => {
+        const active = document.querySelector('.page.active');
+        if (active && active.id === 'page-dashboard') loadDashboard();
+      }, 30000);
 
-    localStorage.setItem('user', JSON.stringify(data.user));
-    hideLogin();
-    document.getElementById('loginPassword').value = '';
-    // Re-init
-    loadDashboard();
-    loadUserInfo();
-  } catch (e) {
-    errEl.textContent = 'Ошибка соединения';
-    errEl.style.display = 'block';
-  }
-  btn.disabled = false;
-  btn.textContent = 'Войти';
-}
+      // Login
+      function showLogin() {
+        document.getElementById('loginOverlay').classList.remove('hidden');
+        document.getElementById('app').style.display = 'none';
+      }
+      function hideLogin() {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        document.getElementById('app').style.display = 'flex';
+      }
 
-// Enter key on password field
-document.getElementById('loginPassword').addEventListener('keydown', e => {
-  if (e.key === 'Enter') handleLogin();
-});
-document.getElementById('loginEmail').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('loginPassword').focus();
-});
+      async function handleLogin() {
+        const btn = document.getElementById('loginBtn');
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errEl = document.getElementById('loginError');
 
-// Init: check existing token, show login or panel
-(function init() {
-  const u = JSON.parse(localStorage.getItem('user') || '{}');
-  if (u.id && u.role === 'admin') {
-    hideLogin();
-    return;
-  }
-  showLogin();
-})();
+        if (!email || !password) {
+          errEl.textContent = 'Введите email и пароль';
+          errEl.style.display = 'block';
+          return;
+        }
 
-function esc(s) {
-  if (s === null || s === undefined) return '';
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
-}
-</script>
-</body>
+        btn.disabled = true;
+        btn.textContent = 'Вход...';
+        errEl.style.display = 'none';
+
+        try {
+          const r = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+            credentials: 'same-origin',
+          });
+          const data = await r.json();
+
+          if (!r.ok) {
+            errEl.textContent = data.error || 'Неверный email или пароль';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+          }
+
+          // Check admin role
+          if (!data.user || data.user.role !== 'admin') {
+            errEl.textContent = 'Доступ только для администраторов';
+            errEl.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'Войти';
+            return;
+          }
+
+          localStorage.setItem('user', JSON.stringify(data.user));
+          hideLogin();
+          document.getElementById('loginPassword').value = '';
+          // Re-init
+          loadDashboard();
+          loadUserInfo();
+        } catch (e) {
+          errEl.textContent = 'Ошибка соединения';
+          errEl.style.display = 'block';
+        }
+        btn.disabled = false;
+        btn.textContent = 'Войти';
+      }
+
+      // Enter key on password field
+      document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleLogin();
+      });
+      document.getElementById('loginEmail').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('loginPassword').focus();
+      });
+
+      // Init: check existing token, show login or panel
+      (function init() {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        if (u.id && u.role === 'admin') {
+          hideLogin();
+          return;
+        }
+        showLogin();
+      })();
+
+      function esc(s) {
+        if (s === null || s === undefined) return '';
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#x27;');
+      }
+    </script>
+  </body>
 </html>

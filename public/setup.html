@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Настройка — School AI</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css" />
+    <style>
+      .setup-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-main);
+        padding: 20px;
+      }
+      .setup-card {
+        background: var(--bg-card-solid);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 40px;
+        width: 100%;
+        max-width: 500px;
+        box-shadow: var(--shadow-lg);
+      }
+      .setup-card h1 {
+        font-size: 1.5rem;
+        margin-bottom: 8px;
+        color: var(--text-main);
+      }
+      .setup-card p {
+        color: var(--text-sec);
+        margin-bottom: 24px;
+        font-size: 0.9rem;
+      }
+      .step {
+        display: none;
+      }
+      .step.active {
+        display: block;
+        animation: fadeSlideIn 0.35s ease;
+      }
+      @keyframes fadeSlideIn {
+        from {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .form-group {
+        margin-bottom: 16px;
+      }
+      .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: var(--text-sec);
+      }
+      .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-main);
+        border: 1px solid var(--border);
+        color: var(--text-main);
+        font-size: 0.95rem;
+        outline: none;
+        transition: border 0.15s;
+      }
+      .form-group input:focus {
+        border-color: var(--primary);
+      }
+      .form-group .hint {
+        font-size: 0.8rem;
+        color: var(--text-sec);
+        margin-top: 4px;
+      }
+      .strength-bar {
+        display: flex;
+        gap: 4px;
+        margin-top: 8px;
+      }
+      .strength-bar span {
+        flex: 1;
+        height: 4px;
+        border-radius: 4px;
+        background: var(--border);
+        transition: background 0.3s;
+      }
+      .strength-bar span.active.weak {
+        background: var(--danger);
+      }
+      .strength-bar span.active.medium {
+        background: var(--warning);
+      }
+      .strength-bar span.active.strong {
+        background: var(--success);
+      }
+      .strength-text {
+        font-size: 0.8rem;
+        margin-top: 4px;
+        display: block;
+      }
+      .error {
+        color: var(--danger);
+        font-size: 0.85rem;
+        margin-top: 8px;
+        display: none;
+      }
+      .success-icon {
+        font-size: 3rem;
+        color: var(--success);
+        margin-bottom: 16px;
+      }
+      .creds-box {
+        background: var(--bg-main);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        padding: 16px;
+        margin: 16px 0;
+        font-family: monospace;
+        font-size: 0.9rem;
+      }
+      .creds-box div {
+        margin-bottom: 4px;
+      }
+      .creds-box .label {
+        color: var(--text-sec);
+        font-size: 0.8rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="setup-wrapper">
+      <div class="setup-card">
+        <!-- Step 1: Welcome -->
+        <div id="step1" class="step active">
+          <div style="text-align: center; margin-bottom: 20px">
+            <i class="ti ti-school" style="font-size: 3rem; color: var(--primary)"></i>
+          </div>
+          <h1>Добро пожаловать!</h1>
+          <p>
+            Настройка School AI займёт 2 минуты. Нужно указать домен, создать администратора и получить SSL-сертификат.
+          </p>
+          <button class="btn" onclick="goStep(2)" style="width: 100%">Начать настройку →</button>
+        </div>
+
+        <!-- Step 2: Domain & Port -->
+        <div id="step2" class="step">
+          <h1>Домен и порт</h1>
+          <p>Укажите домен для вашего сайта. SSL-сертификат будет получен автоматически через Let's Encrypt.</p>
+          <div class="form-group">
+            <label>Домен</label>
+            <input type="text" id="setupDomain" placeholder="school.example.com" required />
+            <div class="hint">A-запись домена должен указывать на IP этого сервера</div>
+          </div>
+          <div class="form-group">
+            <label>Порт (по умолчанию: 3000)</label>
+            <input type="number" id="setupPort" value="3000" min="1" max="65535" />
+          </div>
+          <div id="domainError" class="error"></div>
+          <button class="btn" onclick="goStep(3)" style="width: 100%">Далее →</button>
+        </div>
+
+        <!-- Step 3: Admin Account -->
+        <div id="step3" class="step">
+          <h1>Администратор</h1>
+          <p>Создайте учётную запись администратора для входа в панель управления.</p>
+          <div class="form-group">
+            <label>Имя</label>
+            <input type="text" id="setupAdminName" placeholder="Иван Иванов" required />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="setupAdminEmail" placeholder="admin@school.example.com" required />
+          </div>
+          <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" id="setupAdminPassword" placeholder="Минимум 8 символов" required minlength="8" />
+            <div class="strength-bar" id="strengthBar"><span></span><span></span><span></span></div>
+            <small class="strength-text" id="strengthText"></small>
+          </div>
+          <div id="adminError" class="error"></div>
+          <button class="btn" onclick="applySetup()" style="width: 100%" id="applyBtn">Применить настройки</button>
+        </div>
+
+        <!-- Step 4: Done -->
+        <div id="step4" class="step">
+          <div style="text-align: center">
+            <div class="success-icon"><i class="ti ti-circle-check"></i></div>
+          </div>
+          <h1 style="text-align: center">Готово!</h1>
+          <p style="text-align: center">Настройки применены. Перезапустите сервер для применения изменений.</p>
+          <div class="creds-box">
+            <div><span class="label">Домен:</span> <span id="resultDomain"></span></div>
+            <div><span class="label">URL:</span> <span id="resultUrl"></span></div>
+            <div><span class="label">Админ:</span> <span id="resultEmail"></span></div>
+          </div>
+          <p style="text-align: center; font-size: 0.85rem; color: var(--text-sec)">
+            После перезапуска сервера откройте <span id="resultUrl2"></span> и войдите под созданной учётной записью.
+          </p>
+          <button class="btn" onclick="location.reload()" style="width: 100%">Перезагрузить страницу</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API = window.location.origin + '/api/setup';
+
+      function goStep(n) {
+        document.querySelectorAll('.step').forEach((s) => s.classList.remove('active'));
+        document.getElementById('step' + n).classList.add('active');
+      }
+
+      function showError(id, msg) {
+        const el = document.getElementById(id);
+        el.textContent = msg;
+        el.style.display = 'block';
+      }
+
+      // Password strength
+      const pwdInput = document.getElementById('setupAdminPassword');
+      if (pwdInput) {
+        pwdInput.addEventListener('input', () => {
+          const pwd = pwdInput.value;
+          let score = 0;
+          if (pwd.length >= 8) score++;
+          if (pwd.length >= 12) score++;
+          if (/[a-z]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+          if (/\d/.test(pwd)) score++;
+          if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+          const bars = document.getElementById('strengthBar').querySelectorAll('span');
+          bars.forEach((bar, i) => {
+            bar.className = '';
+            if (pwd.length === 0) return;
+            if (i < Math.min(score, 3)) {
+              bar.classList.add('active');
+              bar.classList.add(score <= 1 ? 'weak' : score <= 2 ? 'medium' : 'strong');
+            }
+          });
+          const txt = document.getElementById('strengthText');
+          if (pwd.length === 0) {
+            txt.textContent = '';
+          } else if (score <= 1) {
+            txt.textContent = 'Слабый';
+            txt.style.color = 'var(--danger)';
+          } else if (score <= 2) {
+            txt.textContent = 'Средний';
+            txt.style.color = 'var(--warning)';
+          } else {
+            txt.textContent = 'Надёжный';
+            txt.style.color = 'var(--success)';
+          }
+        });
+      }
+
+      async function applySetup() {
+        const domain = document.getElementById('setupDomain').value.trim();
+        const port = document.getElementById('setupPort').value || '3000';
+        const adminName = document.getElementById('setupAdminName').value.trim();
+        const adminEmail = document.getElementById('setupAdminEmail').value.trim();
+        const adminPassword = document.getElementById('setupAdminPassword').value;
+
+        if (!domain) return showError('domainError', 'Введите домен');
+        if (!adminName) return showError('adminError', 'Введите имя');
+        if (!adminEmail) return showError('adminError', 'Введите email');
+        if (adminPassword.length < 8) return showError('adminError', 'Пароль минимум 8 символов');
+
+        const btn = document.getElementById('applyBtn');
+        btn.disabled = true;
+        btn.textContent = 'Применение...';
+
+        try {
+          const res = await fetch(API + '/apply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain, port, adminName, adminEmail, adminPassword }),
+          });
+          const data = await res.json();
+          if (res.ok) {
+            document.getElementById('resultDomain').textContent = domain;
+            document.getElementById('resultUrl').textContent = data.frontendUrl;
+            document.getElementById('resultUrl2').textContent = data.frontendUrl;
+            document.getElementById('resultEmail').textContent = adminEmail;
+            goStep(4);
+          } else {
+            showError('adminError', data.error || 'Ошибка');
+            btn.disabled = false;
+            btn.textContent = 'Применить настройки';
+          }
+        } catch (e) {
+          showError('adminError', 'Ошибка сети');
+          btn.disabled = false;
+          btn.textContent = 'Применить настройки';
+        }
+      }
+
+      // Check if setup already done
+      (async function () {
+        try {
+          const res = await fetch(API + '/status');
+          const data = await res.json();
+          if (data.complete) {
+            window.location.href = '/admin-panel';
+          }
+        } catch {}
+      })();
+    </script>
+  </body>
+</html>

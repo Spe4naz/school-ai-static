@@ -97,7 +97,7 @@ class BackupService {
   }
 
   _safePath(name) {
-    if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+    if (name.includes('..') || name.includes('/') || name.includes('\\') || name.includes('\0')) {
       throw new Error('Invalid backup name');
     }
     return path.join(this.backupDir, name);
@@ -105,4 +105,3 @@ class BackupService {
 }
 
 module.exports = BackupService;
-

@@ -4,25 +4,34 @@ const REQUIRED_ENV = ['JWT_SECRET'];
 if (process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'ci') {
   REQUIRED_ENV.push('DATABASE_URL');
 }
-const MISSING_ENV = REQUIRED_ENV.filter(k => !process.env[k]);
+const MISSING_ENV = REQUIRED_ENV.filter((k) => !process.env[k]);
 if (MISSING_ENV.length > 0) {
   console.error(`FATAL: Missing required environment variables: ${MISSING_ENV.join(', ')}`);
   process.exit(1);
 }
 
 const RECOMMENDED_ENV = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER'];
-const MISSING_REC = RECOMMENDED_ENV.filter(k => !process.env[k]);
+const MISSING_REC = RECOMMENDED_ENV.filter((k) => !process.env[k]);
 if (MISSING_REC.length > 0 && process.env.NODE_ENV === 'production') {
   console.warn(`WARNING: Missing recommended env vars in production: ${MISSING_REC.join(', ')}`);
 }
 
-const DEFAULT_SECRETS = ['dev_secret_key_change_in_production', 'change_this_in_production_please_12345', 'change_this_to_a_secure_random_string_please'];
+const DEFAULT_SECRETS = [
+  'dev_secret_key_change_in_production',
+  'change_this_in_production_please_12345',
+  'change_this_to_a_secure_random_string_please',
+];
 if (DEFAULT_SECRETS.includes(process.env.JWT_SECRET)) {
   console.error('FATAL: JWT_SECRET is set to a known default value. Change it immediately.');
   process.exit(1);
 }
 
-if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32 && process.env.NODE_ENV !== 'test' && process.env.NODE_ENV !== 'ci') {
+if (
+  process.env.JWT_SECRET &&
+  process.env.JWT_SECRET.length < 32 &&
+  process.env.NODE_ENV !== 'test' &&
+  process.env.NODE_ENV !== 'ci'
+) {
   console.error('FATAL: JWT_SECRET must be at least 32 characters long.');
   process.exit(1);
 }
@@ -50,6 +59,8 @@ const reportRoutes = require('./routes/reports');
 const profileRoutes = require('./routes/profile');
 const homeworkRoutes = require('./routes/homework');
 const announcementRoutes = require('./routes/announcements');
+const setupRoutes = require('./routes/setup');
+const systemRoutes = require('./routes/system');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -65,28 +76,41 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", (req, res) => `'nonce-${res.locals.cspNonce}'`, 'https://cdn.jsdelivr.net', 'https://unpkg.com'],
-      styleSrc: ["'self'", "'unsafe-inline'", 'https://unpkg.com', 'https://cdn.jsdelivr.net', 'https://fonts.googleapis.com'],
-      fontSrc: ["'self'", 'data:', 'https://unpkg.com', 'https://fonts.gstatic.com'],
-      imgSrc: ["'self'", 'data:', 'blob:'],
-      connectSrc: ["'self'"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
+app.use(
+  helmet({
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          (req, res) => `'nonce-${res.locals.cspNonce}'`,
+          'https://cdn.jsdelivr.net',
+          'https://unpkg.com',
+        ],
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          'https://unpkg.com',
+          'https://cdn.jsdelivr.net',
+          'https://fonts.googleapis.com',
+        ],
+        fontSrc: ["'self'", 'data:', 'https://unpkg.com', 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        connectSrc: ["'self'"],
+        frameSrc: ["'none'"],
+        objectSrc: ["'none'"],
+      },
     },
-  },
-}));
+  }),
+);
 app.use(express.json({ limit: '1mb' }));
 
 // HTML cache (loaded once at startup)
 const htmlCache = {};
 const fs = require('fs');
 const htmlFiles = ['index.html', 'dashboard.html', 'register.html', 'reset-password.html', 'admin-panel.html'];
-htmlFiles.forEach(file => {
+htmlFiles.forEach((file) => {
   const filePath = path.join(__dirname, 'public', file);
   if (fs.existsSync(filePath)) {
     htmlCache[file] = fs.readFileSync(filePath, 'utf8');
@@ -128,15 +152,34 @@ app.get('/admin-panel', (req, res) => {
 });
 
 // Static files AFTER HTML routes — no extensions: ['html'] to prevent bypass
-app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1y',
-  immutable: true,
-  setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-cache');
-    }
-  },
-}));
+app.use(
+  express.static(path.join(__dirname, 'public'), {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  }),
+);
+
+// Setup wizard
+app.get('/setup', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'setup.html'));
+});
+app.use('/api/setup', setupRoutes);
+
+// Redirect to setup if not configured (skip for API and setup routes)
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api') || req.path === '/setup' || req.path.startsWith('/setup/')) {
+    return next();
+  }
+  if (!setupRoutes.isSetupComplete()) {
+    return res.redirect('/setup');
+  }
+  next();
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -154,6 +197,7 @@ app.use('/api', profileRoutes);
 app.use('/api', adminRoutes);
 app.use('/api/homework', homeworkRoutes);
 app.use('/api/announcements', announcementRoutes);
+app.use('/api/system', systemRoutes);
 
 // Make SSE clients available to notification service
 const { notificationService } = require('./config/container');
@@ -195,8 +239,16 @@ async function shutdown(signal) {
   try {
     for (const [, clients] of sseClients) {
       clients.forEach((c) => {
-        try { c.write('data: {"type":"shutdown"}\n\n'); } catch (_) { /* ignore */ }
-        try { c.end(); } catch (_) { /* ignore */ }
+        try {
+          c.write('data: {"type":"shutdown"}\n\n');
+        } catch (_) {
+          /* ignore */
+        }
+        try {
+          c.end();
+        } catch (_) {
+          /* ignore */
+        }
       });
     }
   } catch (err) {

@@ -1,173 +1,98 @@
 # Быстрый старт
 
-Пошаговая инструкция по запуску проекта School AI на локальной машине.
+Запуск School AI на локальной машине.
 
 ---
 
 ## Требования
 
-- **Node.js** 20+ (проверьте: `node -v`)
-- **PostgreSQL** 16+ (или Docker)
-- **npm** (входит в Node.js)
+- Node.js 20+
+- PostgreSQL 16+ (или Docker)
 
 ---
 
-## Вариант 1: Локальный запуск (без Docker)
+## Установка
 
-### 1. Клонируйте репозиторий
+### 1. Клонировать
 
 ```bash
-git clone https://github.com/your-org/school-ai-static.git
+git clone https://github.com/Spe4naz/school-ai-static.git
 cd school-ai-static
 ```
 
-### 2. Установите зависимости
+### 2. Установить зависимости
 
 ```bash
 npm install
 ```
 
-### 3. Настройте переменные окружения
+### 3. Настроить окружение
 
 ```bash
 cp .env.example .env
 ```
 
-Отредактируйте `.env` -- как минимум задайте:
+Отредактировать `.env`:
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/school_db
-JWT_SECRET=your-super-secret-key-min-32-chars
+DATABASE_URL=postgresql://school:school_pass@localhost:5432/school
+JWT_SECRET=your-secret-key-min-32-chars
 DOMAIN=localhost
 NODE_ENV=development
 PORT=3000
 FRONTEND_URL=http://localhost:3000
 ```
 
-### 4. Создайте базу данных
+### 4. Создать базу данных
 
 ```bash
-# Если PostgreSQL уже запущен:
-psql -U postgres -c "CREATE DATABASE school_db;"
+psql -U postgres -c "CREATE USER school WITH PASSWORD 'school_pass' CREATEDB;"
+psql -U postgres -c "CREATE DATABASE school OWNER school;"
 ```
 
-### 5. Соберите фронтенд
+### 5. Собрать и запустить
 
 ```bash
-npm run build:frontend
-```
-
-### 6. Запустите сервер
-
-```bash
-# Разработка (с hot-reload):
-npm run dev
-
-# Или продакшн:
 npm run build
-npm start
+npm run dev
 ```
 
-### 7. Откройте в браузере
+### 6. Открыть в браузере
 
-```
 http://localhost:3000
-```
-
-Войдите под тестовым аккаунтом: `admin@school.ru` / `123456`
-
-> **Примечание**: Тестовые аккаунты используют пароль `123456`, который не соответствует требованиям к сложности паролей (мин. 8 символов + строчные + заглавные + цифры). Этот пароль работает только в seed-данных. При регистрации/смене пароля необходимо соблюдать требования.
 
 ---
 
-## Вариант 2: Docker (рекомендуется)
-
-### 1. Клонируйте и настройте
+## Docker (альтернатива)
 
 ```bash
-git clone https://github.com/your-org/school-ai-static.git
-cd school-ai-static
 cp .env.example .env
+# отредактировать .env
+docker compose --env-file .env up -d
 ```
 
-### 2. Запустите через Docker Compose
+---
+
+## Тестовые аккаунты
+
+| Email | Пароль | Роль |
+|-------|--------|------|
+| admin@school.ru | 123456 | Администратор |
+| teacher@school.ru | 123456 | Учитель |
+| ivan@school.ru | 123456 | Ученик |
+| parent@school.ru | 123456 | Родитель |
+
+> Тестовые пароли не соответствуют требованиям к сложности.
+
+---
+
+## Команды разработки
 
 ```bash
-# Продакшн (Caddy + App + PostgreSQL):
-npm run docker:up
-
-# Разработка (с bind mount и hot-reload):
-docker compose -f docker-compose.yml -f docker-compose.override.yml up
-```
-
-### 3. Откройте в браузере
-
-```
-https://localhost      # если настроен SSL
-http://localhost:3000  # режим разработки
-```
-
----
-
-## Проверка работоспособности
-
-```bash
-# Health-check эндпоинт:
-curl http://localhost:3000/api/health
-```
-
-Ответ:
-```json
-{
-  "status": "ok",
-  "timestamp": "2025-01-15T10:00:00.000Z"
-}
-```
-
----
-
-## Основные команды
-
-| Команда | Описание |
-|---------|----------|
-| `npm run dev` | Запуск в режиме разработки (hot-reload) |
-| `npm run dev:all` | Сервер + фронтенд одновременно |
-| `npm run build` | Сборка TypeScript + фронтенд |
-| `npm start` | Запуск продакшн-версии |
-| `npm test` | Запуск тестов |
-| `npm run lint` | Проверка типов + ESLint |
-| `npm run docker:up` | Запуск Docker Compose |
-| `npm run docker:down` | Остановка Docker Compose |
-
----
-
-## Тестовые данные
-
-При первом запуске с пустой БД автоматически создаются:
-
-- **2 класса**: "3А", "4Б"
-- **4 пользователя**: admin, teacher, student, parent (пароль: `123456`)
-- **Расписание**: полная неделя (Пн-Пт, 5 уроков в день)
-- **Коды регистрации**: SCHOOL2024, ADMIN2024 и другие
-
----
-
-## Возможные проблемы
-
-### Ошибка подключения к БД
-
-Убедитесь, что PostgreSQL запущен и доступен по указанному адресу в `DATABASE_URL`.
-
-### Порт уже занят
-
-Измените порт в `.env`:
-```env
-PORT=3001
-```
-
-### Ошибка сборки фронтента
-
-Установите esbuild глобально или убедитесь, что он есть в `node_modules/.bin/`:
-```bash
-npx esbuild --version
+npm run dev            # сервер с hot-reload
+npm run dev:all        # сервер + фронтенд
+npm run build          # сборка TS + frontend
+npm run lint           # tsc + eslint
+npm run test           # тесты (Docker)
+npm run test:coverage  # покрытие
 ```
