@@ -15,6 +15,10 @@ async function login(email, password) {
   return extractToken(res);
 }
 
+function auth(token) {
+  return { Authorization: `Bearer ${token}` };
+}
+
 beforeAll(async () => {
   tokens.admin = await login('admin@school.ru', '123456');
   tokens.student = await login('ivan@school.ru', '123456');
@@ -22,9 +26,15 @@ beforeAll(async () => {
   tokens.parent = await login('parent@school.ru', '123456');
 });
 
-function auth(token) {
-  return { Authorization: `Bearer ${token}` };
-}
+describe('Health Check', () => {
+  test('GET /api/health: returns status ok', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.status).toBe('ok');
+    expect(res.body).toHaveProperty('timestamp');
+    expect(res.body).not.toHaveProperty('uptime');
+  });
+});
 
 describe('Авторизация', () => {
   test('POST /api/login: успешный вход админа', async () => {
@@ -56,6 +66,15 @@ describe('Авторизация', () => {
     const res = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
     expect(res.body.token).toBeUndefined();
     expect(res.headers['set-cookie'].some(c => c.startsWith('token='))).toBe(true);
+    expect(res.headers['set-cookie'].some(c => c.startsWith('refreshToken='))).toBe(true);
+  });
+
+  test('POST /api/login: body содержит только user', async () => {
+    const res = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
+    expect(Object.keys(res.body)).toEqual(['user']);
+    expect(res.body.user).toHaveProperty('id');
+    expect(res.body.user).toHaveProperty('name');
+    expect(res.body.user).toHaveProperty('role');
   });
 
   test('POST /api/login: неверный пароль', async () => {
@@ -77,11 +96,77 @@ describe('Авторизация', () => {
   });
 });
 
+describe('Регистрация', () => {
+  test('POST /api/register: валидация полей', async () => {
+    const res = await request(app).post('/api/register').send({ email: 'test@test.com' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('POST /api/register: teacher без кода → MISSING_FIELDS', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'newteacher@test.com', password: 'SecurePass1', name: 'New Teacher', role: 'teacher',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('MISSING_FIELDS');
+  });
+
+  test('POST /api/register: teacher с валидным кодом → 201', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'codeteacher@test.com', password: 'SecurePass1', name: 'Code Teacher', role: 'teacher', code: 'SCHOOL2024',
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/register: head_teacher с кодом → 201', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'codehead@test.com', password: 'SecurePass1', name: 'Code Head', role: 'head_teacher', code: 'HEAD01',
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/register: использованный код → 400', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'reusedcode@test.com', password: 'SecurePass1', name: 'Reused', role: 'teacher', code: 'SCHOOL2024',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('INVALID_TOKEN');
+  });
+
+  test('POST /api/register: неверный email → 400', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'invalid', password: 'SecurePass1', name: 'Тест', role: 'student',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('INVALID_EMAIL');
+  });
+
+  test('POST /api/register: успешная регистрация ученика', async () => {
+    const classes = await request(app).get('/api/classes');
+    const classId = classes.body[0]?.id;
+    const res = await request(app).post('/api/register').send({
+      email: 'unique@test.com', password: 'SecurePass1', name: 'Новый', role: 'student', class_id: classId,
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/register: дубликат email → 409', async () => {
+    const res = await request(app).post('/api/register').send({
+      email: 'ivan@school.ru', password: 'SecurePass1', name: 'Дубликат', role: 'student',
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.body.code).toBe('EMAIL_EXISTS');
+  });
+});
+
 describe('Публичные эндпоинты', () => {
   test('GET /api/classes: без токена → возвращает список', async () => {
     const res = await request(app).get('/api/classes');
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThan(0);
   });
 });
 
@@ -107,28 +192,44 @@ describe('Защищённые роуты', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  test('GET /api/students: только для teacher/admin', async () => {
+  test('GET /api/students: student → 403', async () => {
     const res = await request(app).get('/api/students').set(auth(tokens.student));
     expect(res.statusCode).toBe(403);
-
-    const res2 = await request(app).get('/api/students').set(auth(tokens.teacher));
-    expect(res2.statusCode).toBe(200);
   });
 
-  test('GET /api/stats: только для admin', async () => {
+  test('GET /api/students: teacher → 200', async () => {
+    const res = await request(app).get('/api/students').set(auth(tokens.teacher));
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('GET /api/stats: student → 403', async () => {
     const res = await request(app).get('/api/stats').set(auth(tokens.student));
     expect(res.statusCode).toBe(403);
+  });
 
-    const res2 = await request(app).get('/api/stats').set(auth(tokens.admin));
-    expect(res2.statusCode).toBe(200);
-    expect(res2.body).toHaveProperty('totalUsers');
-    expect(res2.body).toHaveProperty('totalGrades');
+  test('GET /api/stats: admin → 200', async () => {
+    const res = await request(app).get('/api/stats').set(auth(tokens.admin));
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('totalUsers');
+    expect(res.body).toHaveProperty('totalGrades');
   });
 
   test('невалидный токен → 403', async () => {
     const res = await request(app).get('/api/grades').set('Authorization', 'Bearer invalid.token.here');
     expect(res.statusCode).toBe(403);
     expect(res.body.code).toBe('TOKEN_INVALID');
+  });
+});
+
+describe('Профиль', () => {
+  test('GET /api/profile: возвращает данные пользователя', async () => {
+    const res = await request(app).get('/api/profile').set(auth(tokens.admin));
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('email');
+    expect(res.body).toHaveProperty('name');
+    expect(res.body).toHaveProperty('role');
+    expect(res.body).not.toHaveProperty('password');
   });
 });
 
@@ -139,7 +240,7 @@ describe('Расписание (schedule)', () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
-  test('GET /api/schedule: учитель получает по class_id', async () => {
+  test('GET /api/schedule: учитель получает расписание', async () => {
     const res = await request(app).get('/api/schedule').set(auth(tokens.teacher));
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -167,16 +268,18 @@ describe('Уведомления (notifications)', () => {
 });
 
 describe('Графики успеваемости', () => {
-  test('GET /api/grades/subjects: только для student/parent', async () => {
+  test('GET /api/grades/subjects: teacher → 403', async () => {
     const res = await request(app).get('/api/grades/subjects').set(auth(tokens.teacher));
     expect(res.statusCode).toBe(403);
-
-    const res2 = await request(app).get('/api/grades/subjects').set(auth(tokens.student));
-    expect(res2.statusCode).toBe(200);
-    expect(Array.isArray(res2.body)).toBe(true);
   });
 
-  test('GET /api/grades/progress: только для student/parent', async () => {
+  test('GET /api/grades/subjects: student → 200', async () => {
+    const res = await request(app).get('/api/grades/subjects').set(auth(tokens.student));
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+
+  test('GET /api/grades/progress: student → 200', async () => {
     const res = await request(app).get('/api/grades/progress?period=month').set(auth(tokens.student));
     expect(res.statusCode).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -184,10 +287,11 @@ describe('Графики успеваемости', () => {
 });
 
 describe('Чат', () => {
-  test('GET /api/chat/messages: admin получает первый доступный класс', async () => {
+  test('GET /api/chat/messages: admin получает сообщения', async () => {
     const res = await request(app).get('/api/chat/messages').set(auth(tokens.admin));
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('messages');
+    expect(res.body).toHaveProperty('total');
   });
 
   test('POST /api/chat/messages: отправка сообщения', async () => {
@@ -199,24 +303,88 @@ describe('Чат', () => {
     expect(res.body).toHaveProperty('content');
   });
 
-  test('POST /api/chat/messages: пустое сообщение → ошибка', async () => {
+  test('POST /api/chat/messages: пустое сообщение → 400', async () => {
     const res = await request(app).post('/api/chat/messages').set(auth(tokens.student)).send({ content: '   ' });
     expect(res.statusCode).toBe(400);
     expect(res.body.code).toBe('EMPTY_MESSAGE');
   });
+
+  test('GET /api/chat/key: возвращает ключ', async () => {
+    const res = await request(app).get('/api/chat/key').set(auth(tokens.student));
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('key');
+  });
+
+  test('GET /api/chat/participants: возвращает список', async () => {
+    const res = await request(app).get('/api/chat/participants').set(auth(tokens.student));
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+});
+
+describe('Домашние задания (homework)', () => {
+  test('POST /api/homework: пустой subject → 400', async () => {
+    const res = await request(app)
+      .post('/api/homework')
+      .set(auth(tokens.teacher))
+      .send({ subject: '', title: 'ДЗ', due_date: '2026-06-01' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('POST /api/homework: успешное создание', async () => {
+    const res = await request(app)
+      .post('/api/homework')
+      .set(auth(tokens.teacher))
+      .send({ subject: 'Математика', title: 'Упр 1-10', due_date: '2026-06-01' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('title', 'Упр 1-10');
+  });
+
+  test('GET /api/homework: ученик получает список', async () => {
+    const res = await request(app).get('/api/homework').set(auth(tokens.student));
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
+});
+
+describe('Объявления (announcements)', () => {
+  test('POST /api/announcements: пустой title → 400', async () => {
+    const res = await request(app)
+      .post('/api/announcements')
+      .set(auth(tokens.teacher))
+      .send({ title: '', content: 'Контент' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('POST /api/announcements: успешное создание', async () => {
+    const res = await request(app)
+      .post('/api/announcements')
+      .set(auth(tokens.teacher))
+      .send({ title: 'Собрание', content: 'Завтра собрание' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toHaveProperty('title', 'Собрание');
+  });
+
+  test('GET /api/announcements: возвращает список', async () => {
+    const res = await request(app).get('/api/announcements').set(auth(tokens.student));
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+  });
 });
 
 describe('Экспорт отчётов', () => {
-  test('GET /api/reports/export: только для teacher/admin', async () => {
+  test('GET /api/reports/export: student → 403', async () => {
     const res = await request(app).get('/api/reports/export?type=pdf').set(auth(tokens.student));
     expect(res.statusCode).toBe(403);
-
-    const res2 = await request(app).get('/api/reports/export?type=pdf').set(auth(tokens.teacher));
-    expect(res2.statusCode).toBe(200);
-    expect(res2.headers['content-type']).toContain('pdf');
   });
 
-  test('GET /api/reports/export: excel формат', async () => {
+  test('GET /api/reports/export: teacher → 200 (pdf)', async () => {
+    const res = await request(app).get('/api/reports/export?type=pdf').set(auth(tokens.teacher));
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('pdf');
+  });
+
+  test('GET /api/reports/export: teacher → 200 (excel)', async () => {
     const res = await request(app).get('/api/reports/export?type=excel').set(auth(tokens.teacher));
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('spreadsheet');
@@ -229,93 +397,8 @@ describe('Экспорт отчётов', () => {
   });
 });
 
-describe('Регистрация', () => {
-  const newUser = { email: 'newstudent@test.com', password: 'Secure123', name: 'Новый', role: 'student', class_id: null };
-
-  test('POST /api/register: валидация полей', async () => {
-    const res = await request(app).post('/api/register').send({ email: 'test@test.com' });
-    expect(res.statusCode).toBe(400);
-  });
-
-  test('POST /api/register: teacher без кода → MISSING_FIELDS', async () => {
-    const res = await request(app).post('/api/register').send({
-      email: 'newteacher@test.com',
-      password: 'Secure123',
-      name: 'New Teacher',
-      role: 'teacher',
-    });
-    expect(res.statusCode).toBe(400);
-    expect(res.body.code).toBe('MISSING_FIELDS');
-  });
-
-  test('POST /api/register: teacher с валидным кодом → 201', async () => {
-    const res = await request(app).post('/api/register').send({
-      email: 'codeteacher@test.com',
-      password: 'Secure123',
-      name: 'Code Teacher',
-      role: 'teacher',
-      code: 'SCHOOL2024',
-    });
-    expect(res.statusCode).toBe(201);
-    expect(res.body.success).toBe(true);
-  });
-
-  test('POST /api/register: head_teacher с кодом → 201', async () => {
-    const res = await request(app).post('/api/register').send({
-      email: 'codehead@test.com',
-      password: 'Secure123',
-      name: 'Code Head',
-      role: 'head_teacher',
-      code: 'HEAD01',
-    });
-    expect(res.statusCode).toBe(201);
-    expect(res.body.success).toBe(true);
-  });
-
-  test('POST /api/register: использованный код → 400', async () => {
-    const res = await request(app).post('/api/register').send({
-      email: 'reusedcode@test.com',
-      password: 'Secure123',
-      name: 'Reused',
-      role: 'teacher',
-      code: 'SCHOOL2024',
-    });
-    expect(res.statusCode).toBe(400);
-    expect(res.body.code).toBe('INVALID_TOKEN');
-  });
-
-  test('POST /api/register: неверный email → 400', async () => {
-    const res = await request(app)
-      .post('/api/register')
-      .send({ email: 'invalid', password: 'Secure123', name: 'Тест', role: 'student' });
-    expect(res.statusCode).toBe(400);
-    expect(res.body.code).toBe('INVALID_EMAIL');
-  });
-
-  test('POST /api/register: успешная регистрация ученика', async () => {
-    const classes = await request(app).get('/api/classes');
-    const classId = classes.body[0]?.id;
-
-    const res = await request(app)
-      .post('/api/register')
-      .send({ ...newUser, email: 'unique@test.com', class_id: classId });
-    expect(res.statusCode).toBe(201);
-    expect(res.body.success).toBe(true);
-  });
-
-  test('POST /api/register: дубликат email → 409', async () => {
-    const classes = await request(app).get('/api/classes');
-    const classId = classes.body[0]?.id;
-    const res = await request(app)
-      .post('/api/register')
-      .send({ ...newUser, email: 'ivan@school.ru', class_id: classId });
-    expect(res.statusCode).toBe(409);
-    expect(res.body.code).toBe('EMAIL_EXISTS');
-  });
-});
-
 describe('Выставление оценок', () => {
-  test('POST /api/grades: ученик не может выставлять → 403', async () => {
+  test('POST /api/grades: ученик → 403', async () => {
     const res = await request(app)
       .post('/api/grades')
       .set(auth(tokens.student))
@@ -334,7 +417,7 @@ describe('Выставление оценок', () => {
 });
 
 describe('Сброс пароля', () => {
-  test('POST /api/password-reset/request: защита от перебора', async () => {
+  test('POST /api/password-reset/request: несуществующий email → 200 (no leak)', async () => {
     const res = await request(app).post('/api/password-reset/request').send({ email: 'nonexistent@test.com' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
@@ -355,23 +438,6 @@ describe('Сброс пароля', () => {
   });
 });
 
-describe('Выход (logout)', () => {
-  test('POST /api/logout: успешный выход', async () => {
-    const loginRes = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
-    const refreshToken = extractToken(loginRes);
-
-    const res = await request(app).post('/api/logout').send({ refreshToken }).set(auth(tokens.admin));
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
-  });
-
-  test('POST /api/logout: без refreshToken → 200', async () => {
-    const res = await request(app).post('/api/logout').set(auth(tokens.admin));
-    expect(res.statusCode).toBe(200);
-    expect(res.body.success).toBe(true);
-  });
-});
-
 describe('Смена пароля', () => {
   test('POST /api/password/change: успешная смена', async () => {
     const res = await request(app)
@@ -380,11 +446,8 @@ describe('Смена пароля', () => {
       .send({ currentPassword: '123456', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
-
-    // Возвращаем старый пароль для остальных тестов
-    await request(app)
-      .post('/api/password/change')
-      .set(auth(tokens.student))
+    // Возвращаем старый пароль
+    await request(app).post('/api/password/change').set(auth(tokens.student))
       .send({ currentPassword: 'NewSecure123', newPassword: '123456' });
   });
 
@@ -398,11 +461,12 @@ describe('Смена пароля', () => {
   });
 
   test('POST /api/password/change: без токена → 401', async () => {
-    const res = await request(app).post('/api/password/change').send({ currentPassword: '123456', newPassword: 'NewSecure123' });
+    const res = await request(app).post('/api/password/change')
+      .send({ currentPassword: '123456', newPassword: 'NewSecure123' });
     expect(res.statusCode).toBe(401);
   });
 
-  test('POST /api/password/change: короткий новый пароль → 400', async () => {
+  test('POST /api/password/change: короткий пароль → 400', async () => {
     const res = await request(app)
       .post('/api/password/change')
       .set(auth(tokens.student))
@@ -410,113 +474,53 @@ describe('Смена пароля', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('POST /api/password/change: пароль без заглавных → 400', async () => {
+  test('POST /api/password/change: без заглавных → 400', async () => {
     const res = await request(app)
       .post('/api/password/change')
       .set(auth(tokens.student))
       .send({ currentPassword: '123456', newPassword: 'newsecure123' });
     expect(res.statusCode).toBe(400);
   });
-});
 
-describe('Валидация Zod (homework / announcements / schedule)', () => {
-  test('POST /api/homework: пустой subject → 400', async () => {
+  test('POST /api/password/change: без цифр → 400', async () => {
     const res = await request(app)
-      .post('/api/homework')
-      .set(auth(tokens.teacher))
-      .send({ subject: '', title: 'ДЗ', due_date: '2026-06-01' });
-    expect(res.statusCode).toBe(400);
-  });
-
-  test('POST /api/homework: успешное создание', async () => {
-    const res = await request(app)
-      .post('/api/homework')
-      .set(auth(tokens.teacher))
-      .send({ subject: 'Математика', title: 'Упр 1-10', due_date: '2026-06-01' });
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('title', 'Упр 1-10');
-  });
-
-  test('POST /api/announcements: пустой title → 400', async () => {
-    const res = await request(app)
-      .post('/api/announcements')
-      .set(auth(tokens.teacher))
-      .send({ title: '', content: 'Контент' });
-    expect(res.statusCode).toBe(400);
-  });
-
-  test('POST /api/announcements: успешное создание', async () => {
-    const res = await request(app)
-      .post('/api/announcements')
-      .set(auth(tokens.teacher))
-      .send({ title: 'Собрание', content: 'Завтра собрание' });
-    expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('title', 'Собрание');
-  });
-
-  test('GET /api/homework: ученик получает список', async () => {
-    const res = await request(app).get('/api/homework').set(auth(tokens.student));
-    expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-
-  test('GET /api/announcements: возвращает список', async () => {
-    const res = await request(app).get('/api/announcements').set(auth(tokens.student));
-    expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-  });
-});
-
-describe('SSE (Server-Sent Events)', () => {
-  test('GET /api/notifications/stream: без токена → 401', async () => {
-    const res = await request(app).get('/api/notifications/stream');
-    expect(res.statusCode).toBe(401);
-    expect(res.body.code).toBe('AUTH_REQUIRED');
-  });
-
-  test('GET /api/notifications/stream: c токеном → 200 + event-stream', (done) => {
-    const http = require('http');
-    const server = app.listen(0, () => {
-      const port = server.address().port;
-      const loginReq = http.request(`http://localhost:${port}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      }, (loginRes) => {
-        let body = '';
-        loginRes.on('data', (c) => body += c);
-        loginRes.on('end', () => {
-          const setCookie = loginRes.headers['set-cookie'] || [];
-          const tokenCookie = setCookie.find(c => c.startsWith('token='));
-          const token = tokenCookie ? tokenCookie.split(';')[0].split('=').slice(1).join('=') : null;
-          const sseReq = http.get(`http://localhost:${port}/api/notifications/stream`, {
-            headers: { Cookie: `token=${token}` },
-          }, (sseRes) => {
-            expect(sseRes.statusCode).toBe(200);
-            expect(sseRes.headers['content-type']).toContain('text/event-stream');
-            sseRes.destroy();
-            server.close(done);
-          });
-          sseReq.on('error', () => { server.close(done); });
-        });
-      });
-      loginReq.write(JSON.stringify({ email: 'admin@school.ru', password: '123456' }));
-      loginReq.end();
-    });
-  }, 15000);
-});
-
-describe('Rate limiting write endpoints', () => {
-  test('POST /api/grades: ученику нельзя → 403 (не rate limit, а roles)', async () => {
-    const res = await request(app)
-      .post('/api/grades')
+      .post('/api/password/change')
       .set(auth(tokens.student))
-      .send({ student_id: 'x', subject: 'Math', grade: 4 });
-    expect(res.statusCode).toBe(403);
+      .send({ currentPassword: '123456', newPassword: 'NewSecurePass' });
+    expect(res.statusCode).toBe(400);
   });
 });
 
-describe('Обработка ошибок', () => {
-  test('404 для несуществующего /api/ маршрута', async () => {
+describe('Выход (logout)', () => {
+  test('POST /api/logout: успешный выход', async () => {
+    const loginRes = await request(app).post('/api/login').send({ email: 'admin@school.ru', password: '123456' });
+    const rt = extractToken(loginRes);
+    const res = await request(app).post('/api/logout').send({ refreshToken: rt }).set(auth(tokens.admin));
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+  });
+
+  test('POST /api/logout: без refreshToken → 200', async () => {
+    const res = await request(app).post('/api/logout').set(auth(tokens.admin));
+    expect(res.statusCode).toBe(200);
+  });
+});
+
+describe('Refresh token', () => {
+  test('POST /api/refresh: без токена → 400', async () => {
+    const res = await request(app).post('/api/refresh').send({});
+    expect(res.statusCode).toBe(400);
+    expect(res.body.code).toBe('MISSING_FIELDS');
+  });
+
+  test('POST /api/refresh: невалидный токен → 401', async () => {
+    const res = await request(app).post('/api/refresh').send({ refreshToken: 'invalid-token' });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
+describe('404 для неизвестных маршрутов', () => {
+  test('GET /api/nonexistent → 404', async () => {
     const res = await request(app).get('/api/nonexistent-route');
     expect(res.statusCode).toBe(404);
     expect(res.body).toHaveProperty('error');

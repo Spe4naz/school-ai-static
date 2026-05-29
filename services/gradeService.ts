@@ -74,25 +74,26 @@ class GradeService {
   }
 
   async getStats(classId) {
-    const grades = await this.db.all(
-      'SELECT grade FROM grades g JOIN users u ON g.student_id = u.id WHERE u.class_id = $1',
+    const result = await this.db.get(
+      `SELECT
+        ROUND(AVG(g.grade)::numeric, 2) as average,
+        COUNT(*)::int as count,
+        COUNT(*) FILTER (WHERE g.grade = 5)::int as five,
+        COUNT(*) FILTER (WHERE g.grade = 4)::int as four,
+        COUNT(*) FILTER (WHERE g.grade = 3)::int as three,
+        COUNT(*) FILTER (WHERE g.grade = 2)::int as two
+      FROM grades g
+      JOIN users u ON g.student_id = u.id
+      WHERE u.class_id = $1`,
       [classId],
     );
 
-    if (grades.length === 0) return { average: null, count: 0 };
-
-    const sum = grades.reduce((acc, g) => acc + g.grade, 0);
-    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0 };
-    grades.forEach((g) => {
-      if (distribution[g.grade] !== undefined) {
-        distribution[g.grade]++;
-      }
-    });
+    if (!result || result.count === 0) return { average: null, count: 0 };
 
     return {
-      average: (sum / grades.length).toFixed(2),
-      count: grades.length,
-      distribution,
+      average: result.average,
+      count: result.count,
+      distribution: { 5: result.five, 4: result.four, 3: result.three, 2: result.two },
     };
   }
 

@@ -30,7 +30,7 @@ services:
       NODE_ENV: production
       PORT: 3000
       FRONTEND_URL: https://${DOMAIN}
-      DATABASE_URL: postgresql://school:school_pass@db:5432/school
+      DATABASE_URL: postgresql://${POSTGRES_USER:-school}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:-school}
     volumes:
       - backups:/app/backups
       - uploads:/app/public/uploads
@@ -39,13 +39,13 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: school
-      POSTGRES_USER: school
-      POSTGRES_PASSWORD: school_pass
+      POSTGRES_DB: ${POSTGRES_DB:-school}
+      POSTGRES_USER: ${POSTGRES_USER:-school}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U school -d school"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-school} -d ${POSTGRES_DB:-school}"]
       interval: 5s
       timeout: 5s
       retries: 5

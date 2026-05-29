@@ -848,3 +848,138 @@ tbody tr:last-child td { border-bottom: none; }
   .profile-header-card { flex-direction: column; text-align: center; }
   .page-header { flex-direction: column; align-items: flex-start; }
 }
+
+/* ============ TOAST NOTIFICATIONS ============ */
+.toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.toast {
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  animation: toastSlideIn 0.3s ease-out;
+  pointer-events: auto;
+  max-width: 400px;
+}
+.toast-success { background: var(--success); color: white; }
+.toast-error { background: var(--danger); color: white; }
+.toast-info { background: var(--primary); color: white; }
+.toast-warning { background: var(--warning); color: #1a1a1a; }
+@keyframes toastSlideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ============ CONFIRM MODAL ============ */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-box {
+  background: var(--bg-card-solid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+.confirm-box h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--text-main);
+}
+.confirm-box p {
+  font-size: 0.9rem;
+  color: var(--text-sec);
+  margin-bottom: 20px;
+}
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* ============ COMMON COMPONENTS ============ */
+.card-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.card-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.card-item-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.card-item-meta {
+  font-size: 0.8rem;
+  color: var(--text-sec);
+  margin-top: 4px;
+}
+.card-item-body {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.card-item-footer {
+  margin-top: 8px;
+  font-size: 0.8rem;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge-danger { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge-success { background: rgba(16,185,129,0.15); color: var(--success); }
+.badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); }
+.badge-info { background: rgba(37,99,235,0.15); color: var(--primary); }
+.btn-icon-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: transparent;
+  color: var(--text-sec);
+  transition: background 0.15s;
+}
+.btn-icon-sm:hover { background: var(--border); }
+.btn-icon-sm.danger { color: var(--danger); }
+.btn-icon-sm.danger:hover { background: rgba(239,68,68,0.1); }
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }

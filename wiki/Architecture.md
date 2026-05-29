@@ -246,6 +246,35 @@ app.get('/admin-panel', (req, res) => {
 
 Файлы `.ts` используют `require()` / `module.exports` (CommonJS), а не ES-модули. Это упрощает совместимость и запуск без сборки в режиме разработки (`tsx`).
 
+### In-memory TTL-кэш
+
+Для снижения нагрузки на БД используется `utils/cache.ts`:
+
+```typescript
+// При чтении
+const cached = getCached('classes:all');
+if (cached) return cached;
+const result = await db.all('SELECT ...');
+setCache('classes:all', result, TTL.CLASSES);  // 5 мин
+
+// При записи
+invalidate('classes:all');          // одиночная инвалидация
+invalidatePrefix('schedule:');      // массовая инвалидация префикса
+```
+
+Кэшируются: classes (5мин), schedule (2мин), announcements (1мин).
+
+### Structured Logging (Pino)
+
+Все запросы логируются через Pino в JSON-формате:
+
+```typescript
+// middleware/logger.ts
+logger.info({ method, path, status, duration, ip, userId });
+```
+
+В production — только `warn` и выше. В development — `info`.
+
 ---
 
 ## Связи между модулями

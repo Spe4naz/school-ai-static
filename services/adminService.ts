@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { ERR } = require('../config/constants');
 const AppError = require('../utils/AppError');
+const { getCached, setCache, invalidate, invalidatePrefix, TTL } = require('../utils/cache');
 
 class AdminService {
   private db: any;
@@ -10,7 +11,11 @@ class AdminService {
   }
 
   async listClasses() {
-    return this.db.all('SELECT * FROM classes ORDER BY name');
+    const cached = getCached('classes:all');
+    if (cached) return cached;
+    const result = await this.db.all('SELECT * FROM classes ORDER BY name');
+    setCache('classes:all', result, TTL.CLASSES);
+    return result;
   }
 
   async createClass(name) {
@@ -18,12 +23,14 @@ class AdminService {
       crypto.randomBytes(16).toString('hex'),
       name,
     ]);
+    invalidate('classes:all');
     return { name };
   }
 
   async updateClass(id, name) {
     const result = await this.db.query('UPDATE classes SET name = $1 WHERE id = $2', [name, id]);
     if (result.rowCount === 0) throw new AppError(404, ERR.NOT_FOUND, 'Класс не найден');
+    invalidate('classes:all');
     return { id, name };
   }
 
@@ -34,6 +41,7 @@ class AdminService {
     }
     const result = await this.db.query('DELETE FROM classes WHERE id = $1', [id]);
     if (result.rowCount === 0) throw new AppError(404, ERR.NOT_FOUND, 'Класс не найден');
+    invalidate('classes:all');
     return { success: true };
   }
 

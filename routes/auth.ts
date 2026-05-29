@@ -6,7 +6,7 @@ const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const { userService } = require('../config/container');
 const config = require('../config/auth');
-const emailTransporter = require('../config/email');
+const { getTransporter } = require('../config/email');
 const auth = require('../middleware/auth');
 const { loginLimiter, passwordResetLimiter, refreshLimiter } = require('../middleware/rateLimit');
 const logger = require('../middleware/logger');
@@ -129,7 +129,7 @@ router.post('/password-reset/request', passwordResetLimiter, logger, validate(pa
   const { user, resetId } = result;
   const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password.html?id=${resetId}&email=${encodeURIComponent(email)}`;
 
-  await emailTransporter.sendMail({
+  await getTransporter().sendMail({
     from: `"Умная Школа" <${process.env.SMTP_USER || 'noreply@lumira-server.ru'}>`,
     to: email,
     subject: 'Сброс пароля — Умная Школа',

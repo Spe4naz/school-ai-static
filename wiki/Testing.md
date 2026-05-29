@@ -9,7 +9,7 @@
 - **Фреймворк**: Jest
 - **HTTP-тесты**: Supertest
 - **БД для тестов**: Testcontainers (реальный PostgreSQL в Docker)
-- **Покрытие**: branches, functions, lines, statements (мин. 20%)
+- **Покрытие**: branches, functions, lines, statements (мин. 50%)
 
 ---
 
@@ -159,29 +159,58 @@ describe('CryptoService', () => {
 
 ---
 
-## Что тестируется
+## Что тестируется (164 теста)
 
-### api.test.js (интеграционные)
+### api.test.js (50 тестов)
 
-- Login (все роли, неверные данные)
-- Публичные эндпоинты (classes, health)
-- Защищённые эндпоинты (без токена, с токеном)
-- Расписание (CRUD)
-- Уведомления (список, unread, mark-read, SSE)
-- Чат (сообщения, загрузка, шифрование)
-- Отчёты (PDF, Excel)
-- Регистрация (ученик, учитель с кодом, неверный код)
-- Создание оценок
-- Сброс пароля (полный цикл)
-- Смена пароля
-- Выход
-- Валидация Zod
+- Health check (status ok, без uptime)
+- Login (все роли, cookie auth, token не в body, неверные данные)
+- Регистрация (ученик, учитель с кодом, неверный код, дубликат email)
+- Публичные эндпоинты (classes)
+- Защищённые эндпоинты (grades, schedule, students, stats)
+- Профиль (данные без password)
+- Расписание
+- Уведомления (список, unread-count)
+- Графики (subjects, progress)
+- Чат (сообщения, ключ, участники)
+- Домашние задания (CRUD)
+- Объявления (CRUD)
+- Отчёты (PDF, Excel, неверный тип)
+- Оценки (roles, валидация)
+- Сброс пароля (неизвестный email, неверный id)
+- Смена пароля (успех, неверный пароль, без токена, сложность)
+- Выход (с refresh-токеном, без)
+- Refresh token (без токена, невалидный)
 - 404 для неизвестных путей
 
-### middleware.test.js
+### middleware.test.js (33 теста)
 
-- auth (нет токена, валидный, истёкший, невалидный)
-- roles (доступ разрешён, запрещён, нет пользователя)
+- auth (нет токена, Bearer, cookie, приоритет Bearer > cookie, истёкший, невалидный)
+- roles (разрешён, запрещён, нет пользователя, несколько ролей)
+- validate (login, register, grade схемы, email normalisation, html sanitization)
+- errorHandler (23505, AppError, ValidationError, JsonWebTokenError, generic, dev mode)
+- requireAuth factory
+
+### services.test.js (22 теста)
+
+- CryptoService (generateKey, roundtrip, wrong key, invalid format, hash, unicode, empty)
+- NotificationService (create, list, markAsRead, unreadCount, limit)
+- GradeService (getStats SQL, empty class, getProgress, getSubjects)
+- Cache utility (set/get, expired, invalidate, invalidatePrefix, TTL, complex objects, overwrite)
+
+### services-extra.test.js (19 тестов)
+
+- AdminService (listClasses + cache, listStudents, listUsers + filter + search, getStats, deleteUser, createClass, getSettings, listRegistrationCodes, listLogs)
+- ScheduleService (list admin/teacher, cache, create)
+- HomeworkService (list, create)
+- AnnouncementService (list, create)
+- asyncHandler (error catch, success, sync error)
+
+### unit.test.js (20 тестов)
+
+- AppError (create, instanceof, stack, multiple)
+- BackupService (constructor, defaults, _safePath traversal × 3, valid path)
+- Cache utility (set/get, missing, expired, invalidate, invalidatePrefix, TTL values, complex objects, overwrite)
 - validate (login, register, grade схемы)
 - errorHandler (unique violation, validation, JWT, generic)
 

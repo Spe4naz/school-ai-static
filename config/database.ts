@@ -16,8 +16,12 @@ class Database {
     this.pool = new Pool({
       connectionString: url,
       max: 20,
+      min: 2,
       idleTimeoutMillis: 30000,
       query_timeout: 10000,
+    });
+    this.pool.on('error', (err) => {
+      console.error('Unexpected database pool error:', err.message);
     });
   }
 
@@ -40,6 +44,7 @@ class Database {
 
   async init() {
     this._ensureConnected();
+    await this.query('SELECT 1');
     await this.query('CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL)');
 
     await this.query(`CREATE TABLE IF NOT EXISTS users (

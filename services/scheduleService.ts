@@ -1,4 +1,5 @@
 const { ERR } = require('../config/constants');
+const { getCached, setCache, invalidate, invalidatePrefix, TTL } = require('../utils/cache');
 
 class ScheduleService {
   private db: any;
@@ -35,7 +36,12 @@ class ScheduleService {
         WHEN 'Чт' THEN 4 WHEN 'Пт' THEN 5 WHEN 'Сб' THEN 6 
       END, s.time_slot`;
 
-    return this.db.all(query, params);
+    const cacheKey = `schedule:${user.role}:${user.id}:${class_id || ''}`;
+    const cached = getCached(cacheKey);
+    if (cached) return cached;
+    const result = await this.db.all(query, params);
+    setCache(cacheKey, result, TTL.SCHEDULE);
+    return result;
   }
 
   async create({ day, time_slot, subject, teacher_id, class_id, room }) {
@@ -43,6 +49,7 @@ class ScheduleService {
       'INSERT INTO schedule (day, time_slot, subject, teacher_id, class_id, room) VALUES ($1,$2,$3,$4,$5,$6)',
       [day, time_slot, subject, teacher_id, class_id, room || null],
     );
+    invalidatePrefix('schedule:');
     return { success: true };
   }
 
@@ -57,6 +64,7 @@ class ScheduleService {
       throw Object.assign(new Error('Нельзя удалить чужой урок'), { status: 403, code: ERR.FORBIDDEN });
     }
 
+    invalidatePrefix('schedule:');
     return { success: true };
   }
 
@@ -81,6 +89,7 @@ class ScheduleService {
     ];
 
     await this.db.query('UPDATE schedule SET day = $1, time_slot = $2, subject = $3, room = $4 WHERE id = $5', updateParams);
+    invalidatePrefix('schedule:');
     return { success: true };
   }
 }

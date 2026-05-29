@@ -360,6 +360,60 @@ if (process.env.JWT_SECRET.length < 32) {
 
 ---
 
+## Кэширование
+
+In-memory TTL-кэш снижает нагрузку на БД для часто запрашиваемых данных:
+
+```typescript
+// utils/cache.ts
+setCache('classes:all', result, 5 * 60 * 1000);  // 5 мин
+setCache('schedule:...', result, 2 * 60 * 1000);  // 2 мин
+setCache('announcements:...', result, 60 * 1000);  // 1 мин
+```
+
+- Кэш автоматически очищается при истечении TTL
+- Инвалидация при записи: `invalidate('classes:all')`, `invalidatePrefix('schedule:')`
+- Кэш не содержит чувствительных данных (пароли, токены)
+
+---
+
+## Логирование
+
+Структурированное логирование через **Pino**:
+
+```typescript
+// middleware/logger.ts
+logger.info({ method, path, status, duration, ip, userId });
+// Вывод: {"level":"info","time":"...","method":"GET","path":"/api/grades","status":200,"duration":15,"ip":"127.0.0.1","userId":"uuid"}
+```
+
+- В production: level `warn` (только ошибки)
+- В development: level `info` (все запросы)
+- В test/ci: level `silent` (без логов)
+- Формат: JSON для машинного парсинга
+
+---
+
+## Graceful Shutdown
+
+При получении SIGTERM/SIGINT:
+
+1. SSE-клиентам отправляется `{"type":"shutdown"}`
+2. Все SSE-соединения закрываются
+3. HTTP-сервер завершает обработку запросов
+4. Пул соединений с БД закрывается
+
+```typescript
+// server.ts
+for (const [, clients] of sseClients) {
+  clients.forEach(c => { c.write('data: {"type":"shutdown"}\n\n'); c.end(); });
+}
+await httpServer.close();
+await db.close();
+```
+
+---
+
 ## Рекомендации для продакшена
 
 - [ ] Использовать сильный `JWT_SECRET` (мин. 32 символа, не дефолтный)

@@ -191,6 +191,17 @@ async function startApp() {
 
 async function shutdown(signal) {
   console.log(`Received ${signal}, shutting down gracefully...`);
+  // Close SSE connections
+  try {
+    for (const [, clients] of sseClients) {
+      clients.forEach((c) => {
+        try { c.write('data: {"type":"shutdown"}\n\n'); } catch (_) { /* ignore */ }
+        try { c.end(); } catch (_) { /* ignore */ }
+      });
+    }
+  } catch (err) {
+    console.error('Error closing SSE connections:', err);
+  }
   try {
     if (httpServer) {
       await new Promise((resolve) => httpServer.close(resolve));
