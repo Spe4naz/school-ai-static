@@ -1,5 +1,5 @@
 #!/bin/bash
-# School AI — Install Script (3x-ui style)
+# School AI — Install Script
 # Access panel at http://SERVER_IP:PORT/panel
 set -e
 
@@ -7,9 +7,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-CYAN='\033[0;36m'
 NC='\033[0m'
-BOLD='\033[1m'
 
 echo ""
 echo "  ============================================"
@@ -27,7 +25,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || echo "127.0.0.1")
-echo -e "${BLUE}Обнаружен IP сервера: ${BOLD}$SERVER_IP${NC}"
+echo -e "${BLUE}Обнаружен IP сервера: ${SERVER_IP}${NC}"
 
 # ==================== DOCKER ====================
 
@@ -79,36 +77,41 @@ echo "  ============================================"
 echo ""
 
 # Порт
-echo -n "  Порт для панели [80]: "
-read PANEL_PORT
-PANEL_PORT=${PANEL_PORT:-80}
+PANEL_PORT=""
+while [ -z "$PANEL_PORT" ]; do
+  echo -n "  Порт для панели [80]: "
+  read -r PANEL_PORT
+  PANEL_PORT=${PANEL_PORT:-80}
+done
 
 # Домен
 echo ""
 echo "  Если у вас есть домен — введите его."
 echo "  Если нет — нажмите Enter для IP-доступа."
+DOMAIN=""
 echo -n "  Домен (опционально): "
-read DOMAIN
+read -r DOMAIN
 
 # Логин
-echo ""
-echo -n "  Логин администратора: "
-read ADMIN_EMAIL
+ADMIN_EMAIL=""
 while [ -z "$ADMIN_EMAIL" ]; do
-  echo -n "  Логин обязателен: "
-  read ADMIN_EMAIL
+  echo -n "  Логин администратора: "
+  read -r ADMIN_EMAIL
 done
 
 # Пароль
-echo ""
-echo -n "  Пароль администратора (мин. 8 символов): "
-read -s ADMIN_PASSWORD
-echo ""
+ADMIN_PASSWORD=""
 while [ ${#ADMIN_PASSWORD} -lt 8 ]; do
-  echo -n "  Минимум 8 символов: "
-  read -s ADMIN_PASSWORD
+  echo -n "  Пароль администратора (мин. 8 символов): "
+  read -rs ADMIN_PASSWORD
   echo ""
+  if [ ${#ADMIN_PASSWORD} -lt 8 ]; then
+    echo "  Минимум 8 символов!"
+  fi
 done
+
+echo ""
+echo -e "${GREEN}  Параметры приняты${NC}"
 
 # ==================== ГЕНЕРАЦИЯ КОНФИГУРАЦИИ ====================
 
@@ -187,7 +190,19 @@ echo -e "${YELLOW}[6/7] Сборка и запуск...${NC}"
 
 # Обновить порт в docker-compose.yml если нужно
 if [ "$PANEL_PORT" != "80" ]; then
-  sed -i "s/- \"80:80\"/- \"${PANEL_PORT}:80\"/g" docker-compose.yml 2>/dev/null || true
+  # Используем python для надёжной замены
+  python3 -c "
+import re, sys
+with open('docker-compose.yml', 'r') as f:
+    content = f.read()
+content = content.replace('- \"80:80\"', '- \"${PANEL_PORT}:80\"')
+with open('docker-compose.yml', 'w') as f:
+    f.write(content)
+" 2>/dev/null || {
+    # Fallback: grep и sed
+    grep -q '"80:80"' docker-compose.yml && \
+    sed -i "s/\"80:80\"/\"${PANEL_PORT}:80\"/g" docker-compose.yml
+  }
 fi
 
 docker compose build -q 2>/dev/null || docker compose build
@@ -223,12 +238,14 @@ else
 fi
 
 echo ""
+FINAL_LOGIN="$ADMIN_EMAIL"
 echo -n "  Введите логин: "
-read FINAL_LOGIN
+read -r FINAL_LOGIN
 FINAL_LOGIN=${FINAL_LOGIN:-$ADMIN_EMAIL}
 
+FINAL_PASSWORD=""
 echo -n "  Введите пароль: "
-read -s FINAL_PASSWORD
+read -rs FINAL_PASSWORD
 echo ""
 FINAL_PASSWORD=${FINAL_PASSWORD:-$ADMIN_PASSWORD}
 

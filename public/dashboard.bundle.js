@@ -1,16 +1,16 @@
 (() => {
   var d = window.location.origin + '/api',
-    fe = {
+    ye = {
       admin: '\u0410\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440',
       teacher: '\u0423\u0447\u0438\u0442\u0435\u043B\u044C',
       student: '\u0423\u0447\u0435\u043D\u0438\u043A',
       parent: '\u0420\u043E\u0434\u0438\u0442\u0435\u043B\u044C',
       head_teacher: '\u0417\u0430\u0432\u0443\u0447',
     };
-  function w(t) {
-    return fe[t] || t;
+  function v(t) {
+    return ye[t] || t;
   }
-  function M(t, e) {
+  function C(t, e) {
     let n;
     return (...a) => {
       (clearTimeout(n), (n = setTimeout(() => t(...a), e)));
@@ -30,7 +30,7 @@
           setTimeout(() => s.remove(), 300));
       }, n));
   }
-  function B(t) {
+  function k(t) {
     return new Promise((e) => {
       let n = document.createElement('div');
       ((n.className = 'confirm-overlay'),
@@ -56,22 +56,22 @@
         }));
     });
   }
-  function O() {
+  function F() {
     return window._chartInstance;
   }
-  function F(t) {
+  function R(t) {
     window._chartInstance = t;
   }
-  function D() {
+  function M() {
     return window._chatEncryptionKey;
   }
-  function R(t) {
+  function N(t) {
     window._chatEncryptionKey = t;
   }
-  function L(t, e) {
+  function B(t, e) {
     window['_refresh_' + t] = e;
   }
-  function N() {
+  function J() {
     Object.keys(window)
       .filter((e) => e.startsWith('_refresh_') || e === '_chatInterval')
       .forEach((e) => {
@@ -88,7 +88,7 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#x27;');
   }
-  async function h() {
+  async function w() {
     try {
       let e = await (await fetch(`${d}/notifications`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('notifList');
@@ -114,8 +114,8 @@
       console.error(t);
     }
   }
-  var S = 0;
-  async function J(t) {
+  var L = 0;
+  async function z(t) {
     let e = document.getElementById('classFilter');
     if (['teacher', 'admin'].includes(t.role)) {
       e.style.display = 'block';
@@ -123,10 +123,10 @@
       ((e.innerHTML =
         '<option value="">\u0412\u0441\u0435 \u043A\u043B\u0430\u0441\u0441\u044B</option>' +
         a.map((s) => `<option value="${i(s.id)}">${i(s.name)}</option>`).join('')),
-        ye());
+        he());
     }
   }
-  async function ye() {
+  async function he() {
     try {
       let e = await (await fetch(`${d}/students`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('modalStudentId');
@@ -140,18 +140,18 @@
       );
     }
   }
-  function H(t) {
-    S += t;
+  function D(t) {
+    L += t;
     let e = document.getElementById('classFilter');
     E(e ? e.value : '');
   }
-  function z() {
-    S = 0;
+  function K() {
+    L = 0;
     let t = document.getElementById('classFilter');
     E(t ? t.value : '');
   }
   async function E(t = '') {
-    let e = `${d}/grades?week_offset=${S}`;
+    let e = `${d}/grades?week_offset=${L}`;
     t && (e += `&class_id=${t}`);
     try {
       let a = await (await fetch(e, { credentials: 'same-origin' })).json(),
@@ -168,23 +168,23 @@
       </tr>`,
         )
         .join('')),
-        he());
+        ve());
     } catch (n) {
       console.error(n);
     }
   }
-  function he() {
+  function ve() {
     let t = document.getElementById('weekLabel');
     if (!t) return;
     let e = new Date(),
       n = new Date(e);
-    n.setDate(n.getDate() + S * 7 - (n.getDay() || 7) + 1);
+    n.setDate(n.getDate() + L * 7 - (n.getDay() || 7) + 1);
     let a = new Date(n);
     a.setDate(n.getDate() + 6);
     let s = (r) => r.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
     t.textContent = `${s(n)} \u2014 ${s(a)}`;
   }
-  async function K(t) {
+  async function q(t) {
     t.preventDefault();
     let e = document.getElementById('modalStudentId').value;
     if (!e)
@@ -213,7 +213,7 @@
         let s = document.getElementById('gradeModal');
         (s && (s.style.display = 'none'),
           E(),
-          h(),
+          w(),
           (document.getElementById('modalStudentId').value = ''),
           (document.getElementById('modalSubject').value = ''),
           (document.getElementById('modalComment').value = ''));
@@ -229,7 +229,7 @@
       u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  function q(t) {
+  function G(t) {
     return { Пн: 1, Вт: 2, Ср: 3, Чт: 4, Пт: 5, Сб: 6 }[t] || 0;
   }
   async function b(t = '') {
@@ -243,7 +243,7 @@
         (r[l.day] || (r[l.day] = []), r[l.day].push(l));
       });
       let c = document.getElementById('scheduleContainer'),
-        o = Object.keys(r).sort((l, m) => q(l) - q(m));
+        o = Object.keys(r).sort((l, m) => G(l) - G(m));
       (o.length === 0
         ? (c.innerHTML =
             '<div style="text-align:center; color:#666; padding:20px;">\u0420\u0430\u0441\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u043F\u0443\u0441\u0442\u043E</div>')
@@ -276,13 +276,13 @@
             .join('')),
         (document.getElementById('homeScheduleCount').textContent = `${s.length} \u0443\u0440\u043E\u043A\u043E\u0432`),
         c.querySelectorAll('.schedule-delete-btn').forEach((l) => {
-          l.addEventListener('click', () => ve(l.dataset.id));
+          l.addEventListener('click', () => we(l.dataset.id));
         }));
     } catch (a) {
       console.error(a);
     }
   }
-  async function G() {
+  async function W() {
     let t = JSON.parse(localStorage.getItem('user')),
       e = document.getElementById('scheduleClassFilter'),
       n = document.getElementById('scheduleClass');
@@ -304,7 +304,7 @@
       console.error(a);
     }
   }
-  async function W(t) {
+  async function V(t) {
     t.preventDefault();
     let e = document.getElementById('scheduleError');
     e.style.display = 'none';
@@ -340,8 +340,8 @@
       ((e.textContent = '\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438'), (e.style.display = 'block'));
     }
   }
-  async function ve(t) {
-    if (await B('\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0443\u0440\u043E\u043A?'))
+  async function we(t) {
+    if (await k('\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0443\u0440\u043E\u043A?'))
       try {
         let n = await fetch(`${d}/schedule/${t}`, { method: 'DELETE', credentials: 'same-origin' });
         if (n.ok) b();
@@ -356,7 +356,7 @@
         u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
       }
   }
-  async function _(t, e) {
+  async function H(t, e) {
     let n = document.getElementById('chartSubject'),
       a = document.getElementById('chartPeriod'),
       s = t || (n ? n.value : 'all'),
@@ -368,7 +368,7 @@
         l = document.getElementById('progressChart');
       if (!l) return;
       let m = l.getContext('2d'),
-        f = O();
+        f = F();
       if ((f && f.destroy(), o.length === 0)) {
         (m.clearRect(0, 0, m.canvas.width, m.canvas.height),
           (m.font = '14px sans-serif'),
@@ -383,11 +383,11 @@
       let y = new Chart(m, {
         type: 'line',
         data: {
-          labels: o.map((v) => v.date),
+          labels: o.map((h) => h.date),
           datasets: [
             {
               label: '\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0431\u0430\u043B\u043B',
-              data: o.map((v) => v.average),
+              data: o.map((h) => h.average),
               borderColor: '#2563eb',
               backgroundColor: 'rgba(37, 99, 235, 0.1)',
               fill: !0,
@@ -405,12 +405,12 @@
           plugins: { legend: { display: !1 } },
         },
       });
-      F(y);
+      R(y);
     } catch (c) {
       console.error(c);
     }
   }
-  async function V() {
+  async function X() {
     try {
       let e = await (await fetch(`${d}/grades/subjects`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('chartSubject');
@@ -421,7 +421,7 @@
       console.error(t);
     }
   }
-  async function j() {
+  async function _() {
     try {
       let e = await (await fetch(`${d}/grades`, { credentials: 'same-origin' })).json();
       if (e.length > 0) {
@@ -432,13 +432,13 @@
       console.error(t);
     }
   }
-  async function X() {
+  async function Z() {
     let e = await (await fetch(`${d}/classes`, { credentials: 'same-origin' })).json();
     document.getElementById('exportClass').innerHTML =
       '<option value="">\u0412\u0441\u0435 \u043A\u043B\u0430\u0441\u0441\u044B</option>' +
       e.map((n) => `<option value="${i(n.id)}">${i(n.name)}</option>`).join('');
   }
-  async function Z(t) {
+  async function Q(t) {
     t.preventDefault();
     let e = document.getElementById('exportClass').value,
       n = document.getElementById('exportPeriod').value,
@@ -461,7 +461,7 @@
         ));
     }
   }
-  var we = [
+  var Ee = [
       '\u{1F600}',
       '\u{1F603}',
       '\u{1F604}',
@@ -571,9 +571,9 @@
       '\u{1F445}',
       '\u{1F444}',
     ],
-    T = !1,
+    S = !1,
     g = { offset: 0, hasMore: !0, loading: !1, loadingMore: !1, sendLock: !1, typingTimer: null };
-  async function ee(t, e) {
+  async function te(t, e) {
     let n = new TextEncoder(),
       a = await crypto.subtle.importKey('raw', n.encode(t), { name: 'PBKDF2' }, !1, ['deriveBits', 'deriveKey']);
     return crypto.subtle.deriveKey(
@@ -584,7 +584,7 @@
       ['encrypt', 'decrypt'],
     );
   }
-  async function Ee(t, e) {
+  async function be(t, e) {
     let n = new TextEncoder(),
       a = crypto.getRandomValues(new Uint8Array(12)),
       s = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: a }, e, n.encode(t)),
@@ -597,7 +597,7 @@
         .join(''),
     );
   }
-  async function be(t, e) {
+  async function Ie(t, e) {
     let n = atob(t),
       a = new Uint8Array(n.length);
     for (let o = 0; o < n.length; o++) a[o] = n.charCodeAt(o);
@@ -606,22 +606,22 @@
       c = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: s }, e, r);
     return new TextDecoder().decode(c);
   }
-  async function Ie(t, e) {
+  async function xe(t, e) {
     if (!e || !t || !/^[A-Za-z0-9+/=]+$/.test(t)) return t;
     try {
-      let n = await ee(e, 'class-chat-salt');
-      return await be(t, n);
+      let n = await te(e, 'class-chat-salt');
+      return await Ie(t, n);
     } catch {
       return t;
     }
   }
-  function xe() {
+  function $e() {
     return Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map((t) => t.toString(16).padStart(2, '0'))
       .join('');
   }
-  async function te() {
-    let t = D();
+  async function ne() {
+    let t = M();
     if (t) return t;
     let e;
     try {
@@ -637,14 +637,14 @@
         ((a = (await (await fetch(`${d}/chat/key`, { credentials: 'same-origin' })).json()).key),
           sessionStorage.setItem(n, a));
       } catch {
-        ((a = xe()), sessionStorage.setItem(n, a));
+        ((a = $e()), sessionStorage.setItem(n, a));
       }
-    return (R(a), a);
-  }
-  function $e(t) {
-    return new Date(t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    return (N(a), a);
   }
   function ke(t) {
+    return new Date(t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  }
+  function Be(t) {
     let e = new Date(t),
       n = new Date(),
       a = new Date(n);
@@ -659,12 +659,12 @@
   }
   function P() {
     let t = document.getElementById('emojiPicker');
-    ((T = !T),
-      t.classList.toggle('open', T),
-      T &&
+    ((S = !S),
+      t.classList.toggle('open', S),
+      S &&
         ((t.innerHTML =
           '<div class="emoji-grid">' +
-          we.map((e) => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('') +
+          Ee.map((e) => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('') +
           '</div>'),
         t.querySelectorAll('.emoji-item').forEach((e) => {
           e.addEventListener('click', () => {
@@ -674,17 +674,17 @@
           });
         })));
   }
-  function Be(t) {
+  function Le(t) {
     return t.scrollHeight - t.scrollTop - t.clientHeight < 100;
   }
-  function ne(t, e) {
+  function ae(t, e) {
     t.scrollTo({ top: t.scrollHeight, behavior: e ? 'smooth' : 'auto' });
   }
-  async function x() {
+  async function I() {
     if (!g.loading) {
       g.loading = !0;
       try {
-        await te();
+        await ne();
         let t = new AbortController(),
           e = setTimeout(() => t.abort(), 8e3),
           n = await fetch(`${d}/chat/messages?offset=0&limit=50`, { credentials: 'same-origin', signal: t.signal });
@@ -695,11 +695,11 @@
         let a = await n.json(),
           s = JSON.parse(localStorage.getItem('user') || '{}'),
           r = document.getElementById('chatMessages'),
-          c = Be(r);
-        (await Se(r, a.messages, s),
+          c = Le(r);
+        (await je(r, a.messages, s),
           (g.hasMore = a.messages.length >= 50),
           (g.offset = 0),
-          (c || a.messages.length <= 1) && ne(r, !1),
+          (c || a.messages.length <= 1) && ae(r, !1),
           A('online'));
       } catch {
         A('offline');
@@ -708,7 +708,7 @@
       }
     }
   }
-  async function Le() {
+  async function Se() {
     if (g.loadingMore || !g.hasMore) return;
     g.loadingMore = !0;
     let t = g.offset + 50;
@@ -725,7 +725,7 @@
         o = c ? parseInt(c.dataset.msgId, 10) : 1 / 0,
         l = n.messages.filter((m) => m.id < o);
       if (l.length > 0) {
-        let m = await ae(l, a);
+        let m = await se(l, a);
         s.insertAdjacentHTML('afterbegin', m);
       }
       ((g.hasMore = n.messages.length >= 50),
@@ -741,41 +741,41 @@
       g.loadingMore = !1;
     }
   }
-  async function ae(t, e) {
-    let n = D(),
-      a = await Promise.all(t.map((c) => Ie(c.content, n))),
+  async function se(t, e) {
+    let n = M(),
+      a = await Promise.all(t.map((c) => xe(c.content, n))),
       s = '',
       r = '';
     return (
       t.forEach((c, o) => {
         let l = new Date(c.created_at).toDateString();
-        l !== r && ((s += `<div class="msg-date-divider">${ke(c.created_at)}</div>`), (r = l));
+        l !== r && ((s += `<div class="msg-date-divider">${Be(c.created_at)}</div>`), (r = l));
         let m = c.user_id === e.id,
           f = a[o],
           y = c.image_url
             ? `<img src="${i(c.image_url)}" class="msg-image" onclick="window.open(this.src)" loading="lazy" />`
             : '',
-          v = m
+          h = m
             ? `<button class="msg-delete" data-action="deleteMessage" data-msg-id="${c.id}" title="\u0423\u0434\u0430\u043B\u0438\u0442\u044C">\u2715</button>`
             : '';
         s += `<div class="msg ${m ? 'user' : 'ai'}" data-msg-id="${c.id}">
       ${m ? '' : `<div class="msg-author">${i(c.user_name)}</div>`}
-      ${v}
+      ${h}
       <div class="msg-content">${i(f)}</div>
       ${y}
-      <div class="msg-time">${$e(c.created_at)}</div>
+      <div class="msg-time">${ke(c.created_at)}</div>
     </div>`;
       }),
       s
     );
   }
-  async function Se(t, e, n) {
-    let a = await ae(e, n);
+  async function je(t, e, n) {
+    let a = await se(e, n);
     t.innerHTML =
       a ||
       '<div style="text-align:center;padding:40px;color:var(--text-sec)">\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442. \u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u043E\u0431\u0449\u0435\u043D\u0438\u0435!</div>';
   }
-  async function je(t) {
+  async function Te(t) {
     try {
       if ((await fetch(`${d}/chat/messages/${t}`, { method: 'DELETE', credentials: 'same-origin' })).ok) {
         let n = document.querySelector(`.msg[data-msg-id="${t}"]`);
@@ -783,18 +783,18 @@
       }
     } catch {}
   }
-  async function Q() {
+  async function Y() {
     if (g.sendLock) return;
     let t = document.getElementById('chatInput'),
       e = t.value.trim();
     if (!e) return;
     g.sendLock = !0;
-    let n = await te(),
+    let n = await ne(),
       a = e;
     if (n)
       try {
-        let s = await ee(n, 'class-chat-salt');
-        a = await Ee(e, s);
+        let s = await te(n, 'class-chat-salt');
+        a = await be(e, s);
       } catch {}
     try {
       (
@@ -804,20 +804,20 @@
           credentials: 'same-origin',
           body: JSON.stringify({ content: a }),
         })
-      ).ok && ((t.value = ''), await x());
+      ).ok && ((t.value = ''), await I());
     } catch {
     } finally {
       g.sendLock = !1;
     }
   }
-  async function se(t) {
+  async function oe(t) {
     let e = new FormData();
     e.append('image', t);
     try {
-      (await fetch(`${d}/chat/upload`, { method: 'POST', credentials: 'same-origin', body: e })).ok && (await x());
+      (await fetch(`${d}/chat/upload`, { method: 'POST', credentials: 'same-origin', body: e })).ok && (await I());
     } catch {}
   }
-  async function Y() {
+  async function ee() {
     try {
       let [t, e] = await Promise.all([
           fetch(`${d}/chat/participants`, { credentials: 'same-origin' }),
@@ -838,14 +838,14 @@
         .join('');
     } catch {}
   }
-  function Te() {
+  function Ce() {
     fetch(`${d}/chat/typing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
     }).catch(() => {});
   }
-  async function Ce() {
+  async function Me() {
     try {
       let t = await fetch(`${d}/chat/typing`, { credentials: 'same-origin' }).then((a) => a.json()),
         e = document.getElementById('typingIndicator'),
@@ -864,44 +864,44 @@
           ? '<span class="status-dot"></span> \u0412 \u0441\u0435\u0442\u0438'
           : '<span class="status-dot offline"></span> \u041D\u0435\u0442 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F');
   }
-  function oe() {
+  function U() {
     try {
       let t = JSON.parse(localStorage.getItem('user') || '{}');
       if (!['student', 'parent'].includes(t.role)) return;
-      (x(),
-        Y(),
+      (I(),
+        ee(),
         setInterval(async () => {
-          document.getElementById('chat')?.classList.contains('active') && (await x(), Y());
+          document.getElementById('chat')?.classList.contains('active') && (await I(), ee());
         }, 5e3),
-        setInterval(Ce, 3e3));
+        setInterval(Me, 3e3));
       let e = document.getElementById('chatInput');
       (e &&
         e.addEventListener(
           'input',
-          M(() => {
-            e.value.trim() && Te();
+          C(() => {
+            e.value.trim() && Ce();
           }, 500),
         ),
-        document.getElementById('sendBtn')?.addEventListener('click', Q));
+        document.getElementById('sendBtn')?.addEventListener('click', Y));
       let n = document.getElementById('chatInput');
       n &&
         n.addEventListener('keypress', (s) => {
-          s.key === 'Enter' && Q();
+          s.key === 'Enter' && Y();
         });
       let a = document.getElementById('chatMessages');
       (a &&
         (a.addEventListener(
           'scroll',
-          M(() => {
-            a.scrollTop < 50 && g.hasMore && !g.loadingMore && Le();
+          C(() => {
+            a.scrollTop < 50 && g.hasMore && !g.loadingMore && Se();
           }, 200),
         ),
         a.addEventListener('click', (s) => {
           let r = s.target.closest('[data-action="deleteMessage"]');
-          r && je(r.dataset.msgId);
+          r && Te(r.dataset.msgId);
         })),
-        document.querySelector('[data-action="chatRefresh"]')?.addEventListener('click', x),
-        setTimeout(() => ne(document.getElementById('chatMessages'), !0), 300));
+        document.querySelector('[data-action="chatRefresh"]')?.addEventListener('click', I),
+        setTimeout(() => ae(document.getElementById('chatMessages'), !0), 300));
     } catch {}
   }
   async function re() {
@@ -933,9 +933,9 @@
             count: o[p],
             pct: (((c[p] / o[p] - 2) / 3) * 100).toFixed(0),
           }))
-          .sort((p, ge) => ge.avg - p.avg),
-        v = y.length > 0 ? y[0].name : '\u2014',
-        pe = (e.name || '')
+          .sort((p, fe) => fe.avg - p.avg),
+        h = y.length > 0 ? y[0].name : '\u2014',
+        ge = (e.name || '')
           .split(' ')
           .map((p) => p[0])
           .join('')
@@ -943,10 +943,10 @@
           .slice(0, 2);
       t.innerHTML = `
       <div class="profile-header-card">
-        <div class="profile-avatar-lg">${i(pe)}</div>
+        <div class="profile-avatar-lg">${i(ge)}</div>
         <div class="profile-info">
           <h2>${i(e.name)}</h2>
-          <p>${i(w(e.role))}${s.class_name ? ` \xB7 ${i(s.class_name)}` : ''}</p>
+          <p>${i(v(e.role))}${s.class_name ? ` \xB7 ${i(s.class_name)}` : ''}</p>
           <p style="font-size:0.85rem; margin-top:6px; opacity:0.7">${i(s.email)}</p>
         </div>
       </div>
@@ -955,12 +955,12 @@
           <h3>\u{1F4CA} \u041E\u0431\u0449\u0430\u044F \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430</h3>
           <div class="profile-stat"><span class="profile-stat-label">\u0412\u0441\u0435\u0433\u043E \u043E\u0446\u0435\u043D\u043E\u043A</span><span class="profile-stat-value">${m}</span></div>
           <div class="profile-stat"><span class="profile-stat-label">\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0431\u0430\u043B\u043B</span><span class="profile-stat-value" style="color: ${f >= 4 ? 'var(--success)' : f >= 3 ? 'var(--warning)' : 'var(--danger)'}">${f}</span></div>
-          <div class="profile-stat"><span class="profile-stat-label">\u041B\u0443\u0447\u0448\u0438\u0439 \u043F\u0440\u0435\u0434\u043C\u0435\u0442</span><span class="profile-stat-value">${i(v)}</span></div>
+          <div class="profile-stat"><span class="profile-stat-label">\u041B\u0443\u0447\u0448\u0438\u0439 \u043F\u0440\u0435\u0434\u043C\u0435\u0442</span><span class="profile-stat-value">${i(h)}</span></div>
           <div class="profile-stat"><span class="profile-stat-label">\u041F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432</span><span class="profile-stat-value">${y.length}</span></div>
         </div>
         <div class="profile-card">
           <h3>\u{1F464} \u0410\u043A\u043A\u0430\u0443\u043D\u0442</h3>
-          <div class="profile-stat"><span class="profile-stat-label">\u0420\u043E\u043B\u044C</span><span class="profile-stat-value"><span class="role-badge role-${i(e.role)}">${i(w(e.role))}</span></span></div>
+          <div class="profile-stat"><span class="profile-stat-label">\u0420\u043E\u043B\u044C</span><span class="profile-stat-value"><span class="role-badge role-${i(e.role)}">${i(v(e.role))}</span></span></div>
           <div class="profile-stat"><span class="profile-stat-label">Email</span><span class="profile-stat-value" style="font-size:0.85rem">${i(s.email)}</span></div>
           ${s.class_name ? `<div class="profile-stat"><span class="profile-stat-label">\u041A\u043B\u0430\u0441\u0441</span><span class="profile-stat-value">${i(s.class_name)}</span></div>` : ''}
         </div>
@@ -994,7 +994,7 @@
         console.error(n));
     }
   }
-  async function $() {
+  async function x() {
     let t = document.getElementById('userRoleFilter').value,
       e = `${d}/admin/users`;
     t && (e += `?role=${t}`);
@@ -1010,7 +1010,7 @@
       <tr>
         <td>${i(o.name)}</td>
         <td>${i(o.email)}</td>
-        <td><span class="role-badge role-${i(o.role)}">${i(w(o.role))}</span></td>
+        <td><span class="role-badge role-${i(o.role)}">${i(v(o.role))}</span></td>
         <td>${o.class_id ? i(c[o.class_id]) || i(o.class_id) : '\u2014'}</td>
         <td>
           ${o.role !== 'admin' || a.filter((l) => l.role === 'admin').length > 1 ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${i(o.id)}">\u0423\u0434\u0430\u043B\u0438\u0442\u044C</button>` : '<span style="color:#999; font-size:0.8rem;">\u041D\u0435\u043B\u044C\u0437\u044F</span>'}
@@ -1020,7 +1020,7 @@
           )
           .join('')),
         s.querySelectorAll('[data-action="deleteUser"]').forEach((o) => {
-          o.addEventListener('click', () => Me(o.dataset.id));
+          o.addEventListener('click', () => De(o.dataset.id));
         }));
     } catch (n) {
       console.error(n);
@@ -1078,15 +1078,15 @@
         let r = document.getElementById('userModal');
         r && (r.style.display = 'none');
         let c = document.getElementById('userForm');
-        (c && c.reset(), $());
+        (c && c.reset(), x());
       } else ((e.textContent = s.error || '\u041E\u0448\u0438\u0431\u043A\u0430'), (e.style.display = 'block'));
     } catch {
       ((e.textContent = '\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438'), (e.style.display = 'block'));
     }
   }
-  async function Me(t) {
+  async function De(t) {
     if (
-      await B(
+      await k(
         '\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F?',
       )
     )
@@ -1097,7 +1097,7 @@
             '\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u0443\u0434\u0430\u043B\u0451\u043D',
             'success',
           ),
-            $());
+            x());
         else {
           let a = await n.json();
           u(
@@ -1109,7 +1109,7 @@
         u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
       }
   }
-  async function k() {
+  async function j() {
     try {
       let e = await (await fetch(`${d}/homework`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('homeworkList');
@@ -1168,7 +1168,7 @@
         body: JSON.stringify({ subject: e, title: n, description: a, due_date: s }),
       });
       if (r.ok)
-        ((document.getElementById('hwModal').style.display = 'none'), document.getElementById('hwForm').reset(), k());
+        ((document.getElementById('hwModal').style.display = 'none'), document.getElementById('hwForm').reset(), j());
       else {
         let c = await r.json();
         u(c.error || '\u041E\u0448\u0438\u0431\u043A\u0430', 'error');
@@ -1177,7 +1177,7 @@
       u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  async function I() {
+  async function $() {
     try {
       let e = await (await fetch(`${d}/announcements`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('announcementList');
@@ -1224,7 +1224,7 @@
         body: JSON.stringify({ title: e, content: n }),
       });
       if (a.ok)
-        ((document.getElementById('annModal').style.display = 'none'), document.getElementById('annForm').reset(), I());
+        ((document.getElementById('annModal').style.display = 'none'), document.getElementById('annForm').reset(), $());
       else {
         let s = await a.json();
         u(s.error || '\u041E\u0448\u0438\u0431\u043A\u0430', 'error');
@@ -1233,7 +1233,7 @@
       u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  async function U() {
+  async function O() {
     try {
       let e = await (await fetch(`${d}/logs`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('logsBody');
@@ -1251,7 +1251,7 @@
         .join('');
     } catch {}
   }
-  function De(t) {
+  function He(t) {
     let e = document.getElementById('navMenu'),
       n = {
         admin: [
@@ -1300,7 +1300,7 @@
       )
       .join('')),
       e.querySelectorAll('.nav-link').forEach((s) => {
-        s.addEventListener('click', () => He(s.dataset.page));
+        s.addEventListener('click', () => _e(s.dataset.page));
       }));
     let a = document.getElementById('sidebarUser');
     if (a) {
@@ -1314,22 +1314,27 @@
       <div class="sidebar-avatar">${i(s)}</div>
       <div class="sidebar-user-info">
         <div class="sidebar-user-name">${i(t.name)}</div>
-        <div class="sidebar-user-role">${i(w(t.role))}</div>
+        <div class="sidebar-user-role">${i(v(t.role))}</div>
       </div>`;
     }
   }
-  function He(t) {
+  function ue(t) {
+    ($(), _(), b(), T());
+  }
+  function _e(t) {
     document.querySelectorAll('.page').forEach((n) => n.classList.remove('active'));
     let e = document.getElementById(t);
     (e && e.classList.add('active'),
+      t === 'home' && ue(),
       t === 'profile' && re(),
-      t === 'notifications' && h(),
-      t === 'homework' && k(),
-      t === 'home' && (I(), j(), b()),
-      t === 'logs' && U());
+      t === 'notifications' && w(),
+      t === 'homework' && j(),
+      t === 'grades' && (E(), X()),
+      t === 'logs' && O(),
+      t === 'chat' && U());
   }
-  function _e() {
-    (N(), localStorage.removeItem('user'));
+  function Ae() {
+    (J(), localStorage.removeItem('user'));
     let t = [];
     for (let e = 0; e < sessionStorage.length; e++) {
       let n = sessionStorage.key(e);
@@ -1340,7 +1345,7 @@
         location.href = '/';
       }));
   }
-  async function C() {
+  async function T() {
     try {
       let e = await (await fetch(`${d}/notifications/unread-count`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('badge-notifications');
@@ -1350,33 +1355,26 @@
           : (n.style.display = 'none'));
     } catch {}
   }
-  function ue() {
+  function pe() {
     let t = JSON.parse(localStorage.getItem('user') || '{}');
     if (!t.id) {
       location.pathname === '/dashboard.html' && (location.href = '/');
       return;
     }
-    (De(t),
-      J(t),
-      E(),
-      b(),
-      h(),
-      j(),
-      V(),
-      C(),
-      I(),
-      k(),
+    (He(t),
+      z(t),
+      ue(t),
       ['teacher', 'admin'].includes(t.role) &&
         ((document.getElementById('addGradeBtn').style.display = 'block'),
         (document.getElementById('addScheduleBtn').style.display = 'block'),
         (document.getElementById('exportBtn').style.display = 'block'),
         (document.getElementById('addHwBtn').style.display = 'block'),
-        X(),
-        G()),
+        Z(),
+        W()),
       ['teacher', 'admin'].includes(t.role) && (document.getElementById('addAnnBtn').style.display = 'block'),
-      ['admin', 'teacher'].includes(t.role) && ($(), ie()),
-      ['student', 'parent'].includes(t.role) && (_(), oe()),
-      setInterval(C, 15e3));
+      ['admin', 'teacher'].includes(t.role) && (x(), ie()),
+      ['student', 'parent'].includes(t.role) && (H(), U()),
+      setInterval(T, 15e3));
     let e = null;
     function n() {
       if (typeof EventSource > 'u') return;
@@ -1384,7 +1382,7 @@
       ((o.onmessage = (l) => {
         try {
           JSON.parse(l.data).type === 'notification' &&
-            (C(), document.getElementById('notifications')?.classList.contains('active') && h());
+            (T(), document.getElementById('notifications')?.classList.contains('active') && w());
         } catch {}
       }),
         (o.onerror = () => {
@@ -1392,31 +1390,31 @@
         }));
     }
     (n(),
-      L(
+      B(
         'notif',
         setInterval(() => {
-          document.getElementById('notifications')?.classList.contains('active') && h();
+          document.getElementById('notifications')?.classList.contains('active') && w();
         }, 3e4),
       ),
-      L(
+      B(
         'stats',
         setInterval(() => {
-          document.getElementById('home')?.classList.contains('active') && (j(), b(), I());
+          document.getElementById('home')?.classList.contains('active') && (_(), b(), $());
         }, 3e4),
       ),
-      L(
+      B(
         'grades',
         setInterval(() => {
           document.getElementById('diary')?.classList.contains('active') && E();
         }, 3e4),
       ),
-      document.getElementById('weekPrev')?.addEventListener('click', () => H(-1)),
-      document.getElementById('weekNext')?.addEventListener('click', () => H(1)),
-      document.getElementById('weekToday')?.addEventListener('click', () => z()),
+      document.getElementById('weekPrev')?.addEventListener('click', () => D(-1)),
+      document.getElementById('weekNext')?.addEventListener('click', () => D(1)),
+      document.getElementById('weekToday')?.addEventListener('click', () => K()),
       document.querySelectorAll('[data-action]').forEach((o) => {
         let l = o.dataset.action;
         l === 'logout'
-          ? o.addEventListener('click', _e)
+          ? o.addEventListener('click', Ae)
           : l === 'openModal'
             ? o.addEventListener('click', () => {
                 let m = document.getElementById(o.dataset.modal);
@@ -1432,34 +1430,34 @@
                 : l === 'filterSchedule'
                   ? o.addEventListener('change', () => b(o.value))
                   : l === 'filterUsers'
-                    ? o.addEventListener('change', $)
+                    ? o.addEventListener('change', x)
                     : l === 'loadChart'
-                      ? o.addEventListener('change', _)
+                      ? o.addEventListener('change', H)
                       : l === 'exportReport'
-                        ? o.addEventListener('submit', Z)
+                        ? o.addEventListener('submit', Q)
                         : l === 'submitGrade'
-                          ? o.addEventListener('submit', K)
+                          ? o.addEventListener('submit', q)
                           : l === 'createUser'
                             ? o.addEventListener('submit', le)
                             : l === 'createSchedule'
-                              ? o.addEventListener('submit', W)
+                              ? o.addEventListener('submit', V)
                               : l === 'toggleUserClass' && o.addEventListener('change', ce);
       }),
       document.getElementById('hwForm')?.addEventListener('submit', de),
       document.getElementById('annForm')?.addEventListener('submit', me),
-      document.getElementById('refreshLogs')?.addEventListener('click', U),
+      document.getElementById('refreshLogs')?.addEventListener('click', O),
       document.getElementById('homeworkList')?.addEventListener('click', async (o) => {
         let l = o.target.closest('[data-action="deleteHomework"]');
         if (l) {
           let m = l.dataset.id;
-          (await fetch(`${d}/homework/${m}`, { method: 'DELETE', credentials: 'same-origin' }), k());
+          (await fetch(`${d}/homework/${m}`, { method: 'DELETE', credentials: 'same-origin' }), j());
         }
       }),
       document.getElementById('announcementList')?.addEventListener('click', async (o) => {
         let l = o.target.closest('[data-action="deleteAnnouncement"]');
         if (l) {
           let m = l.dataset.id;
-          (await fetch(`${d}/announcements/${m}`, { method: 'DELETE', credentials: 'same-origin' }), I());
+          (await fetch(`${d}/announcements/${m}`, { method: 'DELETE', credentials: 'same-origin' }), $());
         }
       }));
     let a = document.getElementById('emojiToggle');
@@ -1470,7 +1468,7 @@
       r &&
       (s.addEventListener('click', () => r.click()),
       r.addEventListener('change', (o) => {
-        o.target.files[0] && (se(o.target.files[0]), (o.target.value = ''));
+        o.target.files[0] && (oe(o.target.files[0]), (o.target.value = ''));
       })),
       document.addEventListener('click', (o) => {
         if (a && !o.target.closest('#emojiPicker') && !o.target.closest('#emojiToggle')) {
@@ -1479,7 +1477,7 @@
         }
       }),
       document.addEventListener('visibilitychange', () => {
-        document.hidden || (C(), document.getElementById('notifications')?.classList.contains('active') && h());
+        document.hidden || (T(), document.getElementById('notifications')?.classList.contains('active') && w());
       }));
     let c = document.getElementById('themeToggle');
     if (c) {
@@ -1498,5 +1496,5 @@
         }));
     }
   }
-  document.addEventListener('DOMContentLoaded', ue);
+  document.addEventListener('DOMContentLoaded', pe);
 })();

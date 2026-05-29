@@ -81,19 +81,27 @@ export function renderDashboard(user) {
   }
 }
 
+function loadHome(user) {
+  loadAnnouncements();
+  loadStats();
+  loadSchedule();
+  checkUnreadNotifications();
+}
+
 export function showPage(id) {
   document.querySelectorAll('.page').forEach((p) => p.classList.remove('active'));
   const page = document.getElementById(id);
   if (page) page.classList.add('active');
+  if (id === 'home') loadHome();
   if (id === 'profile') loadProfile();
   if (id === 'notifications') loadNotifications();
   if (id === 'homework') loadHomeworks();
-  if (id === 'home') {
-    loadAnnouncements();
-    loadStats();
-    loadSchedule();
+  if (id === 'grades') {
+    loadGrades();
+    loadSubjectsForChart();
   }
   if (id === 'logs') loadLogs();
+  if (id === 'chat') initChat();
 }
 
 export function logout() {
@@ -140,14 +148,9 @@ export function initDashboard() {
 
   renderDashboard(user);
   loadClasses(user);
-  loadGrades();
-  loadSchedule();
-  loadNotifications();
-  loadStats();
-  loadSubjectsForChart();
-  checkUnreadNotifications();
-  loadAnnouncements();
-  loadHomeworks();
+
+  // Load only visible section initially (home)
+  loadHome(user);
 
   if (['teacher', 'admin'].includes(user.role)) {
     document.getElementById('addGradeBtn').style.display = 'block';
