@@ -11,26 +11,19 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-clear
-echo -e "${CYAN}"
-echo "  ╔══════════════════════════════════════════════════╗"
-echo "  ║                                                  ║"
-echo "  ║       ${BOLD}School AI — Установка${NC}${CYAN}                   ║"
-echo "  ║       Интеллектуальная образовательная           ║"
-echo "  ║             платформа                           ║"
-echo "  ║                                                  ║"
-echo "  ╚══════════════════════════════════════════════════╝"
-echo -e "${NC}"
+echo ""
+echo "  ============================================"
+echo "       School AI - Установка"
+echo "       Интеллектуальная образовательная"
+echo "             платформа"
+echo "  ============================================"
+echo ""
 
 # ==================== ПРОВЕРКИ ====================
 
 if [ "$EUID" -ne 0 ]; then
   echo -e "${RED}[ОШИБКА] Запустите от root: sudo bash install.sh${NC}"
   exit 1
-fi
-
-if ! grep -qiE 'ubuntu|debian' /etc/os-release 2>/dev/null; then
-  echo -e "${YELLOW}[ПРЕДУПРЕЖДЕНИЕ] Скрипт тестировался на Ubuntu/Debian.${NC}"
 fi
 
 SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || echo "127.0.0.1")
@@ -42,7 +35,7 @@ echo ""
 echo -e "${YELLOW}[1/7] Проверка Docker...${NC}"
 
 if command -v docker &> /dev/null; then
-  echo -e "${GREEN}  ✓ Docker уже установлен${NC}"
+  echo -e "${GREEN}  Docker уже установлен${NC}"
 else
   echo -e "${BLUE}  Установка Docker...${NC}"
   apt-get update -qq
@@ -55,7 +48,7 @@ else
   apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
   systemctl enable docker
   systemctl start docker
-  echo -e "${GREEN}  ✓ Docker установлен${NC}"
+  echo -e "${GREEN}  Docker установлен${NC}"
 fi
 
 # ==================== КЛОНИРОВАНИЕ ====================
@@ -73,41 +66,47 @@ else
   git clone -q https://github.com/Spe4naz/school-ai-static.git "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 fi
-echo -e "${GREEN}  ✓ Проект: $INSTALL_DIR${NC}"
+echo -e "${GREEN}  Проект: $INSTALL_DIR${NC}"
 
 # ==================== НАСТРОЙКА ====================
 
 echo ""
 echo -e "${YELLOW}[3/7] Настройка...${NC}"
 echo ""
-echo -e "${CYAN}  ┌──────────────────────────────────────────┐${NC}"
-echo -e "${CYAN}  │  Настройте параметры вашего сервера       │${NC}"
-echo -e "${CYAN}  └──────────────────────────────────────────┘${NC}"
+echo "  ============================================"
+echo "  Настройте параметры вашего сервера"
+echo "  ============================================"
 echo ""
 
 # Порт
-read -p "  Порт для панели [80]: " PANEL_PORT
+echo -n "  Порт для панели [80]: "
+read PANEL_PORT
 PANEL_PORT=${PANEL_PORT:-80}
 
 # Домен
 echo ""
-echo -e "  ${BLUE}Если у вас есть домен — введите его.${NC}"
-echo -e "  ${BLUE}Если нет — нажмите Enter для IP-доступа.${NC}"
-read -p "  Домен (опционально): " DOMAIN
+echo "  Если у вас есть домен — введите его."
+echo "  Если нет — нажмите Enter для IP-доступа."
+echo -n "  Домен (опционально): "
+read DOMAIN
 
-# Логин администратора
+# Логин
 echo ""
-read -p "  Логин администратора: " ADMIN_EMAIL
+echo -n "  Логин администратора: "
+read ADMIN_EMAIL
 while [ -z "$ADMIN_EMAIL" ]; do
-  read -p "  Логин обязателен: " ADMIN_EMAIL
+  echo -n "  Логин обязателен: "
+  read ADMIN_EMAIL
 done
 
-# Пароль администратора
+# Пароль
 echo ""
-read -s -p "  Пароль администратора (мин. 8 символов): " ADMIN_PASSWORD
+echo -n "  Пароль администратора (мин. 8 символов): "
+read -s ADMIN_PASSWORD
 echo ""
 while [ ${#ADMIN_PASSWORD} -lt 8 ]; do
-  read -s -p "  Минимум 8 символов: " ADMIN_PASSWORD
+  echo -n "  Минимум 8 символов: "
+  read -s ADMIN_PASSWORD
   echo ""
 done
 
@@ -152,7 +151,7 @@ cat > .setup-creds.json << EOF
 EOF
 
 chmod 600 .env .setup-creds.json
-echo -e "${GREEN}  ✓ Конфигурация создана${NC}"
+echo -e "${GREEN}  Конфигурация создана${NC}"
 
 # ==================== CADDY ====================
 
@@ -179,27 +178,28 @@ else
 }
 CADDYEOF
 fi
-echo -e "${GREEN}  ✓ Caddy настроен${NC}"
+echo -e "${GREEN}  Caddy настроен${NC}"
 
 # ==================== СБОРКА И ЗАПУСК ====================
 
 echo ""
 echo -e "${YELLOW}[6/7] Сборка и запуск...${NC}"
 
+# Обновить порт в docker-compose.yml если нужно
 if [ "$PANEL_PORT" != "80" ]; then
-  sed -i "s/- \"80:80\"/- \"${PANEL_PORT}:80\"/g" docker-compose.yml
+  sed -i "s/- \"80:80\"/- \"${PANEL_PORT}:80\"/g" docker-compose.yml 2>/dev/null || true
 fi
 
 docker compose build -q 2>/dev/null || docker compose build
 docker compose --env-file .env up -d
-echo -e "${GREEN}  ✓ Сервисы запущены${NC}"
+echo -e "${GREEN}  Сервисы запущены${NC}"
 
 # ==================== ОЖИДАНИЕ ====================
 
 echo ""
 echo -e "${YELLOW}[7/7] Ожидание готовности...${NC}"
 
-for i in {1..30}; do
+for i in $(seq 1 30); do
   if docker compose ps 2>/dev/null | grep -q "Up"; then
     break
   fi
@@ -211,38 +211,40 @@ echo ""
 # ==================== РЕЗУЛЬТАТ ====================
 
 echo ""
-echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║         Установка завершена успешно!             ║${NC}"
-echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
+echo "  ============================================"
+echo "         Установка завершена успешно!"
+echo "  ============================================"
 echo ""
 
 if [ -n "$DOMAIN" ]; then
-  echo -e "  Домен:    ${BLUE}https://${DOMAIN}/panel${NC}"
+  echo "  Домен:    https://${DOMAIN}/panel"
 else
-  echo -e "  Домен:    ${BLUE}http://${SERVER_IP}:${PANEL_PORT}/panel${NC}"
+  echo "  Домен:    http://${SERVER_IP}:${PANEL_PORT}/panel"
 fi
 
 echo ""
-read -p "  Введите логин: " FINAL_LOGIN
+echo -n "  Введите логин: "
+read FINAL_LOGIN
 FINAL_LOGIN=${FINAL_LOGIN:-$ADMIN_EMAIL}
 
-read -s -p "  Введите пароль: " FINAL_PASSWORD
+echo -n "  Введите пароль: "
+read -s FINAL_PASSWORD
 echo ""
 FINAL_PASSWORD=${FINAL_PASSWORD:-$ADMIN_PASSWORD}
 
 echo ""
 if [ -n "$DOMAIN" ]; then
-  echo -e "  Откройте ${BLUE}https://${DOMAIN}/panel${NC}"
+  echo "  Откройте https://${DOMAIN}/panel"
 else
-  echo -e "  Откройте ${BLUE}http://${SERVER_IP}:${PANEL_PORT}/panel${NC}"
+  echo "  Откройте http://${SERVER_IP}:${PANEL_PORT}/panel"
 fi
-echo -e "  ${YELLOW}SSL-сертификат будет получен автоматически${NC}"
+echo "  SSL-сертификат будет получен автоматически"
 
 echo ""
-echo -e "  Управление:"
-echo -e "    cd $INSTALL_DIR"
-echo -e "    docker compose logs -f          ${CYAN}# логи${NC}"
-echo -e "    docker compose restart           ${CYAN}# перезапуск${NC}"
-echo -e "    docker compose down              ${CYAN}# остановка${NC}"
-echo -e "    docker compose pull && docker compose up -d  ${CYAN}# обновление${NC}"
+echo "  Управление:"
+echo "    cd $INSTALL_DIR"
+echo "    docker compose logs -f          # логи"
+echo "    docker compose restart           # перезапуск"
+echo "    docker compose down              # остановка"
+echo "    docker compose pull && docker compose up -d  # обновление"
 echo ""
