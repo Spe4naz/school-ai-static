@@ -18,7 +18,7 @@ export async function exportReport(e) {
 
   try {
     const res = await fetch(url, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
 
     const blob = await res.blob();

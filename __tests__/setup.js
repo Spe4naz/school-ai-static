@@ -19,7 +19,7 @@ afterAll(async () => {
   const db = require('../config/database');
   const tables = ['refresh_tokens', 'class_keys', 'messages', 'logs', 'notifications', 'schedule', 'grades', 'users', 'classes', 'registration_codes', 'homeworks', 'announcements', 'chat_typing'];
   for (const t of tables) {
-    try { await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`); } catch (_) {}
+    try { await db.query(`DROP TABLE IF EXISTS ${t} CASCADE`); } catch (_) { /* ignore drop errors */ }
   }
   await db.close();
 }, 30000);

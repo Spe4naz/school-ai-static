@@ -8,7 +8,7 @@ export async function loadChart(subject, period) {
 
   try {
     const res = await fetch(`${API}/grades/progress?subject=${subj}&period=${per}`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     const data = await res.json();
 
@@ -39,16 +39,16 @@ export async function loadChart(subject, period) {
           fill: true,
           tension: 0.3,
           pointRadius: 5,
-          pointBackgroundColor: '#2563eb'
-        }]
+          pointBackgroundColor: '#2563eb',
+        }],
       },
       options: {
         scales: {
           y: { min: 2, max: 5, title: { display: true, text: 'Оценка' } },
-          x: { title: { display: true, text: 'Дата' } }
+          x: { title: { display: true, text: 'Дата' } },
         },
-        plugins: { legend: { display: false } }
-      }
+        plugins: { legend: { display: false } },
+      },
     });
     setChartInstance(chart);
   } catch (err) { console.error(err); }

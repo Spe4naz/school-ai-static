@@ -3,7 +3,6 @@ process.env.JWT_SECRET = 'test_jwt_secret_for_jest_only';
 
 const jwt = require('jsonwebtoken');
 const config = require('../config/auth');
-const { z } = require('zod');
 
 const authMiddleware = require('../middleware/auth');
 const rolesMiddleware = require('../middleware/roles');

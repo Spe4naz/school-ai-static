@@ -20,7 +20,7 @@ export function renderDashboard(user) {
     parent: [['🏠 Главная', 'home'], ['📓 Дневник', 'diary'], ['📋 Задания', 'homework'], ['👤 Профиль', 'profile'], ['📈 Графики', 'charts'], ['📅 Расписание', 'schedule'], ['💬 Чат', 'chat'], ['🔔 Уведомления', 'notifications']],
   };
   nav.innerHTML = (links[user.role] || links.student).map(([text, id]) =>
-    `<div class="nav-link" data-page="${id}"><span>${text}</span><span class="nav-badge" id="badge-${id}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`
+    `<div class="nav-link" data-page="${id}"><span>${text}</span><span class="nav-badge" id="badge-${id}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`,
   ).join('');
 
   nav.querySelectorAll('.nav-link').forEach(el => {
@@ -67,7 +67,7 @@ export function logout() {
 async function checkUnreadNotifications() {
   try {
     const res = await fetch(`${API}/notifications/unread-count`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     const data = await res.json();
     const badge = document.getElementById('badge-notifications');

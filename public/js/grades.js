@@ -85,7 +85,7 @@ export async function submitGrade(e) {
     student_id,
     subject: document.getElementById('modalSubject').value,
     grade: document.getElementById('modalGrade').value,
-    comment: document.getElementById('modalComment').value
+    comment: document.getElementById('modalComment').value,
   };
 
   try {
@@ -93,7 +93,7 @@ export async function submitGrade(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     if (res.ok) {

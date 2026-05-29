@@ -1,6 +1,5 @@
 const path = require('path');
 const fs = require('fs');
-const { execSync } = require('child_process');
 const { GenericContainer } = require('testcontainers');
 
 module.exports = async () => {

@@ -73,7 +73,6 @@ const userLimiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 минута
   max: 60, // 60 запросов на пользователя в минуту
   keyGenerator: (req) => req.user?.id || req.ip,
-  validate: { ipKeyGenerator: false, default: true },
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
 

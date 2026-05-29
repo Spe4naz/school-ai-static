@@ -12,13 +12,13 @@ export async function loadUsers() {
 
   try {
     const res = await fetch(url, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     const users = await res.json();
 
     const tbody = document.querySelector('#usersTable tbody');
     const classes = await fetch(`${API}/classes`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     }).then(r => r.json());
 
     const classMap = {};
@@ -32,8 +32,8 @@ export async function loadUsers() {
         <td>${u.class_id ? (escapeHtml(classMap[u.class_id]) || escapeHtml(u.class_id)) : '—'}</td>
         <td>
           ${u.role !== 'admin' || users.filter(x => x.role === 'admin').length > 1 ?
-            `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${escapeHtml(u.id)}">Удалить</button>` :
-            '<span style="color:#999; font-size:0.8rem;">Нельзя</span>'}
+    `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${escapeHtml(u.id)}">Удалить</button>` :
+    '<span style="color:#999; font-size:0.8rem;">Нельзя</span>'}
         </td>
       </tr>
     `).join('');
@@ -46,7 +46,7 @@ export async function loadUsers() {
 
 export async function loadClassesForUserModal() {
   const res = await fetch(`${API}/classes`, {
-    credentials: 'same-origin'
+    credentials: 'same-origin',
   });
   const classes = await res.json();
   document.getElementById('newUserClass').innerHTML = '<option value="">Без класса</option>' +
@@ -76,7 +76,7 @@ export async function createUser(e) {
     password: document.getElementById('newUserPassword').value,
     role: document.getElementById('newUserRole').value,
     class_id: ['student', 'parent'].includes(document.getElementById('newUserRole').value) ?
-      document.getElementById('newUserClass').value : null
+      document.getElementById('newUserClass').value : null,
   };
 
   if (!payload.name || payload.name.length < 2) {
@@ -90,7 +90,7 @@ export async function createUser(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -118,7 +118,7 @@ export async function deleteUser(userId) {
   try {
     const res = await fetch(`${API}/admin/users/${userId}`, {
       method: 'DELETE',
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
 
     if (res.ok) {

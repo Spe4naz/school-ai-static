@@ -40,7 +40,7 @@ class Database {
 
   async init() {
     this._ensureConnected();
-    await this.query(`CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL)`);
+    await this.query('CREATE TABLE IF NOT EXISTS classes (id TEXT PRIMARY KEY, name TEXT UNIQUE NOT NULL)');
 
     await this.query(`CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, password TEXT NOT NULL, name TEXT NOT NULL,
@@ -232,7 +232,7 @@ class Database {
       studentId = uuidv4(),
       parentId = uuidv4();
 
-    await this.query("INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)", [
+    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
       uuidv4(),
       'admin@school.ru',
       hash,
@@ -241,7 +241,7 @@ class Database {
       null,
       null,
     ]);
-    await this.query("INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)", [
+    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
       teacherId,
       'teacher@school.ru',
       hash,
@@ -250,7 +250,7 @@ class Database {
       null,
       null,
     ]);
-    await this.query("INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)", [
+    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
       studentId,
       'ivan@school.ru',
       hash,
@@ -259,7 +259,7 @@ class Database {
       c1,
       null,
     ]);
-    await this.query("INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)", [
+    await this.query('INSERT INTO users (id, email, password, name, role, class_id, linked_student_id, reset_token, reset_token_expiry, reset_id, created_at, last_login) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,NULL,NULL,CURRENT_TIMESTAMP,NULL)', [
       parentId,
       'parent@school.ru',
       hash,

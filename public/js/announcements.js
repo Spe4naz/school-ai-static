@@ -3,7 +3,7 @@ import { API, escapeHtml } from './utils.js';
 export async function loadAnnouncements() {
   try {
     const res = await fetch(`${API}/announcements`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     const announcements = await res.json();
     const container = document.getElementById('announcementList');
@@ -41,7 +41,7 @@ export async function submitAnnouncement(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ title, content })
+      body: JSON.stringify({ title, content }),
     });
     if (res.ok) {
       document.getElementById('annModal').style.display = 'none';

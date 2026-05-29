@@ -31,7 +31,7 @@ const sseClients = new Map();
 const SSE_MAX_CONNECTIONS_PER_USER = 3;
 
 router.get('/stream', (req, res) => {
-  let token = req.cookies?.token;
+  const token = req.cookies?.token;
   if (!token) return res.status(401).json({ error: 'Токен обязателен', code: ERR.AUTH_REQUIRED });
   try {
     const jwt = require('jsonwebtoken');

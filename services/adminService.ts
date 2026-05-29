@@ -174,7 +174,7 @@ class AdminService {
       const url = new URL(dbUrl);
       dbHost = url.hostname;
       dbPort = parseInt(url.port, 10) || 5432;
-    } catch {}
+    } catch (_) { /* invalid URL, use defaults */ }
 
     return {
       nodeEnv: process.env.NODE_ENV || 'development',

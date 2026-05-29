@@ -39,7 +39,7 @@ export async function loadSchedule(classId = '') {
                 <div>
                   <span class="room">${escapeHtml(s.room) || '—'}</span>
                   ${['teacher', 'admin'].includes(user.role) && (user.role === 'admin' || s.teacher_id === user.id) ?
-                    `<button class="schedule-delete-btn" data-id="${s.id}" style="margin-left:10px; padding:2px 8px; font-size:0.7rem; background:#fee2e2; border:none; border-radius:4px; cursor:pointer;">✕</button>` : ''}
+    `<button class="schedule-delete-btn" data-id="${s.id}" style="margin-left:10px; padding:2px 8px; font-size:0.7rem; background:#fee2e2; border:none; border-radius:4px; cursor:pointer;">✕</button>` : ''}
                 </div>
               </li>
             `).join('')}
@@ -73,7 +73,7 @@ export async function loadClassesForSchedule() {
     if (modalSelect) {
       const userClassId = user.class_id;
       modalSelect.innerHTML = classes.map(c =>
-        `<option value="${escapeHtml(c.id)}" ${c.id === userClassId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`
+        `<option value="${escapeHtml(c.id)}" ${c.id === userClassId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`,
       ).join('');
     }
   } catch (err) { console.error(err); }
@@ -89,7 +89,7 @@ export async function createSchedule(e) {
     time_slot: document.getElementById('scheduleTime').value,
     subject: document.getElementById('scheduleSubject').value.trim(),
     class_id: document.getElementById('scheduleClass').value,
-    room: document.getElementById('scheduleRoom').value.trim() || null
+    room: document.getElementById('scheduleRoom').value.trim() || null,
   };
 
   if (!payload.day || !payload.time_slot || !payload.subject || !payload.class_id) {
@@ -103,7 +103,7 @@ export async function createSchedule(e) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     const data = await res.json();
@@ -131,7 +131,7 @@ export async function deleteSchedule(id) {
   try {
     const res = await fetch(`${API}/schedule/${id}`, {
       method: 'DELETE',
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
 
     if (res.ok) {

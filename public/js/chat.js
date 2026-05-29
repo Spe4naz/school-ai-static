@@ -3,14 +3,14 @@ import { API, getChatEncryptionKey, setChatEncryptionKey, escapeHtml, debounce }
 const EMOJIS = ['😀','😃','😄','😁','😅','😂','🤣','😊','😇','🙂','😉','😌','😍','🥰','😘','😗','😋','😛','😜','🤪','😝','🤑','🤗','🤭','🤫','🤔','🤐','🤨','😐','😑','😶','😏','😒','🙄','😬','😮','😯','😲','😳','🥺','😢','😭','😤','😠','😡','🤬','😈','👿','💀','☠️','💩','🤡','👹','👺','👻','👽','👾','🤖','🎃','😺','😸','😹','😻','😼','😽','🙀','😿','😾','💋','👋','🤚','✋','🖐','👌','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','👇','👍','👎','✊','👊','🤛','🤜','👏','🙌','👐','🤲','🤝','🙏','✍️','💪','🦵','🦶','👂','👃','🧠','🫀','🫁','👀','👁️','👅','👄'];
 
 let emojiPickerOpen = false;
-let chatState = { offset: 0, hasMore: true, loading: false, loadingMore: false, sendLock: false, typingTimer: null };
+const chatState = { offset: 0, hasMore: true, loading: false, loadingMore: false, sendLock: false, typingTimer: null };
 
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), { name: 'PBKDF2' }, false, ['deriveBits', 'deriveKey']);
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: enc.encode(salt), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
+    keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt'],
   );
 }
 
@@ -47,7 +47,7 @@ function generateKey() {
 }
 
 async function ensureEncryptionKey() {
-  let key = getChatEncryptionKey();
+  const key = getChatEncryptionKey();
   if (key) return key;
   let user;
   try { user = JSON.parse(localStorage.getItem('user') || '{}'); } catch { user = {}; }
@@ -88,7 +88,7 @@ export function toggleEmojiPicker() {
   picker.classList.toggle('open', emojiPickerOpen);
   if (emojiPickerOpen) {
     picker.innerHTML = '<div class="emoji-grid">' + EMOJIS.map(e =>
-      `<span class="emoji-item" data-emoji="${e}">${e}</span>`
+      `<span class="emoji-item" data-emoji="${e}">${e}</span>`,
     ).join('') + '</div>';
     picker.querySelectorAll('.emoji-item').forEach(el => {
       el.addEventListener('click', () => {
@@ -118,7 +118,7 @@ export async function loadChatMessages() {
     const timeout = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(`${API}/chat/messages?offset=0&limit=50`, {
       credentials: 'same-origin',
-      signal: controller.signal
+      signal: controller.signal,
     });
     clearTimeout(timeout);
     if (!res.ok) { updateChatStatus('offline'); return; }
@@ -144,7 +144,7 @@ async function loadMoreMessages() {
 
   try {
     const res = await fetch(`${API}/chat/messages?offset=${newOffset}&limit=50`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     const data = await res.json();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -220,7 +220,7 @@ async function deleteMessage(msgId) {
   try {
     const res = await fetch(`${API}/chat/messages/${msgId}`, {
       method: 'DELETE',
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     });
     if (res.ok) {
       const el = document.querySelector(`.msg[data-msg-id="${msgId}"]`);
@@ -251,7 +251,7 @@ export async function sendMessage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ content: encryptedContent })
+      body: JSON.stringify({ content: encryptedContent }),
     });
     if (res.ok) {
       input.value = '';
@@ -268,7 +268,7 @@ export async function sendImage(file) {
     const res = await fetch(`${API}/chat/upload`, {
       method: 'POST',
       credentials: 'same-origin',
-      body: formData
+      body: formData,
     });
     if (res.ok) await loadChatMessages();
   } catch { /* ignore */ }
@@ -278,10 +278,10 @@ async function loadParticipants() {
   try {
     const [partRes, typingRes] = await Promise.all([
       fetch(`${API}/chat/participants`, {
-        credentials: 'same-origin'
+        credentials: 'same-origin',
       }),
       fetch(`${API}/chat/typing`, {
-        credentials: 'same-origin'
+        credentials: 'same-origin',
       }).then(r => r.json()).catch(() => []),
     ]);
     const participants = await partRes.json();
@@ -308,7 +308,7 @@ function emitTyping() {
 async function pollTyping() {
   try {
     const typing = await fetch(`${API}/chat/typing`, {
-      credentials: 'same-origin'
+      credentials: 'same-origin',
     }).then(r => r.json());
     const el = document.getElementById('typingIndicator');
     const nameEl = document.getElementById('typingNames');

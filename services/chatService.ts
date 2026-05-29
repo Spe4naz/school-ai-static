@@ -109,7 +109,7 @@ class ChatService {
 
   async clearStaleTyping(classId) {
     const stale = await this.db.all(
-      `SELECT user_id FROM chat_typing WHERE class_id = $1`,
+      'SELECT user_id FROM chat_typing WHERE class_id = $1',
       [classId],
     );
     const now = Date.now();

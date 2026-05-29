@@ -34,7 +34,7 @@ export function clearAllIntervals() {
 }
 
 export function escapeHtml(str) {
-  if (str == null) return '';
+  if (str == null) return ''; // eslint-disable-line eqeqeq
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
