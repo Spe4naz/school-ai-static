@@ -17,20 +17,30 @@
 
 ## Стек
 
-- **Backend:** Node.js, Express, TypeScript (ts-jest)
+- **Backend:** Node.js, Express, TypeScript
 - **Database:** PostgreSQL 16+ (pg Pool: max=20, query_timeout=10s)
 - **Frontend:** Vanilla JS, Chart.js, ESBuild (сборка)
 - **Прокси:** Caddy (авто-SSL, обратный прокси, gzip)
 - **Контейнеризация:** Docker / Docker Compose
 - **Тестирование:** Jest + Supertest + testcontainers (Docker-контейнер на все тесты)
 - **Сжатие:** compression (gzip) — все ответы
-- **Безопасность:** helmet, rate-limit, JWT (HS256 + issuer), защита от path traversal в бэкапах
+- **Безопасность:** helmet + CSP nonces, rate-limit (IP + per-user), JWT в httpOnly cookies, bcrypt (мин. 8 символов + сложность)
+
+## Безопасность (ключевые особенности)
+
+- **Аутентификация:** JWT в httpOnly cookies (токен НЕ передаётся в JSON-ответе)
+- **CSP:** Per-request nonces для инлайн-скриптов
+- **Пароли:** Минимум 8 символов + строчные + заглавные буквы + цифры
+- **Rate-limiting:** Глобальный (100/10мин), login (5/15мин), refresh (10/15мин), upload (10/10мин), per-user (60/1мин)
+- **Admin panel:** Серверная проверка JWT + role=admin перед отдачей HTML
+- **SSE:** CORS ограничен до FRONTEND_URL, макс. 3 соединения на пользователя
+- **Инвалидация:** Все refresh-токены аннулируются при смене пароля
 
 ## Быстрый старт (локальная разработка)
 
 ### Требования
 
-- Node.js 22+
+- Node.js 20+
 - PostgreSQL 16+ (или Docker для тестов с testcontainers)
 
 ### Установка
@@ -64,6 +74,8 @@ npm run dev
 | teacher@school.ru | 123456 | Учитель |
 | ivan@school.ru | 123456 | Ученик |
 | parent@school.ru | 123456 | Родитель |
+
+> **Примечание:** Тестовые пароли (`123456`) не соответствуют требованиям к сложности (мин. 8 символов + строчные + заглавные + цифры). Они работают только в seed-данных. При регистрации или смене пароля требования применяются.
 
 ## Деплой на Ubuntu Server (Docker + Caddy)
 
@@ -184,6 +196,8 @@ Origin-сертификат действителен 15 лет.
 https://school.net.ru/admin-panel
 ```
 
+Админ-панель защищена на серверном уровне — проверяется JWT + role=admin.
+
 Возможности:
 - Дашборд со статистикой
 - Управление пользователями (CRUD)
@@ -199,49 +213,49 @@ https://school.net.ru/admin-panel
 | Переменная | Обязательная | По умолчанию | Описание |
 |---|---|---|---|
 | `DOMAIN` | да | — | Домен сайта, используется Caddy для авто-SSL и в ссылках писем. Пример: school.net.ru |
-| `NODE_ENV` | да | `development` | Режим: `development` (подробные логи), `production` (минимум логов, кеш), `test` (тесты, изолированная БД) |
+| `NODE_ENV` | да | `development` | Режим: `development`, `production`, `test`, `ci` |
 | `PORT` | нет | `3000` | Порт, на котором приложение слушает HTTP-запросы |
-| `FRONTEND_URL` | да | — | Полный URL фронтенда для ссылок в email-письмах. Пример: https://school.net.ru |
+| `FRONTEND_URL` | да | — | Полный URL фронтенда (для email-ссылок и CORS). Пример: https://school.net.ru |
 | `JWT_SECRET` | да | — | Секретный ключ подписи JWT. Минимум 32 символа. Генерация: `openssl rand -hex 32` |
-| `BCRYPT_ROUNDS` | нет | `12` | Раундов хеширования bcrypt. Больше = безопаснее, но медленнее |
 | `DATABASE_URL` | да | — | Строка подключения к PostgreSQL. Формат: `postgresql://user:pass@host:port/db` |
-| `SMTP_HOST` | для писем | — | Адрес SMTP-сервера для отправки email. Примеры: `smtp.yandex.ru`, `smtp.gmail.com` |
-| `SMTP_PORT` | нет | `587` | Порт SMTP: `587` (STARTTLS), `465` (SSL) |
-| `SMTP_USER` | для писем | — | Логин SMTP. Обычно email отправителя |
-| `SMTP_PASS` | для писем | — | Пароль SMTP. Для Gmail — пароль приложения |
-| `BACKUP_DIR` | нет | `./backups` | Директория для дампов PostgreSQL (относительный или абсолютный путь) |
-| `BACKUP_RETENTION_DAYS` | нет | `7` | Дней хранения бэкапов. `0` — не удалять никогда |
+| `BCRYPT_ROUNDS` | нет | `12` | Раундов хеширования bcrypt |
+| `SMTP_HOST` | для писем | — | Адрес SMTP-сервера |
+| `SMTP_PORT` | нет | `587` | Порт SMTP |
+| `SMTP_USER` | для писем | — | Логин SMTP |
+| `SMTP_PASS` | для писем | — | Пароль SMTP |
+| `BACKUP_DIR` | нет | `./backups` | Директория для бэкапов |
+| `BACKUP_RETENTION_DAYS` | нет | `7` | Дней хранения бэкапов |
 
 ## API
 
 Основные эндпоинты:
 
 | Метод | Путь | Роль | Описание |
-|---|---|---|---|---|
-| POST | `/api/login` | — | Вход (JWT + refresh-token) |
+|---|---|---|---|
+| POST | `/api/login` | — | Вход (токены в httpOnly cookies) |
 | POST | `/api/register` | — | Регистрация (с кодом для teacher) |
-| POST | `/api/logout` | любая | Выход (аннулирование refresh-token) |
-| POST | `/api/refresh` | — | Обновление access-token |
-| POST | `/api/password/change` | любая | Смена пароля (требуется currentPassword) |
-| POST | `/api/password-reset/request` | — | Запрос сброса пароля (email) |
-| POST | `/api/password-reset/confirm` | — | Подтверждение сброса (id + email + newPassword) |
+| POST | `/api/logout` | любая | Выход (очистка cookies + инвалидация refresh-token) |
+| POST | `/api/refresh` | — | Обновление токенов (refresh из cookie или body) |
+| POST | `/api/password/change` | любая | Смена пароля + инвалидация всех refresh-токенов |
+| POST | `/api/password-reset/request` | — | Запрос сброса пароля |
+| POST | `/api/password-reset/confirm` | — | Подтверждение сброса |
 | GET | `/api/profile` | любая | Профиль |
 | GET | `/api/classes` | — | Список классов (публичный) |
-| GET/POST | `/api/grades` | teacher+ | Оценки (+ writeLimiter) |
-| GET/POST | `/api/schedule` | teacher+ | Расписание (+ writeLimiter) |
-| GET/POST/DELETE | `/api/homework` | teacher+ | ДЗ (Zod-валидация) |
-| GET/POST/DELETE | `/api/announcements` | teacher+ | Объявления (Zod-валидация) |
-| GET/POST | `/api/chat/messages` | любая | Чат (+ writeLimiter) |
+| GET/POST | `/api/grades` | teacher+ | Оценки |
+| GET/POST | `/api/schedule` | teacher+ | Расписание |
+| GET/POST/DELETE | `/api/homework` | teacher+ | ДЗ |
+| GET/POST/DELETE | `/api/announcements` | teacher+ | Объявления |
+| GET/POST | `/api/chat/messages` | любая | Чат |
 | GET | `/api/reports/export` | teacher+ | Отчёты PDF/Excel |
 | GET | `/api/notifications` | любая | Уведомления |
-| GET | `/api/notifications/stream` | любая | SSE в реальном времени |
+| GET | `/api/notifications/stream` | любая | SSE (макс. 3 соединения/пользователь) |
 | PUT | `/api/notifications/read` | любая | Отметить прочитанными |
 | GET/POST | `/api/admin/*` | admin | Админ-панель |
 
 ## Разработка
 
 ```bash
-# сервер + фронтенд одновременно (tsx watch + esbuild --watch)
+# сервер + фронтенд одновременно
 npm run dev:all
 
 # сервер отдельно
@@ -250,7 +264,7 @@ npm run dev
 # фронтенд отдельно
 npm run build:dev
 
-# typecheck (без линтинга)
+# typecheck
 npm run typecheck
 
 # линтер + typecheck
@@ -265,29 +279,22 @@ npm run format
 # тесты (требуется Docker — testcontainers запускает PostgreSQL)
 npm run test
 
-# тесты без логов консоли
+# тесты без логов
 npm run test:silent
 
 # покрытие
 npm run test:coverage
 
-# docker для разработки (авто-подхватывает docker-compose.override.yml)
+# docker для разработки
 docker compose up -d
 ```
 
-### Отладка в VSCode
-
-В `.vscode/launch.json` три конфигурации:
-- **Dev server** — запуск через tsx
-- **Run tests** — все тесты
-- **Debug current test** — текущий открытый файл
-
 ### Структура тестов
 
-| Файл | Тип | Тестов |
-|------|-----|-------|
-| `api.test.js` | Интеграционные (supertest) | login, register, grades, schedule, chat, reports, logout, password change, SSE, Zod-валидация |
-| `middleware.test.js` | Модульные | auth, roles, validate, errorHandler |
+| Файл | Тип | Описание |
+|------|-----|----------|
+| `api.test.js` | Интеграционные | login, register, grades, schedule, chat, reports, logout, password change, SSE, cookie-based auth |
+| `middleware.test.js` | Модульные | auth, roles, validate (пароль 8+ символов + сложность), errorHandler |
 | `services.test.js` | Модульные + БД | CryptoService, NotificationService, GradeService |
 | `services-extra.test.js` | Модульные + БД | AdminService, ScheduleService, asyncHandler |
 | `unit.test.js` | Модульные (без БД) | AppError, BackupService |
@@ -295,81 +302,24 @@ docker compose up -d
 ## Структура проекта
 
 ```
-├── config/              # Конфигурация, БД, контейнер, константы
-├── middleware/           # Express-мидлвары (auth, roles, validate, errorHandler, logger, rateLimit)
+├── config/              # Конфигурация (БД, auth, email, DI container, константы)
+├── middleware/           # Express middleware (auth, roles, validation, rateLimit, errorHandler, logger)
 ├── routes/              # Маршруты Express (auth, grades, schedule, chat, homework, admin, ...)
 ├── services/            # Бизнес-логика (user, grade, notification, chat, backup, crypto, homework, schedule, announcement, admin)
-├── public/              # Статика (HTML, CSS, JS, изображения)
-│   ├── js/              # Исходники frontend (собираются в dashboard.bundle.js через ESBuild)
-│   ├── admin-panel.html # SPA панель управления
+├── public/              # Статика + фронтенд
+│   ├── js/              # Исходники frontend (ES Modules, собираются в dashboard.bundle.js)
+│   ├── admin-panel.html # SPA панель управления (с серверной auth-проверкой)
 │   └── dashboard.html   # Основной интерфейс
 ├── utils/               # Вспомогательные утилиты (AppError, classResolver)
-├── scripts/             # Вспомогательные скрипты (dev.js)
-├── .vscode/             # VSCode debug config (launch.json)
-├── .nvmrc               # Фиксация версии Node.js
-├── .gitattributes       # Нормализация line-endings
 ├── __tests__/           # Тесты (Jest + Supertest + testcontainers)
-├── backups/             # Резервные копии БД
-├── server.js            # Точка входа
+├── server.ts            # Точка входа сервера
 ├── Dockerfile           # Production-образ
-├── Dockerfile.dev       # Dev-образ
-├── docker-compose.yml       # Docker Compose (production)
-├── docker-compose.override.yml  # Dev-образ + порт + bind mount
-├── docker-compose.local.yml     # Порт 3000 для тестов на сервере
-├── Caddyfile                # Конфиг Caddy
+├── docker-compose.yml   # Docker Compose
+├── Caddyfile            # Конфиг Caddy
 └── .env.example         # Пример переменных окружения
 ```
 
-## Поддерживаемые ОС
+## Известные ограничения
 
-| ОС | Статус | Замечания |
-|---|---|---|
-| **Linux** (Ubuntu 20.04+, Debian 11+, CentOS 8+) | ✅ Полная поддержка | Рекомендуемая платформа для продакшна |
-| **Windows** (10/11, Server 2019+) | ✅ Разработка | Через WSL2 или Docker Desktop |
-| **macOS** | ✅ Разработка | Через Docker Desktop |
-
-## Удаление
-
-### Локальная разработка (без Docker)
-
-```bash
-# остановить сервер (Ctrl+C)
-
-# удалить БД
-psql -U postgres -c "DROP DATABASE school;"
-psql -U postgres -c "DROP ROLE school;"
-
-# удалить директорию проекта
-cd ..
-Remove-Item -Recurse -Force school-ai-static  # Windows
-# или
-rm -rf school-ai-static                        # Linux / macOS
-```
-
-### Docker (продакшн)
-
-```bash
-# остановить и удалить volumes
-docker compose -f docker-compose.yml --env-file .env down -v
-
-# удалить образ
-docker rmi school-ai-static-app
-
-# удалить проект
-rm -rf school-ai-static
-```
-
-### Полная очистка (все данные)
-
-```bash
-# остановить контейнеры и удалить всё
-docker compose -f docker-compose.yml --env-file .env down -v
-docker system prune -a --volumes
-
-# удалить директорию
-cd ..
-rm -rf school-ai-static
-```
-
-> **Внимание:** `down -v` безвозвратно удаляет volume с БД.  
-> Перед удалением сделайте бэкап: `npm run backup` или `docker compose exec app node -e "require('./services/backupService').createBackup()"`
+- `xlsx` (SheetJS) имеет известные уязвимости (prototype pollution, ReDoS). Альтернатива — `exceljs`.
+- Тестовые seed-пароли (`123456`) не соответствуют требованиям к сложности.

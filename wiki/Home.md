@@ -42,6 +42,7 @@ Frontend:  Vanilla JS (ES Modules) + Chart.js
 Proxy:     Caddy (авто-SSL)
 Тесты:     Jest + Supertest + Testcontainers
 Деплой:    Docker + Docker Compose
+Безопасность: helmet + CSP nonces, JWT в httpOnly cookies, rate-limit (IP + per-user)
 ```
 
 ---

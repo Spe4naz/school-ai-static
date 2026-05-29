@@ -6,7 +6,7 @@
 
 ## Требования
 
-- **Node.js** 22+ (проверьте: `node -v`)
+- **Node.js** 20+ (проверьте: `node -v`)
 - **PostgreSQL** 16+ (или Docker)
 - **npm** (входит в Node.js)
 
