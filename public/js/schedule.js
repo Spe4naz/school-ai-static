@@ -1,7 +1,7 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, showToast, showConfirm } from './utils.js';
 
 function getDayOrder(day) {
-  const order = { 'Пн': 1, 'Вт': 2, 'Ср': 3, 'Чт': 4, 'Пт': 5, 'Сб': 6 };
+  const order = { Пн: 1, Вт: 2, Ср: 3, Чт: 4, Пт: 5, Сб: 6 };
   return order[day] || 0;
 }
 
@@ -15,7 +15,7 @@ export async function loadSchedule(classId = '') {
     const schedule = await res.json();
 
     const byDay = {};
-    schedule.forEach(s => {
+    schedule.forEach((s) => {
       if (!byDay[s.day]) byDay[s.day] = [];
       byDay[s.day].push(s);
     });
@@ -26,11 +26,15 @@ export async function loadSchedule(classId = '') {
     if (sortedDays.length === 0) {
       container.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Расписание пусто</div>';
     } else {
-      container.innerHTML = sortedDays.map(day => `
+      container.innerHTML = sortedDays
+        .map(
+          (day) => `
         <div class="schedule-day">
           <h3>${escapeHtml(day)}</h3>
           <ul>
-            ${byDay[day].map(s => `
+            ${byDay[day]
+              .map(
+                (s) => `
               <li style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
                   <span class="time">${escapeHtml(s.time_slot)}</span> 
@@ -38,22 +42,31 @@ export async function loadSchedule(classId = '') {
                 </div>
                 <div>
                   <span class="room">${escapeHtml(s.room) || '—'}</span>
-                  ${['teacher', 'admin'].includes(user.role) && (user.role === 'admin' || s.teacher_id === user.id) ?
-    `<button class="schedule-delete-btn" data-id="${s.id}" style="margin-left:10px; padding:2px 8px; font-size:0.7rem; background:#fee2e2; border:none; border-radius:4px; cursor:pointer;">✕</button>` : ''}
+                  ${
+                    ['teacher', 'admin'].includes(user.role) && (user.role === 'admin' || s.teacher_id === user.id)
+                      ? `<button class="schedule-delete-btn" data-id="${s.id}" style="margin-left:10px; padding:2px 8px; font-size:0.7rem; background:#fee2e2; border:none; border-radius:4px; cursor:pointer;">✕</button>`
+                      : ''
+                  }
                 </div>
               </li>
-            `).join('')}
+            `,
+              )
+              .join('')}
           </ul>
         </div>
-      `).join('');
+      `,
+        )
+        .join('');
     }
 
     document.getElementById('homeScheduleCount').textContent = `${schedule.length} уроков`;
 
-    container.querySelectorAll('.schedule-delete-btn').forEach(btn => {
+    container.querySelectorAll('.schedule-delete-btn').forEach((btn) => {
       btn.addEventListener('click', () => deleteSchedule(btn.dataset.id));
     });
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 export async function loadClassesForSchedule() {
@@ -66,17 +79,23 @@ export async function loadClassesForSchedule() {
     const classes = await res.json();
 
     if (filterSelect) {
-      filterSelect.innerHTML = '<option value="">Все классы</option>' +
-        classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+      filterSelect.innerHTML =
+        '<option value="">Все классы</option>' +
+        classes.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
     }
 
     if (modalSelect) {
       const userClassId = user.class_id;
-      modalSelect.innerHTML = classes.map(c =>
-        `<option value="${escapeHtml(c.id)}" ${c.id === userClassId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`,
-      ).join('');
+      modalSelect.innerHTML = classes
+        .map(
+          (c) =>
+            `<option value="${escapeHtml(c.id)}" ${c.id === userClassId ? 'selected' : ''}>${escapeHtml(c.name)}</option>`,
+        )
+        .join('');
     }
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 export async function createSchedule(e) {
@@ -109,7 +128,7 @@ export async function createSchedule(e) {
     const data = await res.json();
 
     if (res.ok) {
-      alert('Урок добавлен!');
+      showToast('Урок добавлен!', 'success');
       const modal = document.getElementById('scheduleModal');
       if (modal) modal.style.display = 'none';
       const form = document.getElementById('scheduleForm');
@@ -126,7 +145,8 @@ export async function createSchedule(e) {
 }
 
 export async function deleteSchedule(id) {
-  if (!confirm('Удалить этот урок?')) return;
+  const ok = await showConfirm('Удалить этот урок?');
+  if (!ok) return;
 
   try {
     const res = await fetch(`${API}/schedule/${id}`, {
@@ -138,7 +158,9 @@ export async function deleteSchedule(id) {
       loadSchedule();
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка удаления');
+      showToast(data.error || 'Ошибка удаления', 'error');
     }
-  } catch (err) { alert('Ошибка сети'); }
+  } catch (err) {
+    showToast('Ошибка сети', 'error');
+  }
 }

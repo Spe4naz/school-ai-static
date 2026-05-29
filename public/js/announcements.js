@@ -1,4 +1,4 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, showToast } from './utils.js';
 
 export async function loadAnnouncements() {
   try {
@@ -9,14 +9,18 @@ export async function loadAnnouncements() {
     const container = document.getElementById('announcementList');
     if (!container) return;
     if (announcements.length === 0) {
-      container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-sec)">Объявлений пока нет</div>';
+      container.innerHTML =
+        '<div style="padding:16px;text-align:center;color:var(--text-sec)">Объявлений пока нет</div>';
       return;
     }
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isAdmin = user.role === 'admin';
-    container.innerHTML = announcements.map(a => {
-      const delBtn = isAdmin ? `<button class="btn btn-sm btn-danger" data-action="deleteAnnouncement" data-id="${a.id}" style="margin-left:auto">✕</button>` : '';
-      return `<div class="announcement-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);border-left:4px solid var(--warning)">
+    container.innerHTML = announcements
+      .map((a) => {
+        const delBtn = isAdmin
+          ? `<button class="btn btn-sm btn-danger" data-action="deleteAnnouncement" data-id="${a.id}" style="margin-left:auto">✕</button>`
+          : '';
+        return `<div class="announcement-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);border-left:4px solid var(--warning)">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="flex:1">
             <div style="font-weight:600;font-size:1rem">${escapeHtml(a.title)}</div>
@@ -26,15 +30,18 @@ export async function loadAnnouncements() {
           ${delBtn}
         </div>
       </div>`;
-    }).join('');
-  } catch { /* ignore */ }
+      })
+      .join('');
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function submitAnnouncement(e) {
   e.preventDefault();
   const title = document.getElementById('annTitle').value.trim();
   const content = document.getElementById('annContent').value.trim();
-  if (!title || !content) return alert('Заполните все поля');
+  if (!title || !content) return showToast('Заполните все поля', 'warning');
 
   try {
     const res = await fetch(`${API}/announcements`, {
@@ -49,7 +56,9 @@ export async function submitAnnouncement(e) {
       loadAnnouncements();
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка');
+      showToast(data.error || 'Ошибка', 'error');
     }
-  } catch { alert('Ошибка сети'); }
+  } catch {
+    showToast('Ошибка сети', 'error');
+  }
 }

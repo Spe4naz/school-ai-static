@@ -100,11 +100,11 @@ export function logout() {
   clearAllIntervals();
   localStorage.removeItem('user');
   const keys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
     if (key.startsWith('chatKey_')) keys.push(key);
   }
-  keys.forEach((k) => localStorage.removeItem(k));
+  keys.forEach((k) => sessionStorage.removeItem(k));
   fetch(`${API}/logout`, { method: 'POST', credentials: 'same-origin' }).finally(() => {
     location.href = '/';
   });
@@ -173,8 +173,10 @@ export function initDashboard() {
   }
 
   setInterval(checkUnreadNotifications, 15000);
-  // SSE real-time notifications
-  if (typeof EventSource !== 'undefined') {
+  // SSE real-time notifications with reconnect
+  let esReconnectTimer = null;
+  function connectSSE() {
+    if (typeof EventSource === 'undefined') return;
     const es = new EventSource(`${API}/notifications/stream`);
     es.onmessage = (e) => {
       try {
@@ -187,8 +189,13 @@ export function initDashboard() {
         /* ignore */
       }
     };
-    es.onerror = () => es.close();
+    es.onerror = () => {
+      es.close();
+      if (esReconnectTimer) clearTimeout(esReconnectTimer);
+      esReconnectTimer = setTimeout(connectSSE, 5000);
+    };
   }
+  connectSSE();
   setRefreshInterval(
     'notif',
     setInterval(() => {

@@ -181,15 +181,15 @@ async function ensureEncryptionKey() {
   }
   if (!user.class_id) return null;
   const keyStorageName = `chatKey_${user.class_id}`;
-  let storedKey = localStorage.getItem(keyStorageName);
+  let storedKey = sessionStorage.getItem(keyStorageName);
   if (!storedKey) {
     try {
       const res = await fetch(`${API}/chat/key`, { credentials: 'same-origin' });
       storedKey = (await res.json()).key;
-      localStorage.setItem(keyStorageName, storedKey);
+      sessionStorage.setItem(keyStorageName, storedKey);
     } catch {
       storedKey = generateKey();
-      localStorage.setItem(keyStorageName, storedKey);
+      sessionStorage.setItem(keyStorageName, storedKey);
     }
   }
   setChatEncryptionKey(storedKey);

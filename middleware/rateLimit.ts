@@ -1,17 +1,12 @@
-// middleware/rateLimit.js
-const rateLimit = require('express-rate-limit');
+import rateLimit from 'express-rate-limit';
 
-// === Настройки для всех лимитеров ===
+const isTest = process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID;
+
 const baseConfig = {
-  // Отключаем лимиты в тестовом режиме
-  skip: () => process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID,
-
-  // Заголовки для мониторинга (отключаем в тестах)
-  standardHeaders: process.env.NODE_ENV !== 'test',
+  skip: () => isTest,
+  standardHeaders: !isTest,
   legacyHeaders: false,
-
-  // Обработчик превышения лимита
-  handler: (req, res) => {
+  handler: (req: any, res: any) => {
     res.status(429).json({
       error: 'Превышен лимит запросов',
       code: 'RATE_LIMITED',
@@ -20,60 +15,52 @@ const baseConfig = {
   },
 };
 
-// === Лимитер для входа (строгий) ===
-const loginLimiter = rateLimit({
+export const loginLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 5, // 5 попыток с одного IP
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   message: { error: 'Слишком много попыток входа', code: 'RATE_LIMITED' },
 });
 
-// === Лимитер для сброса пароля (строгий) ===
-const passwordResetLimiter = rateLimit({
+export const passwordResetLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 3, // 3 запроса с одного IP
+  windowMs: 15 * 60 * 1000,
+  max: 3,
   message: { error: 'Слишком много попыток сброса пароля', code: 'RATE_LIMITED' },
 });
 
-// === Лимитер для обновления токена ===
-const refreshLimiter = rateLimit({
+export const refreshLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 10, // 10 запросов с одного IP
+  windowMs: 15 * 60 * 1000,
+  max: 10,
   message: { error: 'Слишком много попыток обновления токена', code: 'RATE_LIMITED' },
 });
 
-// === Лимитер для API (мягкий) ===
-const apiLimiter = rateLimit({
+export const apiLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 10 * 60 * 1000, // 10 минут
-  max: 100, // 100 запросов с одного IP
+  windowMs: 10 * 60 * 1000,
+  max: 100,
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
 
-const writeLimiter = rateLimit({
+export const writeLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 1 * 60 * 1000, // 1 минута
-  max: 30, // 30 запросов с одного IP
+  windowMs: 1 * 60 * 1000,
+  max: 30,
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
 
-// === Лимитер для загрузки файлов ===
-const uploadLimiter = rateLimit({
+export const uploadLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 10 * 60 * 1000, // 10 минут
-  max: 10, // 10 загрузок с одного IP
+  windowMs: 10 * 60 * 1000,
+  max: 10,
   message: { error: 'Слишком много загрузок файлов', code: 'RATE_LIMITED' },
 });
 
-// === Per-user лимитер для аутентифицированных эндпоинтов ===
-const userLimiter = rateLimit({
+export const userLimiter = rateLimit({
   ...baseConfig,
-  windowMs: 1 * 60 * 1000, // 1 минута
-  max: 60, // 60 запросов на пользователя в минуту
-  keyGenerator: (req) => req.user?.id || req.ip,
+  windowMs: 1 * 60 * 1000,
+  max: 60,
+  keyGenerator: (req: any) => req.user?.id || req.ip,
   message: { error: 'Превышен лимит запросов', code: 'RATE_LIMITED' },
 });
-
-module.exports = { loginLimiter, passwordResetLimiter, refreshLimiter, apiLimiter, writeLimiter, uploadLimiter, userLimiter };

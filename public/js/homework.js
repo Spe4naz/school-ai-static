@@ -1,4 +1,4 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, showToast } from './utils.js';
 
 export async function loadHomeworks() {
   try {
@@ -9,18 +9,22 @@ export async function loadHomeworks() {
     const container = document.getElementById('homeworkList');
     if (!container) return;
     if (homeworks.length === 0) {
-      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-sec)">Домашних заданий пока нет</div>';
+      container.innerHTML =
+        '<div style="padding:20px;text-align:center;color:var(--text-sec)">Домашних заданий пока нет</div>';
       return;
     }
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const isTeacher = ['teacher', 'admin'].includes(user.role);
-    container.innerHTML = homeworks.map(h => {
-      const due = new Date(h.due_date);
-      const overdue = due < new Date() && !due.toDateString().includes(new Date().toDateString());
-      const daysLeft = Math.ceil((due - new Date()) / (1000 * 60 * 60 * 24));
-      const dueLabel = overdue ? 'Просрочено' : daysLeft <= 1 ? 'На сегодня' : `Осталось ${daysLeft} дн.`;
-      const delBtn = isTeacher ? `<button class="btn btn-sm btn-danger" data-action="deleteHomework" data-id="${h.id}" style="margin-left:auto">✕</button>` : '';
-      return `<div class="hw-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border);border-left:4px solid ${overdue ? 'var(--danger)' : 'var(--primary)'}">
+    container.innerHTML = homeworks
+      .map((h) => {
+        const due = new Date(h.due_date);
+        const overdue = due < new Date() && !due.toDateString().includes(new Date().toDateString());
+        const daysLeft = Math.ceil((due - new Date()) / (1000 * 60 * 60 * 24));
+        const dueLabel = overdue ? 'Просрочено' : daysLeft <= 1 ? 'На сегодня' : `Осталось ${daysLeft} дн.`;
+        const delBtn = isTeacher
+          ? `<button class="btn btn-sm btn-danger" data-action="deleteHomework" data-id="${h.id}" style="margin-left:auto">✕</button>`
+          : '';
+        return `<div class="hw-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border);border-left:4px solid ${overdue ? 'var(--danger)' : 'var(--primary)'}">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="flex:1">
             <div style="font-weight:600">${escapeHtml(h.title)}</div>
@@ -31,8 +35,11 @@ export async function loadHomeworks() {
         </div>
         <div style="margin-top:8px;font-size:0.8rem;color:${overdue ? 'var(--danger)' : 'var(--text-sec)'};font-weight:500">${escapeHtml(dueLabel)} • ${escapeHtml(h.due_date)}</div>
       </div>`;
-    }).join('');
-  } catch { /* ignore */ }
+      })
+      .join('');
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function submitHomework(e) {
@@ -41,7 +48,7 @@ export async function submitHomework(e) {
   const title = document.getElementById('hwTitle').value.trim();
   const description = document.getElementById('hwDesc').value.trim();
   const due_date = document.getElementById('hwDueDate').value;
-  if (!subject || !title || !due_date) return alert('Заполните все поля');
+  if (!subject || !title || !due_date) return showToast('Заполните все поля', 'warning');
 
   try {
     const res = await fetch(`${API}/homework`, {
@@ -56,7 +63,9 @@ export async function submitHomework(e) {
       loadHomeworks();
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка');
+      showToast(data.error || 'Ошибка', 'error');
     }
-  } catch { alert('Ошибка сети'); }
+  } catch {
+    showToast('Ошибка сети', 'error');
+  }
 }

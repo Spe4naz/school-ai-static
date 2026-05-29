@@ -8,21 +8,29 @@
 - Расписание уроков по дням недели
 - Классный чат с шифрованием AES-256-GCM
 - Домашние задания от учителей
-- Объявления и уведомления в реальном времени (SSE)
+- Объявления и уведомления в реальном времени (SSE с reconnect)
 - Отчёты по успеваемости (PDF / Excel)
 - 5 ролей: ученик, родитель, учитель, завуч, администратор
 - Регистрация по кодам для учителей и завучей
-- Админ-панель с управлением пользователями, классами, бэкапами, логами и системой
+- Админ-панель: управление пользователями, классами, бэкапами, логами, Docker-контейнерами
+- Setup wizard — первичная настройка через веб-интерфейс
 
-## Быстрый старт
+## Установка (Linux)
 
-### Через установочный скрипт (Linux)
+### Одна команда (3x-ui стиль)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Spe4naz/school-ai-static/main/install.sh | sudo bash
 ```
 
-Скрипт интерактивно запросит домен, порт, email и пароль администратора, настроит Docker, получит SSL-сертификат и запустит сервер.
+Скрипт интерактивно запросит:
+- Порт (по умолчанию 80)
+- Домен (опционально — если нет, доступ по IP)
+- Email и пароль администратора
+
+После установки панель доступна:
+- С доменом: `https://school.example.com/panel`
+- Без домена: `http://SERVER_IP:PORT/panel`
 
 ### Вручную (Docker)
 
@@ -30,11 +38,9 @@ curl -fsSL https://raw.githubusercontent.com/Spe4naz/school-ai-static/main/insta
 git clone https://github.com/Spe4naz/school-ai-static.git
 cd school-ai-static
 cp .env.example .env
-nano .env   #DOMAIN, JWT_SECRET, DATABASE_URL
+nano .env
 docker compose --env-file .env up -d
 ```
-
-Приложение доступно на `https://<ваш-домен>`. SSL получается автоматически через Caddy/Let's Encrypt.
 
 ### Локальная разработка
 
@@ -43,7 +49,6 @@ git clone https://github.com/Spe4naz/school-ai-static.git
 cd school-ai-static
 npm install
 cp .env.example .env
-# настроить .env (DATABASE_URL обязателен)
 npm run dev
 ```
 
@@ -69,7 +74,7 @@ http://localhost:3000
 | Frontend | Vanilla JS, Chart.js, ESBuild |
 | Прокси | Caddy (авто-SSL, gzip) |
 | Логирование | Pino (structured JSON) |
-| Тесты | Jest + Supertest + testcontainers (164 теста) |
+| Тесты | Jest + Supertest + testcontainers (222 теста) |
 | Контейнеризация | Docker + Docker Compose |
 
 ## Безопасность
@@ -78,9 +83,13 @@ http://localhost:3000
 - **Пароли**: мин. 8 символов + строчные + заглавные + цифры
 - **CSP**: per-request nonces для инлайн-скриптов
 - **Rate-limiting**: глобальный, login, refresh, upload, per-user
+- **Docker**: `execFile` с whitelist валидацией имён контейнеров
+- **Setup wizard**: санитизация .env записей, пароль генерируется автоматически
+- **Chat keys**: хранятся в `sessionStorage` (не `localStorage`)
 - **Admin panel**: серверная проверка JWT + role=admin
-- **SSE**: CORS ограничен до FRONTEND_URL, макс. 3 соединения/пользователь
+- **SSE**: CORS ограничен до FRONTEND_URL, автоматическое переподключение
 - **Кэш**: in-memory TTL для classes (5мин), schedule (2мин), announcements (1мин)
+- **Graceful shutdown**: SSE-клиентам отправляется shutdown event
 
 ## Переменные окружения
 
@@ -92,6 +101,9 @@ http://localhost:3000
 | `FRONTEND_URL` | да | URL фронтенда для CORS и email |
 | `JWT_SECRET` | да | Секрет JWT (мин. 32 символа) |
 | `DATABASE_URL` | да | PostgreSQL connection string |
+| `POSTGRES_USER` | для Docker | Пользователь БД |
+| `POSTGRES_PASSWORD` | для Docker | Пароль БД |
+| `POSTGRES_DB` | для Docker | Имя БД |
 | `BCRYPT_ROUNDS` | нет (12) | Раунды хеширования |
 | `SMTP_HOST/PORT/USER/PASS` | для писем | SMTP настройки |
 | `BACKUP_DIR` | нет (./backups) | Директория бэкапов |
@@ -112,7 +124,7 @@ http://localhost:3000
 | GET/POST/DELETE | `/api/homework` | Домашние задания |
 | GET/POST | `/api/chat/messages` | Чат |
 | GET | `/api/notifications/stream` | SSE уведомления |
-| GET/POST | `/api/system/*` | Система (Docker, логи) |
+| GET | `/api/system/status` | Статус системы |
 | GET/POST | `/api/admin/*` | Админ-панель |
 
 ## Разработка
@@ -122,7 +134,7 @@ npm run dev            # сервер
 npm run dev:all        # сервер + фронтенд
 npm run build          # сборка TS + frontend
 npm run lint           # tsc + eslint
-npm run test           # тесты (Docker)
+npm run test           # тесты (Docker, 222 теста)
 npm run test:coverage  # покрытие (мин. 50%)
 ```
 
@@ -132,12 +144,12 @@ npm run test:coverage  # покрытие (мин. 50%)
 config/           Конфигурация (БД, auth, email, container)
 middleware/       Express middleware (auth, roles, validate, rateLimit, logger, requireAuth)
 routes/           Маршруты (auth, grades, schedule, chat, admin, system, setup)
-services/         Бизнес-логика (user, grade, chat, docker, backup, cache)
+services/         Бизнес-логика (user, grade, chat, notification, admin, docker, backup, crypto)
 public/           Статика + фронтенд (JS, CSS, HTML)
 utils/            Утилиты (AppError, cache, classResolver)
-__tests__/        Тесты (164 теста, Jest + testcontainers)
+__tests__/        Тесты (222 теста, Jest + testcontainers)
 server.ts         Точка входа
-install.sh        Установочный скрипт для Linux
+install.sh        Установочный скрипт для Linux (3x-ui стиль)
 docker-compose.yml Docker Compose
 ```
 

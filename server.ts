@@ -135,13 +135,13 @@ app.get('/reset-password.html', (req, res) => serveHtml('reset-password.html', r
 // Admin panel - SPA with server-side auth check
 app.get('/admin-panel', (req, res) => {
   const jwt = require('jsonwebtoken');
-  const config = require('./config/auth');
+  const authConfig = require('./config/auth');
   const token = req.cookies?.token;
   if (!token) {
     return res.redirect('/');
   }
   try {
-    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
+    const decoded = jwt.verify(token, authConfig.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
     if (decoded.role !== 'admin') {
       return res.redirect('/');
     }

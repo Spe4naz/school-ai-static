@@ -1,6 +1,6 @@
 (() => {
-  var l = window.location.origin + '/api',
-    pe = {
+  var d = window.location.origin + '/api',
+    fe = {
       admin: '\u0410\u0434\u043C\u0438\u043D\u0438\u0441\u0442\u0440\u0430\u0442\u043E\u0440',
       teacher: '\u0423\u0447\u0438\u0442\u0435\u043B\u044C',
       student: '\u0423\u0447\u0435\u043D\u0438\u043A',
@@ -8,30 +8,70 @@
       head_teacher: '\u0417\u0430\u0432\u0443\u0447',
     };
   function w(t) {
-    return pe[t] || t;
+    return fe[t] || t;
   }
-  function T(t, e) {
+  function M(t, e) {
     let n;
     return (...a) => {
       (clearTimeout(n), (n = setTimeout(() => t(...a), e)));
     };
   }
-  function P() {
+  function u(t, e = 'info', n = 3e3) {
+    let a = document.querySelector('.toast-container');
+    a || ((a = document.createElement('div')), (a.className = 'toast-container'), document.body.appendChild(a));
+    let s = document.createElement('div');
+    ((s.className = `toast toast-${e}`),
+      (s.textContent = t),
+      a.appendChild(s),
+      setTimeout(() => {
+        ((s.style.opacity = '0'),
+          (s.style.transform = 'translateX(100%)'),
+          (s.style.transition = '0.3s ease-in'),
+          setTimeout(() => s.remove(), 300));
+      }, n));
+  }
+  function B(t) {
+    return new Promise((e) => {
+      let n = document.createElement('div');
+      ((n.className = 'confirm-overlay'),
+        (n.innerHTML = `
+      <div class="confirm-box">
+        <h3>\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u0438\u0435</h3>
+        <p>${i(t)}</p>
+        <div class="confirm-actions">
+          <button class="btn btn-sm btn-ghost" data-action="cancel">\u041E\u0442\u043C\u0435\u043D\u0430</button>
+          <button class="btn btn-sm" style="background:var(--danger);color:white" data-action="confirm">\u041F\u043E\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u044C</button>
+        </div>
+      </div>
+    `),
+        document.body.appendChild(n),
+        n.querySelector('[data-action="cancel"]').addEventListener('click', () => {
+          (n.remove(), e(!1));
+        }),
+        n.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+          (n.remove(), e(!0));
+        }),
+        n.addEventListener('click', (a) => {
+          a.target === n && (n.remove(), e(!1));
+        }));
+    });
+  }
+  function O() {
     return window._chartInstance;
   }
-  function U(t) {
+  function F(t) {
     window._chartInstance = t;
   }
-  function C() {
+  function D() {
     return window._chatEncryptionKey;
   }
-  function O(t) {
+  function R(t) {
     window._chatEncryptionKey = t;
   }
-  function B(t, e) {
+  function L(t, e) {
     window['_refresh_' + t] = e;
   }
-  function F() {
+  function N() {
     Object.keys(window)
       .filter((e) => e.startsWith('_refresh_') || e === '_chatInterval')
       .forEach((e) => {
@@ -48,9 +88,9 @@
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#x27;');
   }
-  async function y() {
+  async function h() {
     try {
-      let e = await (await fetch(`${l}/notifications`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/notifications`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('notifList');
       if (e.length === 0) {
         n.innerHTML =
@@ -74,21 +114,21 @@
       console.error(t);
     }
   }
-  var k = 0;
-  async function R(t) {
+  var S = 0;
+  async function J(t) {
     let e = document.getElementById('classFilter');
     if (['teacher', 'admin'].includes(t.role)) {
       e.style.display = 'block';
-      let a = await (await fetch(`${l}/classes`, { credentials: 'same-origin' })).json();
+      let a = await (await fetch(`${d}/classes`, { credentials: 'same-origin' })).json();
       ((e.innerHTML =
         '<option value="">\u0412\u0441\u0435 \u043A\u043B\u0430\u0441\u0441\u044B</option>' +
-        a.map((o) => `<option value="${i(o.id)}">${i(o.name)}</option>`).join('')),
-        ge());
+        a.map((s) => `<option value="${i(s.id)}">${i(s.name)}</option>`).join('')),
+        ye());
     }
   }
-  async function ge() {
+  async function ye() {
     try {
-      let e = await (await fetch(`${l}/students`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/students`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('modalStudentId');
       n.innerHTML =
         '<option value="">\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0443\u0447\u0435\u043D\u0438\u043A\u0430</option>' +
@@ -100,54 +140,58 @@
       );
     }
   }
-  function M(t) {
-    k += t;
+  function H(t) {
+    S += t;
     let e = document.getElementById('classFilter');
-    v(e ? e.value : '');
+    E(e ? e.value : '');
   }
-  function N() {
-    k = 0;
+  function z() {
+    S = 0;
     let t = document.getElementById('classFilter');
-    v(t ? t.value : '');
+    E(t ? t.value : '');
   }
-  async function v(t = '') {
-    let e = `${l}/grades?week_offset=${k}`;
+  async function E(t = '') {
+    let e = `${d}/grades?week_offset=${S}`;
     t && (e += `&class_id=${t}`);
     try {
       let a = await (await fetch(e, { credentials: 'same-origin' })).json(),
-        o = document.querySelector('#gradesTable tbody');
-      ((o.innerHTML = a
+        s = document.querySelector('#gradesTable tbody');
+      ((s.innerHTML = a
         .map(
-          (s) => `
+          (r) => `
       <tr>
-        <td>${i(s.subject)}</td>
-        <td><span class="grade grade-${s.grade}">${s.grade}</span></td>
-        <td>${i(s.student_name)}</td>
-        <td>${i(s.comment) || '\u2014'}</td>
-        <td>${i(s.date)}</td>
+        <td>${i(r.subject)}</td>
+        <td><span class="grade grade-${r.grade}">${r.grade}</span></td>
+        <td>${i(r.student_name)}</td>
+        <td>${i(r.comment) || '\u2014'}</td>
+        <td>${i(r.date)}</td>
       </tr>`,
         )
         .join('')),
-        fe());
+        he());
     } catch (n) {
       console.error(n);
     }
   }
-  function fe() {
+  function he() {
     let t = document.getElementById('weekLabel');
     if (!t) return;
     let e = new Date(),
       n = new Date(e);
-    n.setDate(n.getDate() + k * 7 - (n.getDay() || 7) + 1);
+    n.setDate(n.getDate() + S * 7 - (n.getDay() || 7) + 1);
     let a = new Date(n);
     a.setDate(n.getDate() + 6);
-    let o = (s) => s.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-    t.textContent = `${o(n)} \u2014 ${o(a)}`;
+    let s = (r) => r.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+    t.textContent = `${s(n)} \u2014 ${s(a)}`;
   }
-  async function J(t) {
+  async function K(t) {
     t.preventDefault();
     let e = document.getElementById('modalStudentId').value;
-    if (!e) return alert('\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0443\u0447\u0435\u043D\u0438\u043A\u0430');
+    if (!e)
+      return u(
+        '\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0443\u0447\u0435\u043D\u0438\u043A\u0430',
+        'warning',
+      );
     let n = {
       student_id: e,
       subject: document.getElementById('modalSubject').value,
@@ -155,59 +199,61 @@
       comment: document.getElementById('modalComment').value,
     };
     try {
-      let a = await fetch(`${l}/grades`, {
+      let a = await fetch(`${d}/grades`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify(n),
       });
       if (a.ok) {
-        alert(
-          '\u041E\u0446\u0435\u043D\u043A\u0430 \u0432\u044B\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u0430! \u0420\u043E\u0434\u0438\u0442\u0435\u043B\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u043B \u0443\u0432\u0435\u0434\u043E\u043C\u043B\u0435\u043D\u0438\u0435.',
+        u(
+          '\u041E\u0446\u0435\u043D\u043A\u0430 \u0432\u044B\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u0430!',
+          'success',
         );
-        let o = document.getElementById('gradeModal');
-        (o && (o.style.display = 'none'),
-          v(),
-          y(),
+        let s = document.getElementById('gradeModal');
+        (s && (s.style.display = 'none'),
+          E(),
+          h(),
           (document.getElementById('modalStudentId').value = ''),
           (document.getElementById('modalSubject').value = ''),
           (document.getElementById('modalComment').value = ''));
       } else {
-        let o = await a.json();
-        alert(
-          o.error ||
+        let s = await a.json();
+        u(
+          s.error ||
             '\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u0438 \u0432\u044B\u0441\u0442\u0430\u0432\u043B\u0435\u043D\u0438\u0438 \u043E\u0446\u0435\u043D\u043A\u0438',
+          'error',
         );
       }
     } catch {
-      alert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438');
+      u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  function z(t) {
+  function q(t) {
     return { Пн: 1, Вт: 2, Ср: 3, Чт: 4, Пт: 5, Сб: 6 }[t] || 0;
   }
-  async function E(t = '') {
+  async function b(t = '') {
     let e = JSON.parse(localStorage.getItem('user')),
-      n = `${l}/schedule`;
+      n = `${d}/schedule`;
     t && (n += `?class_id=${t}`);
     try {
-      let o = await (await fetch(n, { credentials: 'same-origin' })).json(),
-        s = {};
-      o.forEach((d) => {
-        (s[d.day] || (s[d.day] = []), s[d.day].push(d));
+      let s = await (await fetch(n, { credentials: 'same-origin' })).json(),
+        r = {};
+      s.forEach((l) => {
+        (r[l.day] || (r[l.day] = []), r[l.day].push(l));
       });
-      let r = document.getElementById('scheduleContainer'),
-        c = Object.keys(s).sort((d, m) => z(d) - z(m));
-      (c.length === 0
-        ? (r.innerHTML =
+      let c = document.getElementById('scheduleContainer'),
+        o = Object.keys(r).sort((l, m) => q(l) - q(m));
+      (o.length === 0
+        ? (c.innerHTML =
             '<div style="text-align:center; color:#666; padding:20px;">\u0420\u0430\u0441\u043F\u0438\u0441\u0430\u043D\u0438\u0435 \u043F\u0443\u0441\u0442\u043E</div>')
-        : (r.innerHTML = c
+        : (c.innerHTML = o
             .map(
-              (d) => `
+              (l) => `
         <div class="schedule-day">
-          <h3>${i(d)}</h3>
+          <h3>${i(l)}</h3>
           <ul>
-            ${s[d]
+            ${r[l]
               .map(
                 (m) => `
               <li style="display:flex; justify-content:space-between; align-items:center;">
@@ -228,37 +274,37 @@
       `,
             )
             .join('')),
-        (document.getElementById('homeScheduleCount').textContent = `${o.length} \u0443\u0440\u043E\u043A\u043E\u0432`),
-        r.querySelectorAll('.schedule-delete-btn').forEach((d) => {
-          d.addEventListener('click', () => ye(d.dataset.id));
+        (document.getElementById('homeScheduleCount').textContent = `${s.length} \u0443\u0440\u043E\u043A\u043E\u0432`),
+        c.querySelectorAll('.schedule-delete-btn').forEach((l) => {
+          l.addEventListener('click', () => ve(l.dataset.id));
         }));
     } catch (a) {
       console.error(a);
     }
   }
-  async function K() {
+  async function G() {
     let t = JSON.parse(localStorage.getItem('user')),
       e = document.getElementById('scheduleClassFilter'),
       n = document.getElementById('scheduleClass');
     try {
-      let o = await (await fetch(`${l}/classes`, { credentials: 'same-origin' })).json();
+      let s = await (await fetch(`${d}/classes`, { credentials: 'same-origin' })).json();
       if (
         (e &&
           (e.innerHTML =
             '<option value="">\u0412\u0441\u0435 \u043A\u043B\u0430\u0441\u0441\u044B</option>' +
-            o.map((s) => `<option value="${i(s.id)}">${i(s.name)}</option>`).join('')),
+            s.map((r) => `<option value="${i(r.id)}">${i(r.name)}</option>`).join('')),
         n)
       ) {
-        let s = t.class_id;
-        n.innerHTML = o
-          .map((r) => `<option value="${i(r.id)}" ${r.id === s ? 'selected' : ''}>${i(r.name)}</option>`)
+        let r = t.class_id;
+        n.innerHTML = s
+          .map((c) => `<option value="${i(c.id)}" ${c.id === r ? 'selected' : ''}>${i(c.name)}</option>`)
           .join('');
       }
     } catch (a) {
       console.error(a);
     }
   }
-  async function q(t) {
+  async function W(t) {
     t.preventDefault();
     let e = document.getElementById('scheduleError');
     e.style.display = 'none';
@@ -276,51 +322,54 @@
       return;
     }
     try {
-      let a = await fetch(`${l}/schedule`, {
+      let a = await fetch(`${d}/schedule`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify(n),
         }),
-        o = await a.json();
+        s = await a.json();
       if (a.ok) {
-        alert('\u0423\u0440\u043E\u043A \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D!');
-        let s = document.getElementById('scheduleModal');
-        s && (s.style.display = 'none');
-        let r = document.getElementById('scheduleForm');
-        (r && r.reset(), E());
-      } else ((e.textContent = o.error || '\u041E\u0448\u0438\u0431\u043A\u0430'), (e.style.display = 'block'));
+        u('\u0423\u0440\u043E\u043A \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D!', 'success');
+        let r = document.getElementById('scheduleModal');
+        r && (r.style.display = 'none');
+        let c = document.getElementById('scheduleForm');
+        (c && c.reset(), b());
+      } else ((e.textContent = s.error || '\u041E\u0448\u0438\u0431\u043A\u0430'), (e.style.display = 'block'));
     } catch {
       ((e.textContent = '\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438'), (e.style.display = 'block'));
     }
   }
-  async function ye(t) {
-    if (confirm('\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0443\u0440\u043E\u043A?'))
+  async function ve(t) {
+    if (await B('\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0442 \u0443\u0440\u043E\u043A?'))
       try {
-        let e = await fetch(`${l}/schedule/${t}`, { method: 'DELETE', credentials: 'same-origin' });
-        if (e.ok) E();
+        let n = await fetch(`${d}/schedule/${t}`, { method: 'DELETE', credentials: 'same-origin' });
+        if (n.ok) b();
         else {
-          let n = await e.json();
-          alert(n.error || '\u041E\u0448\u0438\u0431\u043A\u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u044F');
+          let a = await n.json();
+          u(
+            a.error || '\u041E\u0448\u0438\u0431\u043A\u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u044F',
+            'error',
+          );
         }
       } catch {
-        alert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438');
+        u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
       }
   }
-  async function D(t, e) {
+  async function _(t, e) {
     let n = document.getElementById('chartSubject'),
       a = document.getElementById('chartPeriod'),
-      o = t || (n ? n.value : 'all'),
-      s = e || (a ? a.value : 'month');
+      s = t || (n ? n.value : 'all'),
+      r = e || (a ? a.value : 'month');
     try {
-      let c = await (
-          await fetch(`${l}/grades/progress?subject=${o}&period=${s}`, { credentials: 'same-origin' })
+      let o = await (
+          await fetch(`${d}/grades/progress?subject=${s}&period=${r}`, { credentials: 'same-origin' })
         ).json(),
-        d = document.getElementById('progressChart');
-      if (!d) return;
-      let m = d.getContext('2d'),
-        g = P();
-      if ((g && g.destroy(), c.length === 0)) {
+        l = document.getElementById('progressChart');
+      if (!l) return;
+      let m = l.getContext('2d'),
+        f = O();
+      if ((f && f.destroy(), o.length === 0)) {
         (m.clearRect(0, 0, m.canvas.width, m.canvas.height),
           (m.font = '14px sans-serif'),
           (m.fillStyle = '#666'),
@@ -331,14 +380,14 @@
           ));
         return;
       }
-      let f = new Chart(m, {
+      let y = new Chart(m, {
         type: 'line',
         data: {
-          labels: c.map((h) => h.date),
+          labels: o.map((v) => v.date),
           datasets: [
             {
               label: '\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0431\u0430\u043B\u043B',
-              data: c.map((h) => h.average),
+              data: o.map((v) => v.average),
               borderColor: '#2563eb',
               backgroundColor: 'rgba(37, 99, 235, 0.1)',
               fill: !0,
@@ -356,14 +405,14 @@
           plugins: { legend: { display: !1 } },
         },
       });
-      U(f);
-    } catch (r) {
-      console.error(r);
+      F(y);
+    } catch (c) {
+      console.error(c);
     }
   }
-  async function G() {
+  async function V() {
     try {
-      let e = await (await fetch(`${l}/grades/subjects`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/grades/subjects`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('chartSubject');
       n.innerHTML =
         '<option value="all">\u0412\u0441\u0435 \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u044B</option>' +
@@ -372,45 +421,47 @@
       console.error(t);
     }
   }
-  async function L() {
+  async function j() {
     try {
-      let e = await (await fetch(`${l}/grades`, { credentials: 'same-origin' })).json();
+      let e = await (await fetch(`${d}/grades`, { credentials: 'same-origin' })).json();
       if (e.length > 0) {
-        let n = (e.reduce((a, o) => a + o.grade, 0) / e.length).toFixed(1);
+        let n = (e.reduce((a, s) => a + s.grade, 0) / e.length).toFixed(1);
         document.getElementById('homeAvgGrade').textContent = n;
       }
     } catch (t) {
       console.error(t);
     }
   }
-  async function W() {
-    let e = await (await fetch(`${l}/classes`, { credentials: 'same-origin' })).json();
+  async function X() {
+    let e = await (await fetch(`${d}/classes`, { credentials: 'same-origin' })).json();
     document.getElementById('exportClass').innerHTML =
       '<option value="">\u0412\u0441\u0435 \u043A\u043B\u0430\u0441\u0441\u044B</option>' +
       e.map((n) => `<option value="${i(n.id)}">${i(n.name)}</option>`).join('');
   }
-  async function V(t) {
+  async function Z(t) {
     t.preventDefault();
     let e = document.getElementById('exportClass').value,
       n = document.getElementById('exportPeriod').value,
       a = document.getElementById('exportType').value,
-      o = `${l}/reports/export?type=${a}&period=${n}`;
-    e && (o += `&class_id=${e}`);
+      s = `${d}/reports/export?type=${a}&period=${n}`;
+    e && (s += `&class_id=${e}`);
     try {
-      let r = await (await fetch(o, { credentials: 'same-origin' })).blob(),
-        c = a === 'pdf' ? 'pdf' : 'xlsx',
-        d = document.createElement('a');
-      ((d.href = URL.createObjectURL(r)), (d.download = `otchet-${Date.now()}.${c}`), d.click());
+      let c = await (await fetch(s, { credentials: 'same-origin' })).blob(),
+        o = a === 'pdf' ? 'pdf' : 'xlsx',
+        l = document.createElement('a');
+      ((l.href = URL.createObjectURL(c)), (l.download = `otchet-${Date.now()}.${o}`), l.click());
       let m = document.getElementById('exportModal');
-      (m && (m.style.display = 'none'), alert('\u041E\u0442\u0447\u0451\u0442 \u0441\u043A\u0430\u0447\u0430\u043D!'));
-    } catch (s) {
-      (console.error(s),
-        alert(
+      (m && (m.style.display = 'none'),
+        u('\u041E\u0442\u0447\u0451\u0442 \u0441\u043A\u0430\u0447\u0430\u043D!', 'success'));
+    } catch (r) {
+      (console.error(r),
+        u(
           '\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u0438 \u044D\u043A\u0441\u043F\u043E\u0440\u0442\u0435',
+          'error',
         ));
     }
   }
-  var he = [
+  var we = [
       '\u{1F600}',
       '\u{1F603}',
       '\u{1F604}',
@@ -520,9 +571,9 @@
       '\u{1F445}',
       '\u{1F444}',
     ],
-    S = !1,
-    p = { offset: 0, hasMore: !0, loading: !1, loadingMore: !1, sendLock: !1, typingTimer: null };
-  async function Q(t, e) {
+    T = !1,
+    g = { offset: 0, hasMore: !0, loading: !1, loadingMore: !1, sendLock: !1, typingTimer: null };
+  async function ee(t, e) {
     let n = new TextEncoder(),
       a = await crypto.subtle.importKey('raw', n.encode(t), { name: 'PBKDF2' }, !1, ['deriveBits', 'deriveKey']);
     return crypto.subtle.deriveKey(
@@ -533,44 +584,44 @@
       ['encrypt', 'decrypt'],
     );
   }
-  async function ve(t, e) {
+  async function Ee(t, e) {
     let n = new TextEncoder(),
       a = crypto.getRandomValues(new Uint8Array(12)),
-      o = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: a }, e, n.encode(t)),
-      s = Array.from(a),
-      r = Array.from(new Uint8Array(o));
+      s = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: a }, e, n.encode(t)),
+      r = Array.from(a),
+      c = Array.from(new Uint8Array(s));
     return btoa(
-      s
-        .concat(r)
-        .map((c) => String.fromCharCode(c))
+      r
+        .concat(c)
+        .map((o) => String.fromCharCode(o))
         .join(''),
     );
   }
-  async function Ee(t, e) {
+  async function be(t, e) {
     let n = atob(t),
       a = new Uint8Array(n.length);
-    for (let c = 0; c < n.length; c++) a[c] = n.charCodeAt(c);
-    let o = a.slice(0, 12),
-      s = a.slice(12),
-      r = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: o }, e, s);
-    return new TextDecoder().decode(r);
+    for (let o = 0; o < n.length; o++) a[o] = n.charCodeAt(o);
+    let s = a.slice(0, 12),
+      r = a.slice(12),
+      c = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: s }, e, r);
+    return new TextDecoder().decode(c);
   }
-  async function be(t, e) {
+  async function Ie(t, e) {
     if (!e || !t || !/^[A-Za-z0-9+/=]+$/.test(t)) return t;
     try {
-      let n = await Q(e, 'class-chat-salt');
-      return await Ee(t, n);
+      let n = await ee(e, 'class-chat-salt');
+      return await be(t, n);
     } catch {
       return t;
     }
   }
-  function we() {
+  function xe() {
     return Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map((t) => t.toString(16).padStart(2, '0'))
       .join('');
   }
-  async function Y() {
-    let t = C();
+  async function te() {
+    let t = D();
     if (t) return t;
     let e;
     try {
@@ -580,20 +631,20 @@
     }
     if (!e.class_id) return null;
     let n = `chatKey_${e.class_id}`,
-      a = localStorage.getItem(n);
+      a = sessionStorage.getItem(n);
     if (!a)
       try {
-        ((a = (await (await fetch(`${l}/chat/key`, { credentials: 'same-origin' })).json()).key),
-          localStorage.setItem(n, a));
+        ((a = (await (await fetch(`${d}/chat/key`, { credentials: 'same-origin' })).json()).key),
+          sessionStorage.setItem(n, a));
       } catch {
-        ((a = we()), localStorage.setItem(n, a));
+        ((a = xe()), sessionStorage.setItem(n, a));
       }
-    return (O(a), a);
+    return (R(a), a);
   }
-  function Ie(t) {
+  function $e(t) {
     return new Date(t).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
   }
-  function xe(t) {
+  function ke(t) {
     let e = new Date(t),
       n = new Date(),
       a = new Date(n);
@@ -606,197 +657,197 @@
           : e.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })
     );
   }
-  function _() {
+  function P() {
     let t = document.getElementById('emojiPicker');
-    ((S = !S),
-      t.classList.toggle('open', S),
-      S &&
+    ((T = !T),
+      t.classList.toggle('open', T),
+      T &&
         ((t.innerHTML =
           '<div class="emoji-grid">' +
-          he.map((e) => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('') +
+          we.map((e) => `<span class="emoji-item" data-emoji="${e}">${e}</span>`).join('') +
           '</div>'),
         t.querySelectorAll('.emoji-item').forEach((e) => {
           e.addEventListener('click', () => {
             ((document.getElementById('chatInput').value += e.dataset.emoji),
               document.getElementById('chatInput').focus(),
-              _());
+              P());
           });
         })));
   }
-  function $e(t) {
+  function Be(t) {
     return t.scrollHeight - t.scrollTop - t.clientHeight < 100;
   }
-  function ee(t, e) {
+  function ne(t, e) {
     t.scrollTo({ top: t.scrollHeight, behavior: e ? 'smooth' : 'auto' });
   }
-  async function I() {
-    if (!p.loading) {
-      p.loading = !0;
+  async function x() {
+    if (!g.loading) {
+      g.loading = !0;
       try {
-        await Y();
+        await te();
         let t = new AbortController(),
           e = setTimeout(() => t.abort(), 8e3),
-          n = await fetch(`${l}/chat/messages?offset=0&limit=50`, { credentials: 'same-origin', signal: t.signal });
+          n = await fetch(`${d}/chat/messages?offset=0&limit=50`, { credentials: 'same-origin', signal: t.signal });
         if ((clearTimeout(e), !n.ok)) {
-          H('offline');
+          A('offline');
           return;
         }
         let a = await n.json(),
-          o = JSON.parse(localStorage.getItem('user') || '{}'),
-          s = document.getElementById('chatMessages'),
-          r = $e(s);
-        (await ke(s, a.messages, o),
-          (p.hasMore = a.messages.length >= 50),
-          (p.offset = 0),
-          (r || a.messages.length <= 1) && ee(s, !1),
-          H('online'));
+          s = JSON.parse(localStorage.getItem('user') || '{}'),
+          r = document.getElementById('chatMessages'),
+          c = Be(r);
+        (await Se(r, a.messages, s),
+          (g.hasMore = a.messages.length >= 50),
+          (g.offset = 0),
+          (c || a.messages.length <= 1) && ne(r, !1),
+          A('online'));
       } catch {
-        H('offline');
+        A('offline');
       } finally {
-        p.loading = !1;
+        g.loading = !1;
       }
     }
   }
-  async function Be() {
-    if (p.loadingMore || !p.hasMore) return;
-    p.loadingMore = !0;
-    let t = p.offset + 50;
+  async function Le() {
+    if (g.loadingMore || !g.hasMore) return;
+    g.loadingMore = !0;
+    let t = g.offset + 50;
     try {
-      let n = await (await fetch(`${l}/chat/messages?offset=${t}&limit=50`, { credentials: 'same-origin' })).json(),
+      let n = await (await fetch(`${d}/chat/messages?offset=${t}&limit=50`, { credentials: 'same-origin' })).json(),
         a = JSON.parse(localStorage.getItem('user') || '{}'),
-        o = document.getElementById('chatMessages'),
-        s = o.scrollHeight;
-      if ((o.querySelector('.msg-loader-more')?.remove(), n.messages.length === 0)) {
-        p.hasMore = !1;
+        s = document.getElementById('chatMessages'),
+        r = s.scrollHeight;
+      if ((s.querySelector('.msg-loader-more')?.remove(), n.messages.length === 0)) {
+        g.hasMore = !1;
         return;
       }
-      let r = o.querySelector('[data-msg-id]'),
-        c = r ? parseInt(r.dataset.msgId, 10) : 1 / 0,
-        d = n.messages.filter((m) => m.id < c);
-      if (d.length > 0) {
-        let m = await te(d, a);
-        o.insertAdjacentHTML('afterbegin', m);
+      let c = s.querySelector('[data-msg-id]'),
+        o = c ? parseInt(c.dataset.msgId, 10) : 1 / 0,
+        l = n.messages.filter((m) => m.id < o);
+      if (l.length > 0) {
+        let m = await ae(l, a);
+        s.insertAdjacentHTML('afterbegin', m);
       }
-      ((p.hasMore = n.messages.length >= 50),
-        (p.offset = t),
-        p.hasMore &&
-          o.insertAdjacentHTML(
+      ((g.hasMore = n.messages.length >= 50),
+        (g.offset = t),
+        g.hasMore &&
+          s.insertAdjacentHTML(
             'afterbegin',
             '<div class="msg-loader-more">\u2195 \u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u0435\u0449\u0451</div>',
           ),
-        (o.scrollTop = o.scrollHeight - s));
+        (s.scrollTop = s.scrollHeight - r));
     } catch {
     } finally {
-      p.loadingMore = !1;
+      g.loadingMore = !1;
     }
   }
-  async function te(t, e) {
-    let n = C(),
-      a = await Promise.all(t.map((r) => be(r.content, n))),
-      o = '',
-      s = '';
+  async function ae(t, e) {
+    let n = D(),
+      a = await Promise.all(t.map((c) => Ie(c.content, n))),
+      s = '',
+      r = '';
     return (
-      t.forEach((r, c) => {
-        let d = new Date(r.created_at).toDateString();
-        d !== s && ((o += `<div class="msg-date-divider">${xe(r.created_at)}</div>`), (s = d));
-        let m = r.user_id === e.id,
-          g = a[c],
-          f = r.image_url
-            ? `<img src="${i(r.image_url)}" class="msg-image" onclick="window.open(this.src)" loading="lazy" />`
+      t.forEach((c, o) => {
+        let l = new Date(c.created_at).toDateString();
+        l !== r && ((s += `<div class="msg-date-divider">${ke(c.created_at)}</div>`), (r = l));
+        let m = c.user_id === e.id,
+          f = a[o],
+          y = c.image_url
+            ? `<img src="${i(c.image_url)}" class="msg-image" onclick="window.open(this.src)" loading="lazy" />`
             : '',
-          h = m
-            ? `<button class="msg-delete" data-action="deleteMessage" data-msg-id="${r.id}" title="\u0423\u0434\u0430\u043B\u0438\u0442\u044C">\u2715</button>`
+          v = m
+            ? `<button class="msg-delete" data-action="deleteMessage" data-msg-id="${c.id}" title="\u0423\u0434\u0430\u043B\u0438\u0442\u044C">\u2715</button>`
             : '';
-        o += `<div class="msg ${m ? 'user' : 'ai'}" data-msg-id="${r.id}">
-      ${m ? '' : `<div class="msg-author">${i(r.user_name)}</div>`}
-      ${h}
-      <div class="msg-content">${i(g)}</div>
-      ${f}
-      <div class="msg-time">${Ie(r.created_at)}</div>
+        s += `<div class="msg ${m ? 'user' : 'ai'}" data-msg-id="${c.id}">
+      ${m ? '' : `<div class="msg-author">${i(c.user_name)}</div>`}
+      ${v}
+      <div class="msg-content">${i(f)}</div>
+      ${y}
+      <div class="msg-time">${$e(c.created_at)}</div>
     </div>`;
       }),
-      o
+      s
     );
   }
-  async function ke(t, e, n) {
-    let a = await te(e, n);
+  async function Se(t, e, n) {
+    let a = await ae(e, n);
     t.innerHTML =
       a ||
       '<div style="text-align:center;padding:40px;color:var(--text-sec)">\u0421\u043E\u043E\u0431\u0449\u0435\u043D\u0438\u0439 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442. \u041D\u0430\u0447\u043D\u0438\u0442\u0435 \u043E\u0431\u0449\u0435\u043D\u0438\u0435!</div>';
   }
-  async function Le(t) {
+  async function je(t) {
     try {
-      if ((await fetch(`${l}/chat/messages/${t}`, { method: 'DELETE', credentials: 'same-origin' })).ok) {
+      if ((await fetch(`${d}/chat/messages/${t}`, { method: 'DELETE', credentials: 'same-origin' })).ok) {
         let n = document.querySelector(`.msg[data-msg-id="${t}"]`);
         n && n.remove();
       }
     } catch {}
   }
-  async function X() {
-    if (p.sendLock) return;
+  async function Q() {
+    if (g.sendLock) return;
     let t = document.getElementById('chatInput'),
       e = t.value.trim();
     if (!e) return;
-    p.sendLock = !0;
-    let n = await Y(),
+    g.sendLock = !0;
+    let n = await te(),
       a = e;
     if (n)
       try {
-        let o = await Q(n, 'class-chat-salt');
-        a = await ve(e, o);
+        let s = await ee(n, 'class-chat-salt');
+        a = await Ee(e, s);
       } catch {}
     try {
       (
-        await fetch(`${l}/chat/messages`, {
+        await fetch(`${d}/chat/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify({ content: a }),
         })
-      ).ok && ((t.value = ''), await I());
+      ).ok && ((t.value = ''), await x());
     } catch {
     } finally {
-      p.sendLock = !1;
+      g.sendLock = !1;
     }
   }
-  async function ne(t) {
+  async function se(t) {
     let e = new FormData();
     e.append('image', t);
     try {
-      (await fetch(`${l}/chat/upload`, { method: 'POST', credentials: 'same-origin', body: e })).ok && (await I());
+      (await fetch(`${d}/chat/upload`, { method: 'POST', credentials: 'same-origin', body: e })).ok && (await x());
     } catch {}
   }
-  async function Z() {
+  async function Y() {
     try {
       let [t, e] = await Promise.all([
-          fetch(`${l}/chat/participants`, { credentials: 'same-origin' }),
-          fetch(`${l}/chat/typing`, { credentials: 'same-origin' })
-            .then((o) => o.json())
+          fetch(`${d}/chat/participants`, { credentials: 'same-origin' }),
+          fetch(`${d}/chat/typing`, { credentials: 'same-origin' })
+            .then((s) => s.json())
             .catch(() => []),
         ]),
         n = await t.json(),
-        a = e.map((o) => o.user_id);
+        a = e.map((s) => s.user_id);
       document.getElementById('participantsList').innerHTML = n
         .map(
-          (o) => `<div class="participant-item">
-        <span class="participant-dot ${a.includes(o.id) ? 'online' : 'offline'}"></span>
-        <span class="participant-name">${i(o.name)}</span>
-        <span class="participant-role">${i(o.role === 'student' ? '\u0443\u0447' : o.role === 'teacher' ? '\u0443\u0447-\u043B\u044C' : o.role === 'admin' ? '\u0430\u0434\u043C' : '\u0440\u043E\u0434')}</span>
+          (s) => `<div class="participant-item">
+        <span class="participant-dot ${a.includes(s.id) ? 'online' : 'offline'}"></span>
+        <span class="participant-name">${i(s.name)}</span>
+        <span class="participant-role">${i(s.role === 'student' ? '\u0443\u0447' : s.role === 'teacher' ? '\u0443\u0447-\u043B\u044C' : s.role === 'admin' ? '\u0430\u0434\u043C' : '\u0440\u043E\u0434')}</span>
       </div>`,
         )
         .join('');
     } catch {}
   }
-  function Se() {
-    fetch(`${l}/chat/typing`, {
+  function Te() {
+    fetch(`${d}/chat/typing`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
     }).catch(() => {});
   }
-  async function je() {
+  async function Ce() {
     try {
-      let t = await fetch(`${l}/chat/typing`, { credentials: 'same-origin' }).then((a) => a.json()),
+      let t = await fetch(`${d}/chat/typing`, { credentials: 'same-origin' }).then((a) => a.json()),
         e = document.getElementById('typingIndicator'),
         n = document.getElementById('typingNames');
       t.length > 0
@@ -805,7 +856,7 @@
         : (e.style.display = 'none');
     } catch {}
   }
-  function H(t) {
+  function A(t) {
     let e = document.getElementById('chatStatus');
     e &&
       (e.innerHTML =
@@ -813,120 +864,120 @@
           ? '<span class="status-dot"></span> \u0412 \u0441\u0435\u0442\u0438'
           : '<span class="status-dot offline"></span> \u041D\u0435\u0442 \u0441\u043E\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u044F');
   }
-  function ae() {
+  function oe() {
     try {
       let t = JSON.parse(localStorage.getItem('user') || '{}');
       if (!['student', 'parent'].includes(t.role)) return;
-      (I(),
-        Z(),
+      (x(),
+        Y(),
         setInterval(async () => {
-          document.getElementById('chat')?.classList.contains('active') && (await I(), Z());
+          document.getElementById('chat')?.classList.contains('active') && (await x(), Y());
         }, 5e3),
-        setInterval(je, 3e3));
+        setInterval(Ce, 3e3));
       let e = document.getElementById('chatInput');
       (e &&
         e.addEventListener(
           'input',
-          T(() => {
-            e.value.trim() && Se();
+          M(() => {
+            e.value.trim() && Te();
           }, 500),
         ),
-        document.getElementById('sendBtn')?.addEventListener('click', X));
+        document.getElementById('sendBtn')?.addEventListener('click', Q));
       let n = document.getElementById('chatInput');
       n &&
-        n.addEventListener('keypress', (o) => {
-          o.key === 'Enter' && X();
+        n.addEventListener('keypress', (s) => {
+          s.key === 'Enter' && Q();
         });
       let a = document.getElementById('chatMessages');
       (a &&
         (a.addEventListener(
           'scroll',
-          T(() => {
-            a.scrollTop < 50 && p.hasMore && !p.loadingMore && Be();
+          M(() => {
+            a.scrollTop < 50 && g.hasMore && !g.loadingMore && Le();
           }, 200),
         ),
-        a.addEventListener('click', (o) => {
-          let s = o.target.closest('[data-action="deleteMessage"]');
-          s && Le(s.dataset.msgId);
+        a.addEventListener('click', (s) => {
+          let r = s.target.closest('[data-action="deleteMessage"]');
+          r && je(r.dataset.msgId);
         })),
-        document.querySelector('[data-action="chatRefresh"]')?.addEventListener('click', I),
-        setTimeout(() => ee(document.getElementById('chatMessages'), !0), 300));
+        document.querySelector('[data-action="chatRefresh"]')?.addEventListener('click', x),
+        setTimeout(() => ne(document.getElementById('chatMessages'), !0), 300));
     } catch {}
   }
-  async function se() {
+  async function re() {
     let t = document.getElementById('profileContainer'),
       e = JSON.parse(localStorage.getItem('user') || '{}');
     try {
       let [n, a] = await Promise.all([
-          fetch(`${l}/profile`, { credentials: 'same-origin' }),
-          fetch(`${l}/grades`, { credentials: 'same-origin' }),
+          fetch(`${d}/profile`, { credentials: 'same-origin' }),
+          fetch(`${d}/grades`, { credentials: 'same-origin' }),
         ]),
-        o = await n.json(),
-        s = await a.json(),
-        r = {},
+        s = await n.json(),
+        r = await a.json(),
         c = {},
-        d = 0,
+        o = {},
+        l = 0,
         m = 0;
-      s.forEach((u) => {
-        (r[u.subject] || ((r[u.subject] = 0), (c[u.subject] = 0)),
-          (r[u.subject] += u.grade),
-          c[u.subject]++,
-          (d += u.grade),
+      r.forEach((p) => {
+        (c[p.subject] || ((c[p.subject] = 0), (o[p.subject] = 0)),
+          (c[p.subject] += p.grade),
+          o[p.subject]++,
+          (l += p.grade),
           m++);
       });
-      let g = m > 0 ? (d / m).toFixed(1) : '\u2014',
-        f = Object.keys(r)
-          .map((u) => ({
-            name: u,
-            avg: (r[u] / c[u]).toFixed(1),
-            count: c[u],
-            pct: (((r[u] / c[u] - 2) / 3) * 100).toFixed(0),
+      let f = m > 0 ? (l / m).toFixed(1) : '\u2014',
+        y = Object.keys(c)
+          .map((p) => ({
+            name: p,
+            avg: (c[p] / o[p]).toFixed(1),
+            count: o[p],
+            pct: (((c[p] / o[p] - 2) / 3) * 100).toFixed(0),
           }))
-          .sort((u, ue) => ue.avg - u.avg),
-        h = f.length > 0 ? f[0].name : '\u2014',
-        me = (e.name || '')
+          .sort((p, ge) => ge.avg - p.avg),
+        v = y.length > 0 ? y[0].name : '\u2014',
+        pe = (e.name || '')
           .split(' ')
-          .map((u) => u[0])
+          .map((p) => p[0])
           .join('')
           .toUpperCase()
           .slice(0, 2);
       t.innerHTML = `
       <div class="profile-header-card">
-        <div class="profile-avatar-lg">${i(me)}</div>
+        <div class="profile-avatar-lg">${i(pe)}</div>
         <div class="profile-info">
           <h2>${i(e.name)}</h2>
-          <p>${i(w(e.role))}${o.class_name ? ` \xB7 ${i(o.class_name)}` : ''}</p>
-          <p style="font-size:0.85rem; margin-top:6px; opacity:0.7">${i(o.email)}</p>
+          <p>${i(w(e.role))}${s.class_name ? ` \xB7 ${i(s.class_name)}` : ''}</p>
+          <p style="font-size:0.85rem; margin-top:6px; opacity:0.7">${i(s.email)}</p>
         </div>
       </div>
       <div class="profile-grid">
         <div class="profile-card">
           <h3>\u{1F4CA} \u041E\u0431\u0449\u0430\u044F \u0441\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430</h3>
           <div class="profile-stat"><span class="profile-stat-label">\u0412\u0441\u0435\u0433\u043E \u043E\u0446\u0435\u043D\u043E\u043A</span><span class="profile-stat-value">${m}</span></div>
-          <div class="profile-stat"><span class="profile-stat-label">\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0431\u0430\u043B\u043B</span><span class="profile-stat-value" style="color: ${g >= 4 ? 'var(--success)' : g >= 3 ? 'var(--warning)' : 'var(--danger)'}">${g}</span></div>
-          <div class="profile-stat"><span class="profile-stat-label">\u041B\u0443\u0447\u0448\u0438\u0439 \u043F\u0440\u0435\u0434\u043C\u0435\u0442</span><span class="profile-stat-value">${i(h)}</span></div>
-          <div class="profile-stat"><span class="profile-stat-label">\u041F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432</span><span class="profile-stat-value">${f.length}</span></div>
+          <div class="profile-stat"><span class="profile-stat-label">\u0421\u0440\u0435\u0434\u043D\u0438\u0439 \u0431\u0430\u043B\u043B</span><span class="profile-stat-value" style="color: ${f >= 4 ? 'var(--success)' : f >= 3 ? 'var(--warning)' : 'var(--danger)'}">${f}</span></div>
+          <div class="profile-stat"><span class="profile-stat-label">\u041B\u0443\u0447\u0448\u0438\u0439 \u043F\u0440\u0435\u0434\u043C\u0435\u0442</span><span class="profile-stat-value">${i(v)}</span></div>
+          <div class="profile-stat"><span class="profile-stat-label">\u041F\u0440\u0435\u0434\u043C\u0435\u0442\u043E\u0432</span><span class="profile-stat-value">${y.length}</span></div>
         </div>
         <div class="profile-card">
           <h3>\u{1F464} \u0410\u043A\u043A\u0430\u0443\u043D\u0442</h3>
           <div class="profile-stat"><span class="profile-stat-label">\u0420\u043E\u043B\u044C</span><span class="profile-stat-value"><span class="role-badge role-${i(e.role)}">${i(w(e.role))}</span></span></div>
-          <div class="profile-stat"><span class="profile-stat-label">Email</span><span class="profile-stat-value" style="font-size:0.85rem">${i(o.email)}</span></div>
-          ${o.class_name ? `<div class="profile-stat"><span class="profile-stat-label">\u041A\u043B\u0430\u0441\u0441</span><span class="profile-stat-value">${i(o.class_name)}</span></div>` : ''}
+          <div class="profile-stat"><span class="profile-stat-label">Email</span><span class="profile-stat-value" style="font-size:0.85rem">${i(s.email)}</span></div>
+          ${s.class_name ? `<div class="profile-stat"><span class="profile-stat-label">\u041A\u043B\u0430\u0441\u0441</span><span class="profile-stat-value">${i(s.class_name)}</span></div>` : ''}
         </div>
         <div class="profile-card full">
           <h3>\u{1F4C8} \u0423\u0441\u043F\u0435\u0432\u0430\u0435\u043C\u043E\u0441\u0442\u044C \u043F\u043E \u043F\u0440\u0435\u0434\u043C\u0435\u0442\u0430\u043C</h3>
           ${
-            f.length > 0
-              ? f
+            y.length > 0
+              ? y
                   .map(
-                    (u) => `
+                    (p) => `
             <div class="subject-progress">
               <div class="subject-progress-header">
-                <span>${i(u.name)}</span>
-                <span>${u.avg} (${u.count} \u043E\u0446\u0435\u043D\u043E\u043A)</span>
+                <span>${i(p.name)}</span>
+                <span>${p.avg} (${p.count} \u043E\u0446\u0435\u043D\u043E\u043A)</span>
               </div>
               <div class="subject-progress-bar">
-                <div class="subject-progress-fill" style="width:${Math.min(100, u.pct)}%"></div>
+                <div class="subject-progress-fill" style="width:${Math.min(100, p.pct)}%"></div>
               </div>
             </div>
           `,
@@ -943,53 +994,43 @@
         console.error(n));
     }
   }
-  function Te(t) {
-    return (
-      {
-        admin: '\u0410\u0434\u043C\u0438\u043D',
-        teacher: '\u0423\u0447\u0438\u0442\u0435\u043B\u044C',
-        student: '\u0423\u0447\u0435\u043D\u0438\u043A',
-        parent: '\u0420\u043E\u0434\u0438\u0442\u0435\u043B\u044C',
-      }[t] || t
-    );
-  }
-  async function x() {
+  async function $() {
     let t = document.getElementById('userRoleFilter').value,
-      e = `${l}/admin/users`;
+      e = `${d}/admin/users`;
     t && (e += `?role=${t}`);
     try {
       let a = await (await fetch(e, { credentials: 'same-origin' })).json(),
-        o = document.querySelector('#usersTable tbody'),
-        s = await fetch(`${l}/classes`, { credentials: 'same-origin' }).then((c) => c.json()),
-        r = {};
-      (s.forEach((c) => (r[c.id] = c.name)),
-        (o.innerHTML = a
+        s = document.querySelector('#usersTable tbody'),
+        r = await fetch(`${d}/classes`, { credentials: 'same-origin' }).then((o) => o.json()),
+        c = {};
+      (r.forEach((o) => (c[o.id] = o.name)),
+        (s.innerHTML = a
           .map(
-            (c) => `
+            (o) => `
       <tr>
-        <td>${i(c.name)}</td>
-        <td>${i(c.email)}</td>
-        <td><span class="role-badge role-${i(c.role)}">${i(Te(c.role))}</span></td>
-        <td>${c.class_id ? i(r[c.class_id]) || i(c.class_id) : '\u2014'}</td>
+        <td>${i(o.name)}</td>
+        <td>${i(o.email)}</td>
+        <td><span class="role-badge role-${i(o.role)}">${i(w(o.role))}</span></td>
+        <td>${o.class_id ? i(c[o.class_id]) || i(o.class_id) : '\u2014'}</td>
         <td>
-          ${c.role !== 'admin' || a.filter((d) => d.role === 'admin').length > 1 ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${i(c.id)}">\u0423\u0434\u0430\u043B\u0438\u0442\u044C</button>` : '<span style="color:#999; font-size:0.8rem;">\u041D\u0435\u043B\u044C\u0437\u044F</span>'}
+          ${o.role !== 'admin' || a.filter((l) => l.role === 'admin').length > 1 ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:#ef4444;" data-action="deleteUser" data-id="${i(o.id)}">\u0423\u0434\u0430\u043B\u0438\u0442\u044C</button>` : '<span style="color:#999; font-size:0.8rem;">\u041D\u0435\u043B\u044C\u0437\u044F</span>'}
         </td>
       </tr>
     `,
           )
           .join('')),
-        o.querySelectorAll('[data-action="deleteUser"]').forEach((c) => {
-          c.addEventListener('click', () => Ce(c.dataset.id));
+        s.querySelectorAll('[data-action="deleteUser"]').forEach((o) => {
+          o.addEventListener('click', () => Me(o.dataset.id));
         }));
     } catch (n) {
       console.error(n);
     }
   }
-  async function oe() {
-    let e = await (await fetch(`${l}/classes`, { credentials: 'same-origin' })).json();
+  async function ie() {
+    let e = await (await fetch(`${d}/classes`, { credentials: 'same-origin' })).json();
     document.getElementById('newUserClass').innerHTML =
       '<option value="">\u0411\u0435\u0437 \u043A\u043B\u0430\u0441\u0441\u0430</option>' +
-      e.map((o) => `<option value="${i(o.id)}">${i(o.name)}</option>`).join('');
+      e.map((s) => `<option value="${i(s.id)}">${i(s.name)}</option>`).join('');
     let n = JSON.parse(localStorage.getItem('user') || '{}'),
       a = document.getElementById('newUserRole');
     a &&
@@ -997,12 +1038,12 @@
       (a.innerHTML =
         '<option value="student">\u0423\u0447\u0435\u043D\u0438\u043A</option><option value="parent">\u0420\u043E\u0434\u0438\u0442\u0435\u043B\u044C</option>');
   }
-  function re() {
+  function ce() {
     let t = document.getElementById('newUserRole').value,
       e = document.getElementById('newUserClassWrapper');
     e.style.display = ['student', 'parent'].includes(t) ? 'block' : 'none';
   }
-  async function ie(t) {
+  async function le(t) {
     t.preventDefault();
     let e = document.getElementById('userError');
     e.style.display = 'none';
@@ -1022,50 +1063,55 @@
       return;
     }
     try {
-      let a = await fetch(`${l}/admin/users`, {
+      let a = await fetch(`${d}/admin/users`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'same-origin',
           body: JSON.stringify(n),
         }),
-        o = await a.json();
+        s = await a.json();
       if (a.ok) {
-        alert(
-          '\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u0441\u043E\u0437\u0434\u0430\u043D!',
+        u(
+          '\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u0441\u043E\u0437\u0434\u0430\u043D',
+          'success',
         );
-        let s = document.getElementById('userModal');
-        s && (s.style.display = 'none');
-        let r = document.getElementById('userForm');
-        (r && r.reset(), x());
-      } else ((e.textContent = o.error || '\u041E\u0448\u0438\u0431\u043A\u0430'), (e.style.display = 'block'));
+        let r = document.getElementById('userModal');
+        r && (r.style.display = 'none');
+        let c = document.getElementById('userForm');
+        (c && c.reset(), $());
+      } else ((e.textContent = s.error || '\u041E\u0448\u0438\u0431\u043A\u0430'), (e.style.display = 'block'));
     } catch {
       ((e.textContent = '\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438'), (e.style.display = 'block'));
     }
   }
-  async function Ce(t) {
+  async function Me(t) {
     if (
-      confirm(
-        '\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u044D\u0442\u043E\u0433\u043E \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F?',
+      await B(
+        '\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044F?',
       )
     )
       try {
-        let e = await fetch(`${l}/admin/users/${t}`, { method: 'DELETE', credentials: 'same-origin' });
-        if (e.ok)
-          (alert(
+        let n = await fetch(`${d}/admin/users/${t}`, { method: 'DELETE', credentials: 'same-origin' });
+        if (n.ok)
+          (u(
             '\u041F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u0435\u043B\u044C \u0443\u0434\u0430\u043B\u0451\u043D',
+            'success',
           ),
-            x());
+            $());
         else {
-          let n = await e.json();
-          alert(n.error || '\u041E\u0448\u0438\u0431\u043A\u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u044F');
+          let a = await n.json();
+          u(
+            a.error || '\u041E\u0448\u0438\u0431\u043A\u0430 \u0443\u0434\u0430\u043B\u0435\u043D\u0438\u044F',
+            'error',
+          );
         }
       } catch {
-        alert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438');
+        u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
       }
   }
-  async function $() {
+  async function k() {
     try {
-      let e = await (await fetch(`${l}/homework`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/homework`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('homeworkList');
       if (!n) return;
       if (e.length === 0) {
@@ -1074,65 +1120,66 @@
         return;
       }
       let a = JSON.parse(localStorage.getItem('user') || '{}'),
-        o = ['teacher', 'admin'].includes(a.role);
+        s = ['teacher', 'admin'].includes(a.role);
       n.innerHTML = e
-        .map((s) => {
-          let r = new Date(s.due_date),
-            c = r < new Date() && !r.toDateString().includes(new Date().toDateString()),
-            d = Math.ceil((r - new Date()) / (1e3 * 60 * 60 * 24)),
-            m = c
+        .map((r) => {
+          let c = new Date(r.due_date),
+            o = c < new Date() && !c.toDateString().includes(new Date().toDateString()),
+            l = Math.ceil((c - new Date()) / (1e3 * 60 * 60 * 24)),
+            m = o
               ? '\u041F\u0440\u043E\u0441\u0440\u043E\u0447\u0435\u043D\u043E'
-              : d <= 1
+              : l <= 1
                 ? '\u041D\u0430 \u0441\u0435\u0433\u043E\u0434\u043D\u044F'
-                : `\u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C ${d} \u0434\u043D.`,
-            g = o
-              ? `<button class="btn btn-sm btn-danger" data-action="deleteHomework" data-id="${s.id}" style="margin-left:auto">\u2715</button>`
+                : `\u041E\u0441\u0442\u0430\u043B\u043E\u0441\u044C ${l} \u0434\u043D.`,
+            f = s
+              ? `<button class="btn btn-sm btn-danger" data-action="deleteHomework" data-id="${r.id}" style="margin-left:auto">\u2715</button>`
               : '';
-          return `<div class="hw-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border);border-left:4px solid ${c ? 'var(--danger)' : 'var(--primary)'}">
+          return `<div class="hw-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:14px;border:1px solid var(--border);border-left:4px solid ${o ? 'var(--danger)' : 'var(--primary)'}">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="flex:1">
-            <div style="font-weight:600">${i(s.title)}</div>
-            <div style="font-size:0.85rem;color:var(--text-sec);margin-top:4px">${i(s.subject)} \u2022 ${i(s.teacher_name)}</div>
-            ${s.description ? `<div style="font-size:0.9rem;margin-top:6px;color:var(--text-main)">${i(s.description)}</div>` : ''}
+            <div style="font-weight:600">${i(r.title)}</div>
+            <div style="font-size:0.85rem;color:var(--text-sec);margin-top:4px">${i(r.subject)} \u2022 ${i(r.teacher_name)}</div>
+            ${r.description ? `<div style="font-size:0.9rem;margin-top:6px;color:var(--text-main)">${i(r.description)}</div>` : ''}
           </div>
-          ${g}
+          ${f}
         </div>
-        <div style="margin-top:8px;font-size:0.8rem;color:${c ? 'var(--danger)' : 'var(--text-sec)'};font-weight:500">${i(m)} \u2022 ${i(s.due_date)}</div>
+        <div style="margin-top:8px;font-size:0.8rem;color:${o ? 'var(--danger)' : 'var(--text-sec)'};font-weight:500">${i(m)} \u2022 ${i(r.due_date)}</div>
       </div>`;
         })
         .join('');
     } catch {}
   }
-  async function ce(t) {
+  async function de(t) {
     t.preventDefault();
     let e = document.getElementById('hwSubject').value,
       n = document.getElementById('hwTitle').value.trim(),
       a = document.getElementById('hwDesc').value.trim(),
-      o = document.getElementById('hwDueDate').value;
-    if (!e || !n || !o)
-      return alert(
+      s = document.getElementById('hwDueDate').value;
+    if (!e || !n || !s)
+      return u(
         '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0432\u0441\u0435 \u043F\u043E\u043B\u044F',
+        'warning',
       );
     try {
-      let s = await fetch(`${l}/homework`, {
+      let r = await fetch(`${d}/homework`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({ subject: e, title: n, description: a, due_date: o }),
+        body: JSON.stringify({ subject: e, title: n, description: a, due_date: s }),
       });
-      if (s.ok)
-        ((document.getElementById('hwModal').style.display = 'none'), document.getElementById('hwForm').reset(), $());
+      if (r.ok)
+        ((document.getElementById('hwModal').style.display = 'none'), document.getElementById('hwForm').reset(), k());
       else {
-        let r = await s.json();
-        alert(r.error || '\u041E\u0448\u0438\u0431\u043A\u0430');
+        let c = await r.json();
+        u(c.error || '\u041E\u0448\u0438\u0431\u043A\u0430', 'error');
       }
     } catch {
-      alert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438');
+      u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  async function b() {
+  async function I() {
     try {
-      let e = await (await fetch(`${l}/announcements`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/announcements`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('announcementList');
       if (!n) return;
       if (e.length === 0) {
@@ -1140,54 +1187,55 @@
           '<div style="padding:16px;text-align:center;color:var(--text-sec)">\u041E\u0431\u044A\u044F\u0432\u043B\u0435\u043D\u0438\u0439 \u043F\u043E\u043A\u0430 \u043D\u0435\u0442</div>';
         return;
       }
-      let o = JSON.parse(localStorage.getItem('user') || '{}').role === 'admin';
+      let s = JSON.parse(localStorage.getItem('user') || '{}').role === 'admin';
       n.innerHTML = e
-        .map((s) => {
-          let r = o
-            ? `<button class="btn btn-sm btn-danger" data-action="deleteAnnouncement" data-id="${s.id}" style="margin-left:auto">\u2715</button>`
+        .map((r) => {
+          let c = s
+            ? `<button class="btn btn-sm btn-danger" data-action="deleteAnnouncement" data-id="${r.id}" style="margin-left:auto">\u2715</button>`
             : '';
           return `<div class="announcement-item" style="background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;border:1px solid var(--border);border-left:4px solid var(--warning)">
         <div style="display:flex;align-items:flex-start;gap:10px">
           <div style="flex:1">
-            <div style="font-weight:600;font-size:1rem">${i(s.title)}</div>
-            <div style="font-size:0.8rem;color:var(--text-sec);margin-top:2px">${i(s.user_name)} \u2022 ${new Date(s.created_at).toLocaleDateString('ru-RU')}</div>
-            <div style="margin-top:8px;font-size:0.92rem;line-height:1.5">${i(s.content)}</div>
+            <div style="font-weight:600;font-size:1rem">${i(r.title)}</div>
+            <div style="font-size:0.8rem;color:var(--text-sec);margin-top:2px">${i(r.user_name)} \u2022 ${new Date(r.created_at).toLocaleDateString('ru-RU')}</div>
+            <div style="margin-top:8px;font-size:0.92rem;line-height:1.5">${i(r.content)}</div>
           </div>
-          ${r}
+          ${c}
         </div>
       </div>`;
         })
         .join('');
     } catch {}
   }
-  async function le(t) {
+  async function me(t) {
     t.preventDefault();
     let e = document.getElementById('annTitle').value.trim(),
       n = document.getElementById('annContent').value.trim();
     if (!e || !n)
-      return alert(
+      return u(
         '\u0417\u0430\u043F\u043E\u043B\u043D\u0438\u0442\u0435 \u0432\u0441\u0435 \u043F\u043E\u043B\u044F',
+        'warning',
       );
     try {
-      let a = await fetch(`${l}/announcements`, {
+      let a = await fetch(`${d}/announcements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({ title: e, content: n }),
       });
       if (a.ok)
-        ((document.getElementById('annModal').style.display = 'none'), document.getElementById('annForm').reset(), b());
+        ((document.getElementById('annModal').style.display = 'none'), document.getElementById('annForm').reset(), I());
       else {
-        let o = await a.json();
-        alert(o.error || '\u041E\u0448\u0438\u0431\u043A\u0430');
+        let s = await a.json();
+        u(s.error || '\u041E\u0448\u0438\u0431\u043A\u0430', 'error');
       }
     } catch {
-      alert('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438');
+      u('\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u0435\u0442\u0438', 'error');
     }
   }
-  async function A() {
+  async function U() {
     try {
-      let e = await (await fetch(`${l}/logs`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/logs`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('logsBody');
       n.innerHTML = e
         .map(
@@ -1203,7 +1251,7 @@
         .join('');
     } catch {}
   }
-  function Me(t) {
+  function De(t) {
     let e = document.getElementById('navMenu'),
       n = {
         admin: [
@@ -1247,54 +1295,54 @@
       };
     ((e.innerHTML = (n[t.role] || n.student)
       .map(
-        ([o, s]) =>
-          `<div class="nav-link" data-page="${s}"><span>${o}</span><span class="nav-badge" id="badge-${s}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`,
+        ([s, r]) =>
+          `<div class="nav-link" data-page="${r}"><span>${s}</span><span class="nav-badge" id="badge-${r}" style="display:none; margin-left:auto; background:var(--danger); color:white; font-size:0.7rem; padding:2px 8px; border-radius:10px; font-weight:600;"></span></div>`,
       )
       .join('')),
-      e.querySelectorAll('.nav-link').forEach((o) => {
-        o.addEventListener('click', () => De(o.dataset.page));
+      e.querySelectorAll('.nav-link').forEach((s) => {
+        s.addEventListener('click', () => He(s.dataset.page));
       }));
     let a = document.getElementById('sidebarUser');
     if (a) {
-      let o = (t.name || '')
+      let s = (t.name || '')
         .split(' ')
-        .map((s) => s[0])
+        .map((r) => r[0])
         .join('')
         .toUpperCase()
         .slice(0, 2);
       a.innerHTML = `
-      <div class="sidebar-avatar">${i(o)}</div>
+      <div class="sidebar-avatar">${i(s)}</div>
       <div class="sidebar-user-info">
         <div class="sidebar-user-name">${i(t.name)}</div>
         <div class="sidebar-user-role">${i(w(t.role))}</div>
       </div>`;
     }
   }
-  function De(t) {
+  function He(t) {
     document.querySelectorAll('.page').forEach((n) => n.classList.remove('active'));
     let e = document.getElementById(t);
     (e && e.classList.add('active'),
-      t === 'profile' && se(),
-      t === 'notifications' && y(),
-      t === 'homework' && $(),
-      t === 'home' && (b(), L(), E()),
-      t === 'logs' && A());
+      t === 'profile' && re(),
+      t === 'notifications' && h(),
+      t === 'homework' && k(),
+      t === 'home' && (I(), j(), b()),
+      t === 'logs' && U());
   }
-  function He() {
-    (F(), localStorage.removeItem('user'));
+  function _e() {
+    (N(), localStorage.removeItem('user'));
     let t = [];
-    for (let e = 0; e < localStorage.length; e++) {
-      let n = localStorage.key(e);
+    for (let e = 0; e < sessionStorage.length; e++) {
+      let n = sessionStorage.key(e);
       n.startsWith('chatKey_') && t.push(n);
     }
-    (t.forEach((e) => localStorage.removeItem(e)),
-      fetch(`${l}/logout`, { method: 'POST', credentials: 'same-origin' }).finally(() => {
+    (t.forEach((e) => sessionStorage.removeItem(e)),
+      fetch(`${d}/logout`, { method: 'POST', credentials: 'same-origin' }).finally(() => {
         location.href = '/';
       }));
   }
-  async function j() {
+  async function C() {
     try {
-      let e = await (await fetch(`${l}/notifications/unread-count`, { credentials: 'same-origin' })).json(),
+      let e = await (await fetch(`${d}/notifications/unread-count`, { credentials: 'same-origin' })).json(),
         n = document.getElementById('badge-notifications');
       n &&
         (e.unread > 0
@@ -1302,150 +1350,153 @@
           : (n.style.display = 'none'));
     } catch {}
   }
-  function de() {
+  function ue() {
     let t = JSON.parse(localStorage.getItem('user') || '{}');
     if (!t.id) {
       location.pathname === '/dashboard.html' && (location.href = '/');
       return;
     }
-    if (
-      (Me(t),
-      R(t),
-      v(),
+    (De(t),
+      J(t),
       E(),
-      y(),
-      L(),
-      G(),
-      j(),
       b(),
-      $(),
+      h(),
+      j(),
+      V(),
+      C(),
+      I(),
+      k(),
       ['teacher', 'admin'].includes(t.role) &&
         ((document.getElementById('addGradeBtn').style.display = 'block'),
         (document.getElementById('addScheduleBtn').style.display = 'block'),
         (document.getElementById('exportBtn').style.display = 'block'),
         (document.getElementById('addHwBtn').style.display = 'block'),
-        W(),
-        K()),
+        X(),
+        G()),
       ['teacher', 'admin'].includes(t.role) && (document.getElementById('addAnnBtn').style.display = 'block'),
-      ['admin', 'teacher'].includes(t.role) && (x(), oe()),
-      ['student', 'parent'].includes(t.role) && (D(), ae()),
-      setInterval(j, 15e3),
-      typeof EventSource < 'u')
-    ) {
-      let s = new EventSource(`${l}/notifications/stream`);
-      ((s.onmessage = (r) => {
+      ['admin', 'teacher'].includes(t.role) && ($(), ie()),
+      ['student', 'parent'].includes(t.role) && (_(), oe()),
+      setInterval(C, 15e3));
+    let e = null;
+    function n() {
+      if (typeof EventSource > 'u') return;
+      let o = new EventSource(`${d}/notifications/stream`);
+      ((o.onmessage = (l) => {
         try {
-          JSON.parse(r.data).type === 'notification' &&
-            (j(), document.getElementById('notifications')?.classList.contains('active') && y());
+          JSON.parse(l.data).type === 'notification' &&
+            (C(), document.getElementById('notifications')?.classList.contains('active') && h());
         } catch {}
       }),
-        (s.onerror = () => s.close()));
+        (o.onerror = () => {
+          (o.close(), e && clearTimeout(e), (e = setTimeout(n, 5e3)));
+        }));
     }
-    (B(
-      'notif',
-      setInterval(() => {
-        document.getElementById('notifications')?.classList.contains('active') && y();
-      }, 3e4),
-    ),
-      B(
+    (n(),
+      L(
+        'notif',
+        setInterval(() => {
+          document.getElementById('notifications')?.classList.contains('active') && h();
+        }, 3e4),
+      ),
+      L(
         'stats',
         setInterval(() => {
-          document.getElementById('home')?.classList.contains('active') && (L(), E(), b());
+          document.getElementById('home')?.classList.contains('active') && (j(), b(), I());
         }, 3e4),
       ),
-      B(
+      L(
         'grades',
         setInterval(() => {
-          document.getElementById('diary')?.classList.contains('active') && v();
+          document.getElementById('diary')?.classList.contains('active') && E();
         }, 3e4),
       ),
-      document.getElementById('weekPrev')?.addEventListener('click', () => M(-1)),
-      document.getElementById('weekNext')?.addEventListener('click', () => M(1)),
-      document.getElementById('weekToday')?.addEventListener('click', () => N()),
-      document.querySelectorAll('[data-action]').forEach((s) => {
-        let r = s.dataset.action;
-        r === 'logout'
-          ? s.addEventListener('click', He)
-          : r === 'openModal'
-            ? s.addEventListener('click', () => {
-                let c = document.getElementById(s.dataset.modal);
-                c && (c.style.display = 'flex');
+      document.getElementById('weekPrev')?.addEventListener('click', () => H(-1)),
+      document.getElementById('weekNext')?.addEventListener('click', () => H(1)),
+      document.getElementById('weekToday')?.addEventListener('click', () => z()),
+      document.querySelectorAll('[data-action]').forEach((o) => {
+        let l = o.dataset.action;
+        l === 'logout'
+          ? o.addEventListener('click', _e)
+          : l === 'openModal'
+            ? o.addEventListener('click', () => {
+                let m = document.getElementById(o.dataset.modal);
+                m && (m.style.display = 'flex');
               })
-            : r === 'closeModal'
-              ? s.addEventListener('click', () => {
-                  let c = document.getElementById(s.dataset.modal);
-                  c && (c.style.display = 'none');
+            : l === 'closeModal'
+              ? o.addEventListener('click', () => {
+                  let m = document.getElementById(o.dataset.modal);
+                  m && (m.style.display = 'none');
                 })
-              : r === 'filterGrades'
-                ? s.addEventListener('change', () => v(s.value))
-                : r === 'filterSchedule'
-                  ? s.addEventListener('change', () => E(s.value))
-                  : r === 'filterUsers'
-                    ? s.addEventListener('change', x)
-                    : r === 'loadChart'
-                      ? s.addEventListener('change', D)
-                      : r === 'exportReport'
-                        ? s.addEventListener('submit', V)
-                        : r === 'submitGrade'
-                          ? s.addEventListener('submit', J)
-                          : r === 'createUser'
-                            ? s.addEventListener('submit', ie)
-                            : r === 'createSchedule'
-                              ? s.addEventListener('submit', q)
-                              : r === 'toggleUserClass' && s.addEventListener('change', re);
+              : l === 'filterGrades'
+                ? o.addEventListener('change', () => E(o.value))
+                : l === 'filterSchedule'
+                  ? o.addEventListener('change', () => b(o.value))
+                  : l === 'filterUsers'
+                    ? o.addEventListener('change', $)
+                    : l === 'loadChart'
+                      ? o.addEventListener('change', _)
+                      : l === 'exportReport'
+                        ? o.addEventListener('submit', Z)
+                        : l === 'submitGrade'
+                          ? o.addEventListener('submit', K)
+                          : l === 'createUser'
+                            ? o.addEventListener('submit', le)
+                            : l === 'createSchedule'
+                              ? o.addEventListener('submit', W)
+                              : l === 'toggleUserClass' && o.addEventListener('change', ce);
       }),
-      document.getElementById('hwForm')?.addEventListener('submit', ce),
-      document.getElementById('annForm')?.addEventListener('submit', le),
-      document.getElementById('refreshLogs')?.addEventListener('click', A),
-      document.getElementById('homeworkList')?.addEventListener('click', async (s) => {
-        let r = s.target.closest('[data-action="deleteHomework"]');
-        if (r) {
-          let c = r.dataset.id;
-          (await fetch(`${l}/homework/${c}`, { method: 'DELETE', credentials: 'same-origin' }), $());
+      document.getElementById('hwForm')?.addEventListener('submit', de),
+      document.getElementById('annForm')?.addEventListener('submit', me),
+      document.getElementById('refreshLogs')?.addEventListener('click', U),
+      document.getElementById('homeworkList')?.addEventListener('click', async (o) => {
+        let l = o.target.closest('[data-action="deleteHomework"]');
+        if (l) {
+          let m = l.dataset.id;
+          (await fetch(`${d}/homework/${m}`, { method: 'DELETE', credentials: 'same-origin' }), k());
         }
       }),
-      document.getElementById('announcementList')?.addEventListener('click', async (s) => {
-        let r = s.target.closest('[data-action="deleteAnnouncement"]');
-        if (r) {
-          let c = r.dataset.id;
-          (await fetch(`${l}/announcements/${c}`, { method: 'DELETE', credentials: 'same-origin' }), b());
+      document.getElementById('announcementList')?.addEventListener('click', async (o) => {
+        let l = o.target.closest('[data-action="deleteAnnouncement"]');
+        if (l) {
+          let m = l.dataset.id;
+          (await fetch(`${d}/announcements/${m}`, { method: 'DELETE', credentials: 'same-origin' }), I());
         }
       }));
-    let e = document.getElementById('emojiToggle');
-    e && e.addEventListener('click', _);
-    let n = document.getElementById('attachBtn'),
-      a = document.getElementById('imageInput');
-    (n &&
-      a &&
-      (n.addEventListener('click', () => a.click()),
-      a.addEventListener('change', (s) => {
-        s.target.files[0] && (ne(s.target.files[0]), (s.target.value = ''));
+    let a = document.getElementById('emojiToggle');
+    a && a.addEventListener('click', P);
+    let s = document.getElementById('attachBtn'),
+      r = document.getElementById('imageInput');
+    (s &&
+      r &&
+      (s.addEventListener('click', () => r.click()),
+      r.addEventListener('change', (o) => {
+        o.target.files[0] && (se(o.target.files[0]), (o.target.value = ''));
       })),
-      document.addEventListener('click', (s) => {
-        if (e && !s.target.closest('#emojiPicker') && !s.target.closest('#emojiToggle')) {
-          let r = document.getElementById('emojiPicker');
-          r && r.classList.remove('open');
+      document.addEventListener('click', (o) => {
+        if (a && !o.target.closest('#emojiPicker') && !o.target.closest('#emojiToggle')) {
+          let l = document.getElementById('emojiPicker');
+          l && l.classList.remove('open');
         }
       }),
       document.addEventListener('visibilitychange', () => {
-        document.hidden || (j(), document.getElementById('notifications')?.classList.contains('active') && y());
+        document.hidden || (C(), document.getElementById('notifications')?.classList.contains('active') && h());
       }));
-    let o = document.getElementById('themeToggle');
-    if (o) {
-      let s = localStorage.getItem('theme') === 'dark';
-      (s && document.body.classList.add('dark'),
-        (o.innerHTML = s
+    let c = document.getElementById('themeToggle');
+    if (c) {
+      let o = localStorage.getItem('theme') === 'dark';
+      (o && document.body.classList.add('dark'),
+        (c.innerHTML = o
           ? '<i class="bx bx-sun"></i> \u0421\u0432\u0435\u0442\u043B\u0430\u044F \u0442\u0435\u043C\u0430'
           : '<i class="bx bx-moon"></i> \u0422\u0451\u043C\u043D\u0430\u044F \u0442\u0435\u043C\u0430'),
-        o.addEventListener('click', () => {
+        c.addEventListener('click', () => {
           document.body.classList.toggle('dark');
-          let r = document.body.classList.contains('dark');
-          (localStorage.setItem('theme', r ? 'dark' : 'light'),
-            (o.innerHTML = r
+          let l = document.body.classList.contains('dark');
+          (localStorage.setItem('theme', l ? 'dark' : 'light'),
+            (c.innerHTML = l
               ? '<i class="bx bx-sun"></i> \u0421\u0432\u0435\u0442\u043B\u0430\u044F \u0442\u0435\u043C\u0430'
               : '<i class="bx bx-moon"></i> \u0422\u0451\u043C\u043D\u0430\u044F \u0442\u0435\u043C\u0430'));
         }));
     }
   }
-  document.addEventListener('DOMContentLoaded', de);
+  document.addEventListener('DOMContentLoaded', ue);
 })();

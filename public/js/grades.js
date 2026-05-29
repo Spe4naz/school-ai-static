@@ -1,4 +1,4 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, showToast } from './utils.js';
 import { loadNotifications } from './notifications.js';
 
 let currentWeekOffset = 0;
@@ -7,20 +7,23 @@ export async function loadClasses(user) {
   const select = document.getElementById('classFilter');
   if (['teacher', 'admin'].includes(user.role)) {
     select.style.display = 'block';
-    const res = await fetch(`${API}/classes`, {       credentials: 'same-origin' });
+    const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
     const classes = await res.json();
-    select.innerHTML = '<option value="">Все классы</option>' + classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+    select.innerHTML =
+      '<option value="">Все классы</option>' +
+      classes.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
     loadStudentsForModal();
   }
 }
 
 export async function loadStudentsForModal() {
   try {
-    const res = await fetch(`${API}/students`, {       credentials: 'same-origin' });
+    const res = await fetch(`${API}/students`, { credentials: 'same-origin' });
     const students = await res.json();
     const select = document.getElementById('modalStudentId');
-    select.innerHTML = '<option value="">Выберите ученика</option>' +
-      students.map(s => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
+    select.innerHTML =
+      '<option value="">Выберите ученика</option>' +
+      students.map((s) => `<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');
   } catch (err) {
     console.error('Ошибка загрузки учеников:', err);
   }
@@ -49,19 +52,25 @@ export async function loadGrades(class_id = '') {
   if (class_id) url += `&class_id=${class_id}`;
 
   try {
-    const res = await fetch(url, {       credentials: 'same-origin' });
+    const res = await fetch(url, { credentials: 'same-origin' });
     const grades = await res.json();
     const tbody = document.querySelector('#gradesTable tbody');
-    tbody.innerHTML = grades.map(g => `
+    tbody.innerHTML = grades
+      .map(
+        (g) => `
       <tr>
         <td>${escapeHtml(g.subject)}</td>
         <td><span class="grade grade-${g.grade}">${g.grade}</span></td>
         <td>${escapeHtml(g.student_name)}</td>
         <td>${escapeHtml(g.comment) || '—'}</td>
         <td>${escapeHtml(g.date)}</td>
-      </tr>`).join('');
+      </tr>`,
+      )
+      .join('');
     updateWeekLabel();
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function updateWeekLabel() {
@@ -79,7 +88,7 @@ function updateWeekLabel() {
 export async function submitGrade(e) {
   e.preventDefault();
   const student_id = document.getElementById('modalStudentId').value;
-  if (!student_id) return alert('Выберите ученика');
+  if (!student_id) return showToast('Выберите ученика', 'warning');
 
   const payload = {
     student_id,
@@ -97,7 +106,7 @@ export async function submitGrade(e) {
     });
 
     if (res.ok) {
-      alert('Оценка выставлена! Родитель получил уведомление.');
+      showToast('Оценка выставлена!', 'success');
       const modal = document.getElementById('gradeModal');
       if (modal) modal.style.display = 'none';
       loadGrades();
@@ -107,9 +116,9 @@ export async function submitGrade(e) {
       document.getElementById('modalComment').value = '';
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка при выставлении оценки');
+      showToast(data.error || 'Ошибка при выставлении оценки', 'error');
     }
   } catch (err) {
-    alert('Ошибка сети');
+    showToast('Ошибка сети', 'error');
   }
 }

@@ -1,10 +1,11 @@
-import { API, escapeHtml } from './utils.js';
+import { API, escapeHtml, showToast } from './utils.js';
 
 export async function loadClassesForExport() {
   const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
   const classes = await res.json();
-  document.getElementById('exportClass').innerHTML = '<option value="">Все классы</option>' +
-    classes.map(c => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
+  document.getElementById('exportClass').innerHTML =
+    '<option value="">Все классы</option>' +
+    classes.map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.name)}</option>`).join('');
 }
 
 export async function exportReport(e) {
@@ -30,9 +31,9 @@ export async function exportReport(e) {
 
     const modal = document.getElementById('exportModal');
     if (modal) modal.style.display = 'none';
-    alert('Отчёт скачан!');
+    showToast('Отчёт скачан!', 'success');
   } catch (err) {
     console.error(err);
-    alert('Ошибка при экспорте');
+    showToast('Ошибка при экспорте', 'error');
   }
 }

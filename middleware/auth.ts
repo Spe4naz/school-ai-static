@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 const config = require('../config/auth');
 
-module.exports = (req, res, next) => {
+module.exports = (req: any, res: any, next: any) => {
   let token = req.headers.authorization?.split(' ')[1];
   if (!token) token = req.cookies?.token;
 
@@ -12,7 +12,7 @@ module.exports = (req, res, next) => {
   try {
     req.user = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'], issuer: 'school-ai' });
     next();
-  } catch (err) {
+  } catch (err: any) {
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: 'Токен истёк', code: 'TOKEN_EXPIRED' });
     }

@@ -42,7 +42,7 @@ cd school-ai-static && npm install && npm run dev
 |--------|----------|
 | [Безопасность](Security.md) | Аутентификация, шифрование, rate-limiting |
 | [Аутентификация](Authentication.md) | JWT, роли, регистрация, сброс пароля |
-| [Тестирование](Testing.md) | 164 теста, запуск, написание новых |
+| [Тестирование](Testing.md) | 222 теста, запуск, написание новых |
 
 ---
 
@@ -64,7 +64,7 @@ Backend:   Node.js + Express + TypeScript
 Database:  PostgreSQL 16
 Frontend:  Vanilla JS (ES Modules) + Chart.js
 Proxy:     Caddy (авто-SSL)
-Тесты:     Jest + Supertest + Testcontainers (164 теста)
-Деплой:    Docker + Docker Compose
-Безопасность: helmet + CSP nonces, JWT в httpOnly cookies, rate-limit
+Тесты:     Jest + Supertest + Testcontainers (222 теста)
+Деплой:    Docker + Docker Compose (install.sh — 3x-ui стиль)
+Безопасность: helmet + CSP nonces, JWT в httpOnly cookies, rate-limit, execFile для Docker
 ```

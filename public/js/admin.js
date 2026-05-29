@@ -1,9 +1,4 @@
-import { API, escapeHtml } from './utils.js';
-
-function getRoleLabel(role) {
-  const labels = { admin: 'Админ', teacher: 'Учитель', student: 'Ученик', parent: 'Родитель' };
-  return labels[role] || role;
-}
+import { API, escapeHtml, getRoleLabel, showToast, showConfirm } from './utils.js';
 
 export async function loadUsers() {
   const roleFilter = document.getElementById('userRoleFilter').value;
@@ -11,15 +6,11 @@ export async function loadUsers() {
   if (roleFilter) url += `?role=${roleFilter}`;
 
   try {
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-    });
+    const res = await fetch(url, { credentials: 'same-origin' });
     const users = await res.json();
 
     const tbody = document.querySelector('#usersTable tbody');
-    const classes = await fetch(`${API}/classes`, {
-      credentials: 'same-origin',
-    }).then((r) => r.json());
+    const classes = await fetch(`${API}/classes`, { credentials: 'same-origin' }).then((r) => r.json());
 
     const classMap = {};
     classes.forEach((c) => (classMap[c.id] = c.name));
@@ -53,9 +44,7 @@ export async function loadUsers() {
 }
 
 export async function loadClassesForUserModal() {
-  const res = await fetch(`${API}/classes`, {
-    credentials: 'same-origin',
-  });
+  const res = await fetch(`${API}/classes`, { credentials: 'same-origin' });
   const classes = await res.json();
   document.getElementById('newUserClass').innerHTML =
     '<option value="">Без класса</option>' +
@@ -106,7 +95,7 @@ export async function createUser(e) {
     const data = await res.json();
 
     if (res.ok) {
-      alert('Пользователь создан!');
+      showToast('Пользователь создан', 'success');
       const modal = document.getElementById('userModal');
       if (modal) modal.style.display = 'none';
       const form = document.getElementById('userForm');
@@ -123,7 +112,8 @@ export async function createUser(e) {
 }
 
 export async function deleteUser(userId) {
-  if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
+  const ok = await showConfirm('Удалить пользователя?');
+  if (!ok) return;
 
   try {
     const res = await fetch(`${API}/admin/users/${userId}`, {
@@ -132,13 +122,13 @@ export async function deleteUser(userId) {
     });
 
     if (res.ok) {
-      alert('Пользователь удалён');
+      showToast('Пользователь удалён', 'success');
       loadUsers();
     } else {
       const data = await res.json();
-      alert(data.error || 'Ошибка удаления');
+      showToast(data.error || 'Ошибка удаления', 'error');
     }
   } catch (err) {
-    alert('Ошибка сети');
+    showToast('Ошибка сети', 'error');
   }
 }

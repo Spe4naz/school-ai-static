@@ -1,11 +1,8 @@
-// config/database.js — PostgreSQL
-const { Pool } = require('pg');
+// config/database.ts — PostgreSQL
+import { Pool, QueryResult } from 'pg';
 
 class Database {
-  private pool: any;
-  constructor() {
-    this.pool = null;
-  }
+  private pool: Pool | null = null;
 
   _ensureConnected() {
     if (this.pool) return;
@@ -21,7 +18,7 @@ class Database {
       query_timeout: 10000,
     });
     this.pool.on('error', (err) => {
-      console.error('Unexpected database pool error:', err.message);
+      console.error('[db] Unexpected pool error:', err.message);
     });
   }
 
@@ -217,6 +214,7 @@ class Database {
   }
 
   async seed() {
+    if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'ci') return;
     const { rows } = await this.query('SELECT COUNT(*) as count FROM classes');
     if (Number(rows[0].count) === 0) await this._createSeedData();
   }
@@ -225,7 +223,7 @@ class Database {
     const { v4: uuidv4 } = require('uuid');
     const bcrypt = require('bcryptjs');
 
-    console.log('Initializing test data...');
+    console.log('[db] Initializing test data...');
 
     const c1 = uuidv4(),
       c2 = uuidv4();
@@ -301,7 +299,7 @@ class Database {
     await this.query('INSERT INTO registration_codes (code, role) VALUES ($1,$2)', ['TEACH02', 'teacher']);
     await this.query('INSERT INTO registration_codes (code, role) VALUES ($1,$2)', ['HEAD01', 'head_teacher']);
 
-    console.log('Test data created');
+    console.log('[db] Test data created');
   }
 
   async close() {
