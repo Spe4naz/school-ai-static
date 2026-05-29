@@ -105,11 +105,27 @@ sudo ufw allow 80/tcp && sudo ufw allow 443/tcp
 
 # 5. Убедиться, что A-запись school.net.ru ведёт на IP сервера
 
-# 6. Запустить
-docker compose --env-file .env up -d
+# 6. Запустить (основной compose, без override — он для разработки)
+docker compose -f docker-compose.yml --env-file .env up -d
 
 # 7. Смотреть логи
 docker compose logs -f caddy app
+```
+
+### Локальный доступ для тестирования (localhost:3000)
+
+Чтобы на сервере открыть `http://localhost:3000` в обход Caddy (например, для отладки):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env up -d
+```
+
+Порт 3000 маппится на интерфейс `0.0.0.0`, поэтому закройте его фаерволом, если не нужен внешним:
+
+```bash
+sudo ufw deny 3000/tcp
+# или оставить только localhost:
+sudo ufw allow from 127.0.0.1 to any port 3000
 ```
 
 Сайт будет доступен по `https://school.net.ru`.  
@@ -255,7 +271,7 @@ npm run test:silent
 # покрытие
 npm run test:coverage
 
-# docker для разработки
+# docker для разработки (авто-подхватывает docker-compose.override.yml)
 docker compose up -d
 ```
 
@@ -297,8 +313,10 @@ docker compose up -d
 ├── server.js            # Точка входа
 ├── Dockerfile           # Production-образ
 ├── Dockerfile.dev       # Dev-образ
-├── docker-compose.yml   # Docker Compose
-├── Caddyfile            # Конфиг Caddy
+├── docker-compose.yml       # Docker Compose (production)
+├── docker-compose.override.yml  # Dev-образ + порт + bind mount
+├── docker-compose.local.yml     # Порт 3000 для тестов на сервере
+├── Caddyfile                # Конфиг Caddy
 └── .env.example         # Пример переменных окружения
 ```
 
@@ -331,16 +349,21 @@ rm -rf school-ai-static                        # Linux / macOS
 ### Docker (продакшн)
 
 ```bash
-docker compose --env-file .env down -v       # остановить и удалить volumes
-docker rmi school-ai-static-app               # удалить образ
-rm -rf school-ai-static                       # удалить проект
+# остановить и удалить volumes
+docker compose -f docker-compose.yml --env-file .env down -v
+
+# удалить образ
+docker rmi school-ai-static-app
+
+# удалить проект
+rm -rf school-ai-static
 ```
 
 ### Полная очистка (все данные)
 
 ```bash
 # остановить контейнеры и удалить всё
-docker compose --env-file .env down -v
+docker compose -f docker-compose.yml --env-file .env down -v
 docker system prune -a --volumes
 
 # удалить директорию
