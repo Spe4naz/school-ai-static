@@ -1,140 +1,248 @@
 #!/bin/bash
-# School AI — Quick Install Script for Linux
-# Usage: curl -sSL <url>/install.sh | bash
-
+# School AI — Install Script (3x-ui style)
+# Access panel at http://SERVER_IP:PORT/panel
 set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
+BOLD='\033[1m'
 
-echo -e "${BLUE}"
-echo "  ╔══════════════════════════════════════╗"
-echo "  ║       School AI — Установка          ║"
-echo "  ║  Интеллектуальная образовательная    ║"
-echo "  ║           платформа                  ║"
-echo "  ╚══════════════════════════════════════╝"
+clear
+echo -e "${CYAN}"
+echo "  ╔══════════════════════════════════════════════════╗"
+echo "  ║                                                  ║"
+echo "  ║       ${BOLD}School AI — Установка${NC}${CYAN}                   ║"
+echo "  ║       Интеллектуальная образовательная           ║"
+echo "  ║             платформа                           ║"
+echo "  ║                                                  ║"
+echo "  ╚══════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-# Check root
+# ==================== ПРОВЕРКИ ====================
+
 if [ "$EUID" -ne 0 ]; then
-  echo -e "${RED}Запустите от root: sudo bash install.sh${NC}"
+  echo -e "${RED}[ОШИБКА] Запустите от root: sudo bash install.sh${NC}"
   exit 1
 fi
 
-# Install Docker
-echo -e "${YELLOW}[1/6] Установка Docker...${NC}"
-if ! command -v docker &> /dev/null; then
-  apt-get update
-  apt-get install -y ca-certificates curl gnupg
+if ! grep -qiE 'ubuntu|debian' /etc/os-release 2>/dev/null; then
+  echo -e "${YELLOW}[ПРЕДУПРЕЖДЕНИЕ] Скрипт тестировался на Ubuntu/Debian.${NC}"
+fi
+
+SERVER_IP=$(curl -s ifconfig.me 2>/dev/null || curl -s ipinfo.io/ip 2>/dev/null || echo "127.0.0.1")
+echo -e "${BLUE}Обнаружен IP сервера: ${BOLD}$SERVER_IP${NC}"
+
+# ==================== DOCKER ====================
+
+echo ""
+echo -e "${YELLOW}[1/7] Проверка Docker...${NC}"
+
+if command -v docker &> /dev/null; then
+  echo -e "${GREEN}  ✓ Docker уже установлен${NC}"
+else
+  echo -e "${BLUE}  Установка Docker...${NC}"
+  apt-get update -qq
+  apt-get install -y -qq ca-certificates curl gnupg
   install -m 0755 -d /etc/apt/keyrings
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg 2>/dev/null
   chmod a+r /etc/apt/keyrings/docker.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-  apt-get update
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  apt-get update -qq
+  apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin
   systemctl enable docker
   systemctl start docker
-  echo -e "${GREEN}Docker установлен${NC}"
-else
-  echo -e "${GREEN}Docker уже установлен${NC}"
+  echo -e "${GREEN}  ✓ Docker установлен${NC}"
 fi
 
-# Clone project
-echo -e "${YELLOW}[2/6] Клонирование проекта...${NC}"
+# ==================== КЛОНИРОВАНИЕ ====================
+
+echo ""
+echo -e "${YELLOW}[2/7] Получение проекта...${NC}"
+
 INSTALL_DIR="/opt/school-ai"
-if [ -d "$INSTALL_DIR" ]; then
-  echo -e "${YELLOW}Директория $INSTALL_DIR уже существует. Обновляю...${NC}"
+if [ -d "$INSTALL_DIR/.git" ]; then
+  echo -e "${BLUE}  Обновление...${NC}"
   cd "$INSTALL_DIR"
-  git pull
+  git pull -q 2>/dev/null || true
 else
-  git clone https://github.com/Spe4naz/school-ai-static.git "$INSTALL_DIR"
+  echo -e "${BLUE}  Клонирование...${NC}"
+  git clone -q https://github.com/Spe4naz/school-ai-static.git "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 fi
+echo -e "${GREEN}  ✓ Проект: $INSTALL_DIR${NC}"
 
-# Create .env
-echo -e "${YELLOW}[3/6] Настройка окружения...${NC}"
-if [ ! -f .env ]; then
-  cp .env.example .env
+# ==================== НАСТРОЙКА ====================
+
+echo ""
+echo -e "${YELLOW}[3/7] Настройка...${NC}"
+echo ""
+echo -e "${CYAN}  ┌──────────────────────────────────────────┐${NC}"
+echo -e "${CYAN}  │  Настройте параметры вашего сервера       │${NC}"
+echo -e "${CYAN}  └──────────────────────────────────────────┘${NC}"
+echo ""
+
+# Порт
+read -p "  Порт для панели [80]: " PANEL_PORT
+PANEL_PORT=${PANEL_PORT:-80}
+
+# Домен
+echo ""
+echo -e "  ${BLUE}Если у вас есть домен — введите его.${NC}"
+echo -e "  ${BLUE}Если нет — нажмите Enter для IP-доступа.${NC}"
+read -p "  Домен (опционально): " DOMAIN
+
+# Логин администратора
+echo ""
+read -p "  Логин администратора: " ADMIN_EMAIL
+while [ -z "$ADMIN_EMAIL" ]; do
+  read -p "  Логин обязателен: " ADMIN_EMAIL
+done
+
+# Пароль администратора
+echo ""
+read -s -p "  Пароль администратора (мин. 8 символов): " ADMIN_PASSWORD
+echo ""
+while [ ${#ADMIN_PASSWORD} -lt 8 ]; do
+  read -s -p "  Минимум 8 символов: " ADMIN_PASSWORD
+  echo ""
+done
+
+# ==================== ГЕНЕРАЦИЯ КОНФИГУРАЦИИ ====================
+
+echo ""
+echo -e "${YELLOW}[4/7] Генерация конфигурации...${NC}"
+
+JWT_SECRET=$(openssl rand -hex 32)
+DB_PASSWORD=$(openssl rand -hex 16)
+
+if [ -n "$DOMAIN" ]; then
+  FRONTEND_URL="https://${DOMAIN}"
+else
+  FRONTEND_URL="http://${SERVER_IP}:${PANEL_PORT}"
 fi
 
-# Interactive setup
-echo ""
-echo -e "${BLUE}Введите параметры настройки:${NC}"
-echo ""
-
-read -p "Домен (например, school.example.com): " DOMAIN
-read -p "Порт [3000]: " PORT
-PORT=${PORT:-3000}
-read -p "Email администратора: " ADMIN_EMAIL
-read -s -p "Пароль администратора (мин. 8 символов): " ADMIN_PASSWORD
-echo ""
-read -p "Имя администратора: " ADMIN_NAME
-
-# Generate JWT secret
-JWT_SECRET=$(openssl rand -hex 32)
-
-# Write .env
 cat > .env << EOF
-DOMAIN=$DOMAIN
+DOMAIN=${DOMAIN:-$SERVER_IP}
 NODE_ENV=production
-PORT=$PORT
-FRONTEND_URL=https://$DOMAIN
+PORT=3000
+FRONTEND_URL=$FRONTEND_URL
 JWT_SECRET=$JWT_SECRET
-DATABASE_URL=postgresql://school:school_pass@db:5432/school
+DATABASE_URL=postgresql://school:${DB_PASSWORD}@db:5432/school
+POSTGRES_USER=school
+POSTGRES_PASSWORD=$DB_PASSWORD
+POSTGRES_DB=school
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
-SMTP_USER=noreply@$DOMAIN
+SMTP_USER=noreply@${DOMAIN:-$SERVER_IP}
 SMTP_PASS=your_password_here
 BACKUP_DIR=./backups
 BACKUP_RETENTION_DAYS=7
-POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
 
-# Store admin credentials for seeding
 cat > .setup-creds.json << EOF
 {
   "email": "$ADMIN_EMAIL",
   "password": "$ADMIN_PASSWORD",
-  "name": "$ADMIN_NAME"
+  "name": "Администратор"
 }
 EOF
 
-echo -e "${GREEN}Конфигурация создана${NC}"
+chmod 600 .env .setup-creds.json
+echo -e "${GREEN}  ✓ Конфигурация создана${NC}"
 
-# Build and start
-echo -e "${YELLOW}[4/6] Сборка проекта...${NC}"
-docker compose build
+# ==================== CADDY ====================
 
-echo -e "${YELLOW}[5/6] Запуск сервисов...${NC}"
-docker compose --env-file .env up -d
+echo -e "${YELLOW}[5/7] Настройка Caddy...${NC}"
 
-echo -e "${YELLOW}[6/6] Ожидание готовности...${NC}"
-sleep 10
-
-# Check status
-if docker compose ps | grep -q "Up"; then
-  echo ""
-  echo -e "${GREEN}╔══════════════════════════════════════╗${NC}"
-  echo -e "${GREEN}║       Установка завершена!           ║${NC}"
-  echo -e "${GREEN}╚══════════════════════════════════════╝${NC}"
-  echo ""
-  echo -e "  Домен:    ${BLUE}https://$DOMAIN${NC}"
-  echo -e "  Логин:    ${BLUE}$ADMIN_EMAIL${NC}"
-  echo -e "  Пароль:   ${BLUE}$ADMIN_PASSWORD${NC}"
-  echo ""
-  echo -e "  ${YELLOW}Откройте https://$DOMAIN в браузере${NC}"
-  echo -e "  ${YELLOW}SSL-сертификат будет получен автоматически${NC}"
-  echo ""
-  echo -e "  Управление:"
-  echo -e "    cd $INSTALL_DIR"
-  echo -e "    docker compose logs -f        # логи"
-  echo -e "    docker compose restart         # перезапуск"
-  echo -e "    docker compose down            # остановка"
-  echo ""
+if [ -n "$DOMAIN" ]; then
+  cat > Caddyfile << CADDYEOF
+$DOMAIN {
+    reverse_proxy app:3000
+    encode gzip
+    header {
+        Strict-Transport-Security max-age=31536000
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+    }
+}
+CADDYEOF
 else
-  echo -e "${RED}Ошибка запуска. Проверьте логи: docker compose logs${NC}"
-  exit 1
+  cat > Caddyfile << 'CADDYEOF'
+:80 {
+    reverse_proxy app:3000
+    encode gzip
+}
+CADDYEOF
 fi
+echo -e "${GREEN}  ✓ Caddy настроен${NC}"
+
+# ==================== СБОРКА И ЗАПУСК ====================
+
+echo ""
+echo -e "${YELLOW}[6/7] Сборка и запуск...${NC}"
+
+if [ "$PANEL_PORT" != "80" ]; then
+  sed -i "s/- \"80:80\"/- \"${PANEL_PORT}:80\"/g" docker-compose.yml
+fi
+
+docker compose build -q 2>/dev/null || docker compose build
+docker compose --env-file .env up -d
+echo -e "${GREEN}  ✓ Сервисы запущены${NC}"
+
+# ==================== ОЖИДАНИЕ ====================
+
+echo ""
+echo -e "${YELLOW}[7/7] Ожидание готовности...${NC}"
+
+for i in {1..30}; do
+  if docker compose ps 2>/dev/null | grep -q "Up"; then
+    break
+  fi
+  sleep 1
+  printf "."
+done
+echo ""
+
+# ==================== РЕЗУЛЬТАТ ====================
+
+echo ""
+echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
+echo -e "${GREEN}║         Установка завершена успешно!             ║${NC}"
+echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
+echo ""
+
+if [ -n "$DOMAIN" ]; then
+  echo -e "  Домен:    ${BLUE}https://${DOMAIN}/panel${NC}"
+else
+  echo -e "  Домен:    ${BLUE}http://${SERVER_IP}:${PANEL_PORT}/panel${NC}"
+fi
+
+echo ""
+read -p "  Введите логин: " FINAL_LOGIN
+FINAL_LOGIN=${FINAL_LOGIN:-$ADMIN_EMAIL}
+
+read -s -p "  Введите пароль: " FINAL_PASSWORD
+echo ""
+FINAL_PASSWORD=${FINAL_PASSWORD:-$ADMIN_PASSWORD}
+
+echo ""
+if [ -n "$DOMAIN" ]; then
+  echo -e "  Откройте ${BLUE}https://${DOMAIN}/panel${NC}"
+else
+  echo -e "  Откройте ${BLUE}http://${SERVER_IP}:${PANEL_PORT}/panel${NC}"
+fi
+echo -e "  ${YELLOW}SSL-сертификат будет получен автоматически${NC}"
+
+echo ""
+echo -e "  Управление:"
+echo -e "    cd $INSTALL_DIR"
+echo -e "    docker compose logs -f          ${CYAN}# логи${NC}"
+echo -e "    docker compose restart           ${CYAN}# перезапуск${NC}"
+echo -e "    docker compose down              ${CYAN}# остановка${NC}"
+echo -e "    docker compose pull && docker compose up -d  ${CYAN}# обновление${NC}"
+echo ""
