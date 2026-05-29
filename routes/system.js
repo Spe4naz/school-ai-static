@@ -104,8 +104,12 @@ router.get('/logs', ...protect, async (req, res) => {
 // Backup management
 router.get('/backups', ...protect, async (req, res) => {
   const { backupService } = require('../config/container');
-  const backups = await backupService.list();
-  res.json(backups);
+  try {
+    const backups = await backupService.list();
+    res.json(backups);
+  } catch {
+    res.json([]);
+  }
 });
 
 router.post('/backups', ...protect, async (req, res) => {

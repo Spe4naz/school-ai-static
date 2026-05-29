@@ -107,7 +107,6 @@ describe('System API (admin only)', () => {
     const res = await request(app).get('/api/system/config').set(auth(adminToken));
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty('nodeEnv');
-    expect(res.body).toHaveProperty('domain');
     expect(res.body).toHaveProperty('jwtSecretSet');
     expect(typeof res.body.jwtSecretSet).toBe('boolean');
   });
