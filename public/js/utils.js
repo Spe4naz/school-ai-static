@@ -117,12 +117,7 @@ export function escapeHtml(str) {
 
 export function safeSetHTML(el, html) {
   if (typeof el === 'string') el = document.getElementById(el);
-  if (el) {
-    const tmp = document.createElement('div');
-    tmp.textContent = html;
-    el.innerHTML = '';
-    el.appendChild(tmp);
-  }
+  if (el) el.innerHTML = html;
 }
 
 export async function apiFetch(url, options = {}) {

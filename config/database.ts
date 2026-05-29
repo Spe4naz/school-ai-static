@@ -217,7 +217,6 @@ class Database {
   }
 
   async seed() {
-    if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'ci') return;
     const { rows } = await this.query('SELECT COUNT(*) as count FROM classes');
     if (Number(rows[0].count) === 0) await this._createSeedData();
   }

@@ -53,9 +53,9 @@ school-ai-static/
 │   ├── setup.html       # Setup wizard
 │   └── dashboard.html   # Основной интерфейс
 ├── utils/               # AppError, classResolver, cache
-├── __tests__/           # 222 теста (Jest + Supertest + testcontainers)
+├── __tests__/           # 164 теста (Jest + Supertest + testcontainers)
 ├── server.ts            # Точка входа
-├── install.sh           # Установочный скрипт (3x-ui стиль)
+├── install.sh           # Установочный скрипт для Linux
 └── docker-compose.yml   # Docker Compose
 ```
 
@@ -90,16 +90,6 @@ res.cookie('token', accessToken, { httpOnly: true, sameSite: 'strict', secure: t
 res.cookie('refreshToken', refreshToken, { httpOnly: true, sameSite: 'strict', secure: true, maxAge: 30d });
 ```
 
-### DockerService — execFile вместо exec
-
-```javascript
-// Безопасно:
-this._exec('start', [name]);  // name валидируется regex
-
-// Небезопасно (было):
-exec(`docker start ${name}`);
-```
-
 ### In-memory TTL-кэш
 
 ```typescript
@@ -109,27 +99,15 @@ const result = await db.all('SELECT ...');
 setCache('classes:all', result, TTL.CLASSES);
 ```
 
-### Setup Wizard
+### Structured Logging (Pino)
 
-- Санитизация .env записей (отклонение `\n`, `"`, `'`)
-- Валидация домена regex `^[a-zA-Z0-9.-]+$`
-- Пароль БД генерируется автоматически
-- `.setup-creds.json` удаляется после первого входа
-
-### Chat Keys
-
-Ключи шифрования хранятся в `sessionStorage` — при закрытии вкладки ключи удаляются.
-
-### SSE Reconnect
-
-Автоматическое переподключение через 5 секунд при обрыве соединения:
-
-```javascript
-es.onerror = () => {
-  es.close();
-  setTimeout(connectSSE, 5000);
-};
+```typescript
+logger.info({ method, path, status, duration, ip, userId });
 ```
+
+### CommonJS в TypeScript
+
+Файлы `.ts` используют `require()` / `module.exports` для совместимости с `tsx`.
 
 ---
 

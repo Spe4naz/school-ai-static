@@ -1,0 +1,5 @@
+public/dashboard.bundle.js
+coverage/
+backups/
+dist/
+node_modules/
